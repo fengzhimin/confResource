@@ -51,4 +51,12 @@ char* IntToStr(char *str, int num);
 ***********************************/
 int StrToInt(char *str);
 
+/***********************************
+ * func: extract last char position from string
+ * return: -1 = not exist char     >= 0 = last char position
+ * @para str: string
+ * @para ch: extract char
+***********************************/
+int ExtractLastCharIndex(char *str, char ch);
+
 #endif

@@ -15,3 +15,5 @@ char *createFuncLibraryTable = "create table funcLibray(funcName varchar(30), ty
 //每个函数对应的各项资源的分数
 char *createFuncScoreTable = "create table funcScore(funcName varchar(30), CPU int, MEM int, IO int, NET int)";
 char *deleteFuncScoreTable = "drop table funcScore";
+
+char programName[MAX_PROGRAMNAME_NUM] = "";

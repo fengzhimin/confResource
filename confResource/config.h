@@ -17,6 +17,10 @@
 
 #define MAX_SUBSTR               512   //拆分后子字符串的最大长度
 
+#define PATH_MAX                 256
+
+#define MAX_PROGRAMNAME_NUM      50     //a program max name length
+
 extern char bind_address[CONFIG_VALUE_MAX_NUM];
 extern int port;
 extern char user[CONFIG_VALUE_MAX_NUM];
@@ -27,5 +31,8 @@ extern MYSQL *mysqlConnect;
 extern char *createFuncLibraryTable;
 extern char *createFuncScoreTable;
 extern char *deleteFuncScoreTable;
+
+//analyse program name
+extern char programName[MAX_PROGRAMNAME_NUM];
 
 #endif

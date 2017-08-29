@@ -125,3 +125,16 @@ int StrToInt(char *str)
 
 	return retNum;
 }
+
+int ExtractLastCharIndex(char *str, char ch)
+{
+    int strLength = strlen(str);
+    int i, ret = -1;
+    for(i = 0; i < strLength; i++)
+    {
+        if(str[i] == ch)
+            ret = i;
+    }
+    
+    return ret;
+}
