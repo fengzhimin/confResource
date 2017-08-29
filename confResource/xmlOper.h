@@ -1,14 +1,26 @@
 #ifndef __XMLOPER_H__
 #define __XMLOPER_H__
 
-#include <stdio.h>  
+#include <stdio.h> 
 #include <string.h>  
-#include <stdlib.h>  
+#include <stdlib.h>
+#include <stdbool.h>
 #include <libxml/xmlmemory.h>  
 #include <libxml/parser.h>
+#include "logOper.h"
 
-void parseDoc(char *docname);
+/*******************************
+ * func: Extract function Name from XML
+ * return: true = success    false = failure
+ * @para docName: xml path
+********************************/
+bool ExtractFuncFromXML(char *docName);
 
-void parseStory(xmlDocPtr doc, xmlNodePtr cur);
+/*******************************
+ * func: scan call function
+ * return: void
+ * @para cur: current Node
+********************************/
+void scanCallFunction(xmlNodePtr cur);
 
 #endif

@@ -1,10 +1,9 @@
+#include "mysqlOper.h"
 #include "xmlOper.h"
 
 int main(int argc, char **argv) 
-{  
-  
-    char *docname = "./adlist.c.xml";
-    parseDoc (docname);
-    
-    return (1);
+{
+    ExtractFuncFromXML("./adlist.c.xml");
+        
+    return 0;
 }

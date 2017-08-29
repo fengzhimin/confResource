@@ -30,8 +30,8 @@ int WriteLog(const char* logName, const char* logInfo, const char *file, const c
 {
 	printf("%s", logInfo);   //终端及时显示信息
 #if OPENLOG
-	FILE * _fd = OpenFile(logName, "a");
-	if(NULL == _fd)
+	int _fd = OpenFile(logName, O_APPEND | O_RDWR);
+	if(-1 == _fd)
 		return -1;
 	
 	char *_mergeInfo = CreateLogInfo(logInfo, file, function, line);
