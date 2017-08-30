@@ -6,6 +6,7 @@
 #include "config.h"
 #include "strOper.h"
 #include "xmlOper.h"
+#include "mysqlOper.h"
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
@@ -42,5 +43,17 @@ bool CodeToXML(char *srcPath, char *desPath);
  * @para dirPath: program directory
 *****************************************/
 bool convertProgram(char *dirPath);
+
+/*****************************************
+ * func: delete temp xml file
+ * return: true = success     false = failure
+*****************************************/
+bool deleteTempXMLFile();
+
+/****************************************
+ * func: build self-define function score
+ * return: true = success    false = failure
+****************************************/
+bool buildFuncScore();
 
 #endif

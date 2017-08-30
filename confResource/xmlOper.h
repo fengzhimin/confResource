@@ -8,6 +8,7 @@
 #include <libxml/xmlmemory.h>  
 #include <libxml/parser.h>
 #include "logOper.h"
+#include "mysqlOper.h"
 
 /*******************************
  * func: Extract function Name from XML

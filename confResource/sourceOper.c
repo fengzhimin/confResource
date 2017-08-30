@@ -2,6 +2,7 @@
 
 static char error_info[200];
 static char xml_dir[DIRPATH_MAX];
+static char sqlCommand[LINE_CHAR_MAX_NUM];
 
 bool getProgramName(char *sourcePath)
 {
@@ -146,9 +147,7 @@ bool convertProgram(char *dirPath)
                     if(CodeToXML(child_dir, xml_dir))
                     {
                         ret = true;
-                        //printf("------------------------------------%s/%s-------------------------------------\n", temp_dir, pdirent->d_name);
                         ExtractFuncFromXML(xml_dir);
-                        //printf("-----------------------------------------------------------------------------------------------\n\n");
                         printf("analysing file %s\n", child_dir);
                     }
                     else
@@ -169,6 +168,152 @@ bool convertProgram(char *dirPath)
         ret = false;
     }
     closedir(pdir);
+    
+    return ret;
+}
+
+bool deleteTempXMLFile()
+{
+    char temp[MAX_PROGRAMNAME_NUM] = "temp_";
+    strcat(temp, programName);
+    return deleteDir(temp);
+}
+
+bool buildFuncScore()
+{
+    bool ret = false;
+    //update funcCall table type field
+    memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+    strcpy(sqlCommand, "update funcScore, funcCall set funcCall.type='S' where funcScore.funcName=funcCall.calledFunc");
+    if(!executeCommand(sqlCommand))
+    {
+        memset(error_info, 0, 200);
+        sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+        RecordLog(error_info);
+    }
+    else
+        ret = true;
+        
+    //对每个函数进行打分， 每个函数中直接使用到的库函数
+    //MEM score
+    memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+    strcpy(sqlCommand, "create table tmp_table (select * from funcCall where funcCall.calledFunc in\
+            (select funcName from funcLibrary where type='MEM'))");
+    if(!executeCommand(sqlCommand))
+    {
+        memset(error_info, 0, 200);
+        sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+        RecordLog(error_info);
+    }
+    memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+    strcpy(sqlCommand, "update tmp_table, funcScore set funcScore.MEM=(select count(*) from tmp_table\
+            where tmp_table.funcName=funcScore.funcName) where tmp_table.funcName=funcScore.funcName");
+    if(!executeCommand(sqlCommand))
+    {
+        memset(error_info, 0, 200);
+        sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+        RecordLog(error_info);
+    }
+    memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+    strcpy(sqlCommand, "drop table tmp_table");
+    if(!executeCommand(sqlCommand))
+    {
+        memset(error_info, 0, 200);
+        sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+        RecordLog(error_info);
+    }
+    else
+        ret = true;
+        
+    //CPU score
+    memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+    strcpy(sqlCommand, "create table tmp_table (select * from funcCall where funcCall.calledFunc in \
+            (select funcName from funcLibrary where type='CPU'))");
+    if(!executeCommand(sqlCommand))
+    {
+        memset(error_info, 0, 200);
+        sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+        RecordLog(error_info);
+    }
+    memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+    strcpy(sqlCommand, "update tmp_table, funcScore set funcScore.CPU=(select count(*) from tmp_table \
+            where tmp_table.funcName=funcScore.funcName) where tmp_table.funcName=funcScore.funcName");
+    if(!executeCommand(sqlCommand))
+    {
+        memset(error_info, 0, 200);
+        sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+        RecordLog(error_info);
+    }
+    memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+    strcpy(sqlCommand, "drop table tmp_table");
+    if(!executeCommand(sqlCommand))
+    {
+        memset(error_info, 0, 200);
+        sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+        RecordLog(error_info);
+    }
+    else
+        ret = true;
+        
+    //NET score
+    memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+    strcpy(sqlCommand, "create table tmp_table (select * from funcCall where funcCall.calledFunc in \
+            (select funcName from funcLibrary where type='NET'))");
+    if(!executeCommand(sqlCommand))
+    {
+        memset(error_info, 0, 200);
+        sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+        RecordLog(error_info);
+    }
+    memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+    strcpy(sqlCommand, "update tmp_table, funcScore set funcScore.NET=(select count(*) from tmp_table \
+            where tmp_table.funcName=funcScore.funcName) where tmp_table.funcName=funcScore.funcName");
+    if(!executeCommand(sqlCommand))
+    {
+        memset(error_info, 0, 200);
+        sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+        RecordLog(error_info);
+    }
+    memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+    strcpy(sqlCommand, "drop table tmp_table");
+    if(!executeCommand(sqlCommand))
+    {
+        memset(error_info, 0, 200);
+        sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+        RecordLog(error_info);
+    }
+    else
+        ret = true;
+        
+    //IO score
+    memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+    strcpy(sqlCommand, "create table tmp_table (select * from funcCall where funcCall.calledFunc in \
+            (select funcName from funcLibrary where type='IO'))");
+    if(!executeCommand(sqlCommand))
+    {
+        memset(error_info, 0, 200);
+        sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+        RecordLog(error_info);
+    }
+    memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+    strcpy(sqlCommand, "update tmp_table, funcScore set funcScore.IO=(select count(*) from tmp_table \
+            where tmp_table.funcName=funcScore.funcName) where tmp_table.funcName=funcScore.funcName");
+    if(!executeCommand(sqlCommand))
+    {
+        memset(error_info, 0, 200);
+        sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+        RecordLog(error_info);
+    }
+    memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+    strcpy(sqlCommand, "drop table tmp_table");
+    if(!executeCommand(sqlCommand))
+    {
+        memset(error_info, 0, 200);
+        sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+        RecordLog(error_info);
+    }
+    else
+        ret = true;
     
     return ret;
 }
