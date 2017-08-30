@@ -11,13 +11,15 @@
 //定义KCode配置文件存放的路径
 #define CONFIG_PATH     "confResource.conf"
 #define CONFIG_NOTESYMBOL    '#'
+//存放库函数与资源的关系文件
+#define FUNCLIBRARY_PATH  "funcLibrary.conf"
 
 #define CONFIG_KEY_MAX_NUM       50     //配置项key的最大值
 #define CONFIG_VALUE_MAX_NUM     30    //配置项value的最大值
 
 #define MAX_SUBSTR               512   //拆分后子字符串的最大长度
 
-#define PATH_MAX                 256
+#define DIRPATH_MAX              256
 
 #define MAX_PROGRAMNAME_NUM      50     //a program max name length
 

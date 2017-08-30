@@ -1,8 +1,8 @@
 #include "sourceOper.h"
 
 static char error_info[200];
-static char xml_dir[PATH_MAX];
-static char temp_dir[PATH_MAX];
+static char xml_dir[DIRPATH_MAX];
+static char temp_dir[DIRPATH_MAX];
 
 bool getProgramName(char *sourcePath)
 {
@@ -35,7 +35,6 @@ bool getProgramName(char *sourcePath)
 bool judgeCSrcFile(char *filePath)
 {
     int index = ExtractLastCharIndex(filePath, '.');
-    int length = strlen(filePath);
     if(index != -1)
     {
         if(strcasecmp((char *)&filePath[index+1], "c") == 0 || strcasecmp((char *)&filePath[index+1], "cc") == 0)
@@ -53,6 +52,7 @@ bool CodeToXML(char *srcPath, char *desPath)
         memset(error_info, 0, 200);
         sprintf(error_info, "create process failed: %s.\n", strerror(errno));
         RecordLog(error_info);
+        return false;
     }
     else if(pid == 0)
     {
@@ -88,13 +88,13 @@ bool convertProgram(char *dirPath)
     char *temp_point = strstr(dirPath, programName);
     if(temp_point[strlen(programName)] == '\0')
     {
-        memset(temp_dir, 0, PATH_MAX);
+        memset(temp_dir, 0, DIRPATH_MAX);
         strcpy(temp_dir, "temp");
     }
     else
     {
         temp_point = (char *)&temp_point[strlen(programName)];
-        memset(temp_dir, 0, PATH_MAX);
+        memset(temp_dir, 0, DIRPATH_MAX);
         sprintf(temp_dir, "temp%s", temp_point);
     }
     createDir(temp_dir);
@@ -103,18 +103,18 @@ bool convertProgram(char *dirPath)
     struct dirent *pdirent;
     struct stat statbuf;
     bool ret = true;
-    char child_dir[PATH_MAX];
+    char child_dir[DIRPATH_MAX];
 
     pdir = opendir(dirPath);
     if(pdir)
     {
-        while(pdirent = readdir(pdir))
+        while((pdirent = readdir(pdir)) != NULL)
         {
             //跳过"."和".."和隐藏文件夹
             if(strcmp(pdirent->d_name, ".") == 0 || strcmp(pdirent->d_name, "..") == 0 || (pdirent->d_name[0] == '.'))
                 continue;
             
-            memset(child_dir, 0, PATH_MAX);
+            memset(child_dir, 0, DIRPATH_MAX);
             sprintf(child_dir, "%s/%s", dirPath, pdirent->d_name);
             if(lstat(child_dir, &statbuf) < 0)
             {
@@ -141,7 +141,7 @@ bool convertProgram(char *dirPath)
             {
                 if(judgeCSrcFile(child_dir))
                 {
-                    memset(xml_dir, 0, PATH_MAX);
+                    memset(xml_dir, 0, DIRPATH_MAX);
                     sprintf(xml_dir, "%s/%s.xml", temp_dir, pdirent->d_name);
                     if(CodeToXML(child_dir, xml_dir))
                         ret = true;

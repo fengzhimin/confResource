@@ -4,6 +4,7 @@
 #include "dirOper.h"
 #include "logOper.h"
 #include "config.h"
+#include "strOper.h"
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>

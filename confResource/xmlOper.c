@@ -30,7 +30,7 @@ bool ExtractFuncFromXML(char *docName)
     {
         if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
         {
-            xmlChar* attr_value = xmlGetProp(cur->children->next, "line");
+            xmlChar* attr_value = xmlGetProp(cur->children->next, (xmlChar*)"line");
             printf("%s: %s\t", (char*)xmlNodeGetContent(cur->children->next), attr_value);
             scanCallFunction(cur->children);
             printf("\n");

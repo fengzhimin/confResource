@@ -60,8 +60,8 @@ AS       := as
 ## User defined environment variables
 ##
 CodeLiteDir:=/usr/share/codelite
-Objects0=$(IntermediateDirectory)/main.c$(ObjectSuffix) $(IntermediateDirectory)/xmlOper.c$(ObjectSuffix) $(IntermediateDirectory)/mysqlOper.c$(ObjectSuffix) $(IntermediateDirectory)/confOper.c$(ObjectSuffix) $(IntermediateDirectory)/fileOper.c$(ObjectSuffix) $(IntermediateDirectory)/strOper.c$(ObjectSuffix) $(IntermediateDirectory)/dirOper.c$(ObjectSuffix) $(IntermediateDirectory)/dateOper.c$(ObjectSuffix) $(IntermediateDirectory)/config.c$(ObjectSuffix) $(IntermediateDirectory)/sourceOper.c$(ObjectSuffix) \
-	$(IntermediateDirectory)/logOper.c$(ObjectSuffix) 
+Objects0=$(IntermediateDirectory)/main.c$(ObjectSuffix) $(IntermediateDirectory)/xmlOper.c$(ObjectSuffix) $(IntermediateDirectory)/mysqlOper.c$(ObjectSuffix) $(IntermediateDirectory)/buildFuncLibrary.c$(ObjectSuffix) $(IntermediateDirectory)/confOper.c$(ObjectSuffix) $(IntermediateDirectory)/fileOper.c$(ObjectSuffix) $(IntermediateDirectory)/strOper.c$(ObjectSuffix) $(IntermediateDirectory)/dirOper.c$(ObjectSuffix) $(IntermediateDirectory)/dateOper.c$(ObjectSuffix) $(IntermediateDirectory)/config.c$(ObjectSuffix) \
+	$(IntermediateDirectory)/sourceOper.c$(ObjectSuffix) $(IntermediateDirectory)/logOper.c$(ObjectSuffix) 
 
 
 
@@ -115,6 +115,14 @@ $(IntermediateDirectory)/mysqlOper.c$(DependSuffix): mysqlOper.c
 
 $(IntermediateDirectory)/mysqlOper.c$(PreprocessSuffix): mysqlOper.c
 	$(CC) $(CFLAGS) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/mysqlOper.c$(PreprocessSuffix) mysqlOper.c
+
+$(IntermediateDirectory)/buildFuncLibrary.c$(ObjectSuffix): buildFuncLibrary.c $(IntermediateDirectory)/buildFuncLibrary.c$(DependSuffix)
+	$(CC) $(SourceSwitch) "/home/fzm/confResource/confResource/buildFuncLibrary.c" $(CFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/buildFuncLibrary.c$(ObjectSuffix) $(IncludePath)
+$(IntermediateDirectory)/buildFuncLibrary.c$(DependSuffix): buildFuncLibrary.c
+	@$(CC) $(CFLAGS) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/buildFuncLibrary.c$(ObjectSuffix) -MF$(IntermediateDirectory)/buildFuncLibrary.c$(DependSuffix) -MM buildFuncLibrary.c
+
+$(IntermediateDirectory)/buildFuncLibrary.c$(PreprocessSuffix): buildFuncLibrary.c
+	$(CC) $(CFLAGS) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/buildFuncLibrary.c$(PreprocessSuffix) buildFuncLibrary.c
 
 $(IntermediateDirectory)/confOper.c$(ObjectSuffix): confOper.c $(IntermediateDirectory)/confOper.c$(DependSuffix)
 	$(CC) $(SourceSwitch) "/home/fzm/confResource/confResource/confOper.c" $(CFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/confOper.c$(ObjectSuffix) $(IncludePath)

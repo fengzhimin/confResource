@@ -17,6 +17,8 @@
   <VirtualDirectory Name="mysql">
     <File Name="mysqlOper.h"/>
     <File Name="mysqlOper.c"/>
+    <File Name="buildFuncLibrary.h"/>
+    <File Name="buildFuncLibrary.c"/>
   </VirtualDirectory>
   <VirtualDirectory Name="common">
     <File Name="confOper.h"/>
@@ -34,6 +36,7 @@
   </VirtualDirectory>
   <VirtualDirectory Name="configuration">
     <File Name="confResource.conf"/>
+    <File Name="funcLibrary.conf"/>
   </VirtualDirectory>
   <VirtualDirectory Name="sourceCode">
     <File Name="sourceOper.h"/>
