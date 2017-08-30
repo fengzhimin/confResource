@@ -20,7 +20,8 @@ bool ExtractFuncFromXML(char *docName);
  * func: scan call function
  * return: void
  * @para cur: current Node
+ * @para funcName: current self-define function name
 ********************************/
-void scanCallFunction(xmlNodePtr cur);
+void scanCallFunction(xmlNodePtr cur, char *funcName);
 
 #endif

@@ -5,6 +5,7 @@
 #include "logOper.h"
 #include "config.h"
 #include "strOper.h"
+#include "xmlOper.h"
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
@@ -36,7 +37,7 @@ bool judgeCSrcFile(char *filePath);
 bool CodeToXML(char *srcPath, char *desPath);
 
 /*****************************************
- * func: convert a program all source file to xml(input program directory)
+ * func: convert a program all source file to xml(input program directory) and extract self-define function
  * return: true = success   false = failure
  * @para dirPath: program directory
 *****************************************/

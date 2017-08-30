@@ -2,7 +2,6 @@
 
 static char error_info[200];
 static char xml_dir[DIRPATH_MAX];
-static char temp_dir[DIRPATH_MAX];
 
 bool getProgramName(char *sourcePath)
 {
@@ -85,17 +84,18 @@ bool CodeToXML(char *srcPath, char *desPath)
 
 bool convertProgram(char *dirPath)
 {
+    char temp_dir[DIRPATH_MAX];
     char *temp_point = strstr(dirPath, programName);
     if(temp_point[strlen(programName)] == '\0')
     {
         memset(temp_dir, 0, DIRPATH_MAX);
-        strcpy(temp_dir, "temp");
+        sprintf(temp_dir, "temp_%s", programName);
     }
     else
     {
         temp_point = (char *)&temp_point[strlen(programName)];
         memset(temp_dir, 0, DIRPATH_MAX);
-        sprintf(temp_dir, "temp%s", temp_point);
+        sprintf(temp_dir, "temp_%s%s", programName, temp_point);
     }
     createDir(temp_dir);
     
@@ -103,8 +103,8 @@ bool convertProgram(char *dirPath)
     struct dirent *pdirent;
     struct stat statbuf;
     bool ret = true;
+    
     char child_dir[DIRPATH_MAX];
-
     pdir = opendir(dirPath);
     if(pdir)
     {
@@ -144,7 +144,13 @@ bool convertProgram(char *dirPath)
                     memset(xml_dir, 0, DIRPATH_MAX);
                     sprintf(xml_dir, "%s/%s.xml", temp_dir, pdirent->d_name);
                     if(CodeToXML(child_dir, xml_dir))
+                    {
                         ret = true;
+                        //printf("------------------------------------%s/%s-------------------------------------\n", temp_dir, pdirent->d_name);
+                        ExtractFuncFromXML(xml_dir);
+                        //printf("-----------------------------------------------------------------------------------------------\n\n");
+                        printf("analysing file %s\n", child_dir);
+                    }
                     else
                     {
                         ret = false;

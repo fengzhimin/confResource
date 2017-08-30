@@ -15,11 +15,11 @@ CurrentFileFullPath    :=
 User                   :=fzm
 Date                   :=30/08/17
 CodeLitePath           :=/home/fzm/.codelite
-LinkerName             :=gcc
-SharedObjectLinkerName :=gcc -shared -fPIC
+LinkerName             :=/usr/bin/g++
+SharedObjectLinkerName :=/usr/bin/g++ -shared -fPIC
 ObjectSuffix           :=.o
 DependSuffix           :=.o.d
-PreprocessSuffix       :=.o.i
+PreprocessSuffix       :=.i
 DebugSwitch            :=-g 
 IncludeSwitch          :=-I
 LibrarySwitch          :=-l
@@ -31,7 +31,7 @@ OutputFile             :=$(IntermediateDirectory)/$(ProjectName)
 Preprocessors          :=
 ObjectSwitch           :=-o 
 ArchiveOutputSwitch    := 
-PreprocessOnlySwitch   :=-E 
+PreprocessOnlySwitch   :=-E
 ObjectsFileList        :="confResource.txt"
 PCHCompileFlags        :=
 MakeDirCommand         :=mkdir -p
@@ -47,21 +47,21 @@ LibPath                :=$(LibraryPathSwitch)/usr/lib/x86_64-linux-gnu/  $(Libra
 ## Common variables
 ## AR, CXX, CC, AS, CXXFLAGS and CFLAGS can be overriden using an environment variables
 ##
-AR       := ar rcus
-CXX      := gcc
-CC       := gcc
+AR       := /usr/bin/ar rcu
+CXX      := /usr/bin/g++
+CC       := /usr/bin/gcc
 CXXFLAGS :=  -g -O0 -Wall $(Preprocessors)
 CFLAGS   :=  -g -O0 -Wall $(Preprocessors)
 ASFLAGS  := 
-AS       := as
+AS       := /usr/bin/as
 
 
 ##
 ## User defined environment variables
 ##
 CodeLiteDir:=/usr/share/codelite
-Objects0=$(IntermediateDirectory)/main.c$(ObjectSuffix) $(IntermediateDirectory)/xmlOper.c$(ObjectSuffix) $(IntermediateDirectory)/mysqlOper.c$(ObjectSuffix) $(IntermediateDirectory)/buildFuncLibrary.c$(ObjectSuffix) $(IntermediateDirectory)/confOper.c$(ObjectSuffix) $(IntermediateDirectory)/fileOper.c$(ObjectSuffix) $(IntermediateDirectory)/strOper.c$(ObjectSuffix) $(IntermediateDirectory)/dirOper.c$(ObjectSuffix) $(IntermediateDirectory)/dateOper.c$(ObjectSuffix) $(IntermediateDirectory)/config.c$(ObjectSuffix) \
-	$(IntermediateDirectory)/sourceOper.c$(ObjectSuffix) $(IntermediateDirectory)/logOper.c$(ObjectSuffix) 
+Objects0=$(IntermediateDirectory)/main.c$(ObjectSuffix) $(IntermediateDirectory)/xmlOper.c$(ObjectSuffix) $(IntermediateDirectory)/mysqlOper.c$(ObjectSuffix) $(IntermediateDirectory)/buildFuncLibrary.c$(ObjectSuffix) $(IntermediateDirectory)/buildTempTable.c$(ObjectSuffix) $(IntermediateDirectory)/confOper.c$(ObjectSuffix) $(IntermediateDirectory)/fileOper.c$(ObjectSuffix) $(IntermediateDirectory)/strOper.c$(ObjectSuffix) $(IntermediateDirectory)/dirOper.c$(ObjectSuffix) $(IntermediateDirectory)/dateOper.c$(ObjectSuffix) \
+	$(IntermediateDirectory)/config.c$(ObjectSuffix) $(IntermediateDirectory)/sourceOper.c$(ObjectSuffix) $(IntermediateDirectory)/logOper.c$(ObjectSuffix) 
 
 
 
@@ -123,6 +123,14 @@ $(IntermediateDirectory)/buildFuncLibrary.c$(DependSuffix): buildFuncLibrary.c
 
 $(IntermediateDirectory)/buildFuncLibrary.c$(PreprocessSuffix): buildFuncLibrary.c
 	$(CC) $(CFLAGS) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/buildFuncLibrary.c$(PreprocessSuffix) buildFuncLibrary.c
+
+$(IntermediateDirectory)/buildTempTable.c$(ObjectSuffix): buildTempTable.c $(IntermediateDirectory)/buildTempTable.c$(DependSuffix)
+	$(CC) $(SourceSwitch) "/home/fzm/confResource/confResource/buildTempTable.c" $(CFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/buildTempTable.c$(ObjectSuffix) $(IncludePath)
+$(IntermediateDirectory)/buildTempTable.c$(DependSuffix): buildTempTable.c
+	@$(CC) $(CFLAGS) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/buildTempTable.c$(ObjectSuffix) -MF$(IntermediateDirectory)/buildTempTable.c$(DependSuffix) -MM buildTempTable.c
+
+$(IntermediateDirectory)/buildTempTable.c$(PreprocessSuffix): buildTempTable.c
+	$(CC) $(CFLAGS) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/buildTempTable.c$(PreprocessSuffix) buildTempTable.c
 
 $(IntermediateDirectory)/confOper.c$(ObjectSuffix): confOper.c $(IntermediateDirectory)/confOper.c$(DependSuffix)
 	$(CC) $(SourceSwitch) "/home/fzm/confResource/confResource/confOper.c" $(CFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/confOper.c$(ObjectSuffix) $(IncludePath)

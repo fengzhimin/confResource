@@ -3,17 +3,20 @@
 #include "sourceOper.h"
 #include "strOper.h"
 #include "buildFuncLibrary.h"
+#include "buildTempTable.h"
 
 int main(int argc, char **argv) 
 {
-    /*
-    getProgramName("/home/fzm/Downloads/Program source code/httpd-2.4.27");
-    convertProgram("/home/fzm/Downloads/Program source code/httpd-2.4.27");
-    deleteDir("temp");
-    */
-    if(buildLibrary())
-        printf("create function library success!\n");
-    else
-        printf("create function library failure!\n");
+    if(!startMysql())
+    {
+        printf("connect mysql failure!\n");
+        return -1;
+    }
+    buildTempTable();
+    getProgramName("/home/fzm/Downloads/Program source code/mysql-5.5.36");
+    convertProgram("/home/fzm/Downloads/Program source code/mysql-5.5.36");
+    //deleteTempTable();
+    stopMysql();
+    
     return 0;
 }

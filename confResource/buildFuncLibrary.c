@@ -8,11 +8,7 @@ static char insertCommand[LINE_CHAR_MAX_NUM];
 bool buildLibrary()
 {
     bool ret = false;
-    if(!startMysql())
-    {
-        RecordLog("connect database failure!\n");
-        return ret;
-    }
+
     //create funcLibrary table
     if(executeCommand(createFuncLibraryTable))
         ret = true;
@@ -29,7 +25,6 @@ bool buildLibrary()
         sprintf(error_info, "open file(%s) failed: %s\n", FUNCLIBRARY_PATH, strerror(errno));
 		RecordLog(error_info);
         
-        stopMysql();
         return ret;
     }
     memset(lineData, 0, LINE_CHAR_MAX_NUM);
@@ -49,7 +44,6 @@ bool buildLibrary()
         memset(lineData, 0, LINE_CHAR_MAX_NUM);
     }
     CloseFile(fd);
-    stopMysql();
     
     return ret;
 }

@@ -19,6 +19,8 @@
     <File Name="mysqlOper.c"/>
     <File Name="buildFuncLibrary.h"/>
     <File Name="buildFuncLibrary.c"/>
+    <File Name="buildTempTable.h"/>
+    <File Name="buildTempTable.c"/>
   </VirtualDirectory>
   <VirtualDirectory Name="common">
     <File Name="confOper.h"/>
