@@ -1,6 +1,6 @@
 #include "buildFuncLibrary.h"
 
-static char error_info[200];
+static char error_info[LOGINFO_LENGTH];
 static char lineData[LINE_CHAR_MAX_NUM];
 static char subStr2[2][MAX_SUBSTR];
 static char insertCommand[LINE_CHAR_MAX_NUM];
@@ -8,6 +8,15 @@ static char insertCommand[LINE_CHAR_MAX_NUM];
 bool buildLibrary()
 {
     bool ret = false;
+    
+    //judge funcLibrary whether exist or not
+    if(executeCommand("drop table if exists funcLibrary"))
+        ret = true;
+    else
+    {
+        RecordLog("delete funcLibrary table failure!\n");
+        ret = false;
+    }
 
     //create funcLibrary table
     if(executeCommand(createFuncLibraryTable))
@@ -21,7 +30,7 @@ bool buildLibrary()
     int fd = OpenFile(FUNCLIBRARY_PATH, O_RDONLY);
     if(fd == -1)
     {
-        memset(error_info, 0, 200);
+        memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "open file(%s) failed: %s\n", FUNCLIBRARY_PATH, strerror(errno));
 		RecordLog(error_info);
         

@@ -14,6 +14,7 @@
 #include <sys/wait.h>
 #include <sys/dir.h>
 #include <sys/stat.h>
+#include <time.h>
 
 /***************************************
  * func: get analyse program name
@@ -55,5 +56,28 @@ bool deleteTempXMLFile();
  * return: true = success    false = failure
 ****************************************/
 bool buildFuncScore();
+
+/****************************************
+ * func: get variable used function
+ * return: void
+ * @para varName: variable name
+ * @para xmlPath: xml file path
+*****************************************/
+void getVarUsedFunc(char *varName, char *xmlPath);
+
+/****************************************
+ * func: build configuration score
+ * return: score
+ * @para confName: configuration name
+ * @para xmlPath: xml file path
+*****************************************/
+confScore buildConfScore(char *confName, char *xmlPath);
+
+/****************************************
+ * func: 配置项在一个函数中的资源分数(递归包含该函数所调用的函数)
+ * return: score
+ * @para funcName: function name
+*****************************************/
+confScore getFuncScore(char *funcName);
 
 #endif

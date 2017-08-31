@@ -13,14 +13,18 @@ MYSQL *mysqlConnect = NULL;
 char *createFuncLibraryTable = "create table funcLibrary(funcName varchar(128), type text)";
 //存放已经打分的函数
 //每个函数对应的各项资源的分数
-char *createFuncScoreTable = "create table funcScore(funcName varchar(128), sourceFile text, line int, CPU int, MEM int, IO int, NET int)";
-char *deleteFuncScoreTable = "drop table funcScore";
+char *createFuncScoreTable = "create table funcScore(funcName varchar(128), sourceFile text, line int,\
+        CPU int default 0, MEM int  default 0, IO int default 0, NET int default 0)";
+char *deleteFuncScoreTable = "drop table if exists funcScore";
 //存放函数调用关系图
 //funcName: 自定义函数
+//sourceFile: 自定义函数的源文件
 //calledFunc: funcName调用的函数
 //line: 调用的行号
 //type: calledFunc类型  'L' = 库函数    'S' = 自定义函数
-char *createFuncCallTable = "create table funcCall(funcName varchar(128), calledFunc varchar(128), line int, type char(1))";
-char *deleteFuncCallTable = "drop table funcCall";
+char *createFuncCallTable = "create table funcCall(funcName varchar(128), sourceFile text, calledFunc varchar(128), line int, type char(1))";
+char *deleteFuncCallTable = "drop table if exists funcCall";
 
 char programName[MAX_PROGRAMNAME_NUM] = "";
+
+int max_funcCallRecursive_NUM = 5;

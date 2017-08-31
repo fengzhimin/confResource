@@ -23,6 +23,10 @@
 
 #define MAX_PROGRAMNAME_NUM      50     //a program max name length
 
+#define MAX_FUNCNAME_LENGTH      50     //a function name max length
+
+#define LOGINFO_LENGTH           1024 
+
 extern char bind_address[CONFIG_VALUE_MAX_NUM];
 extern int port;
 extern char user[CONFIG_VALUE_MAX_NUM];
@@ -36,7 +40,25 @@ extern char *deleteFuncScoreTable;
 extern char *createFuncCallTable;
 extern char *deleteFuncCallTable;
 
+//函数递归的最大深度
+extern int max_funcCallRecursive_NUM;
+
 //analyse program name
 extern char programName[MAX_PROGRAMNAME_NUM];
+
+typedef struct configurationScore
+{
+    int CPU;
+    int MEM;
+    int IO;
+    int NET;
+} confScore;
+
+typedef struct functionList
+{
+    char funcName[MAX_FUNCNAME_LENGTH];
+    int line;
+    struct functionList *next;
+} funcList;
 
 #endif

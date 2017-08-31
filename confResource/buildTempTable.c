@@ -1,10 +1,9 @@
 #include "buildTempTable.h"
 
-static char error_info[200];
-
 bool buildTempTable()
 {
-    bool ret = false;
+    //delete already exist temp table
+    bool ret = deleteTempTable();
 
     //create function score table
     if(executeCommand(createFuncScoreTable))

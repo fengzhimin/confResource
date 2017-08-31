@@ -1,12 +1,12 @@
 #include "dirOper.h"
 
-static char error_info[200];
+static char error_info[LOGINFO_LENGTH];
 
 bool createDir(char *path)
 {
     if(mkdir(path, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH) < 0)
     {
-         memset(error_info, 0, 200);
+         memset(error_info, 0, LOGINFO_LENGTH);
          sprintf(error_info, "create %s failed: %s.\n", path, strerror(errno));
          RecordLog(error_info);
          return false;
@@ -24,7 +24,7 @@ bool deleteDir(char *path)
     dir = opendir(path);
     if (dir == NULL)
     {
-        memset(error_info, 0, 200);
+        memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "open %s failed: %s.\n", path, strerror(errno));
         RecordLog(error_info);
         return false;

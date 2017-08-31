@@ -1,6 +1,6 @@
 #include "mysqlOper.h"
 
-static char error_info[200];
+static char error_info[LOGINFO_LENGTH];
 
 bool startMysql()
 {
@@ -29,7 +29,7 @@ bool startMysql()
     }
 	if(NULL == mysql_real_connect((MYSQL *)mysqlConnect, bind_address, user, pass, database, port, NULL, 0))
 	{
-        memset(error_info, 0, 200);
+        memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "connect failed: %s\n", mysql_error(mysqlConnect));
 		RecordLog(error_info);
 		return false;
@@ -48,7 +48,7 @@ bool executeCommand(char *command)
 {
     if(mysql_real_query(mysqlConnect, command, strlen(command)) != 0)
 	{
-		memset(error_info, 0, 200);
+		memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute command failed: %s\n", mysql_error(mysqlConnect));
 		RecordLog(error_info);
 		return false;

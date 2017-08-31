@@ -8,6 +8,7 @@
 #include <libxml/xmlmemory.h>  
 #include <libxml/parser.h>
 #include "logOper.h"
+#include "config.h"
 #include "mysqlOper.h"
 
 /*******************************
@@ -22,7 +23,24 @@ bool ExtractFuncFromXML(char *docName);
  * return: void
  * @para cur: current Node
  * @para funcName: current self-define function name
+ * @para srcPath: function source file path
 ********************************/
-void scanCallFunction(xmlNodePtr cur, char *funcName);
+void scanCallFunction(xmlNodePtr cur, char *funcName, char *srcPath);
+
+/*******************************
+ * func: extract variable use position from a xml file(function and line)
+ * return: save use variable funcName    NULL = xmlFilePath not exist use varName
+ * @para varName: variable name
+ * @para xmlFilePath: xml style file path
+********************************/
+funcList *ExtractVarUsedPos(char *varName, char *xmlFilePath);
+
+/********************************
+ * func: judge current node whether use variable or not
+ * return: true = use   false = not use
+ * @para cur: current node
+ * @para varName: variable name
+********************************/
+bool scanVarIsUsed(xmlNodePtr cur, char *varName);
 
 #endif
