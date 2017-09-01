@@ -3,8 +3,11 @@
 #include "sourceOper.h"
 #include "strOper.h"
 #include "config.h"
+#include "logOper.h"
 #include "buildFuncLibrary.h"
 #include "buildTempTable.h"
+
+static char log_info[LOGINFO_LENGTH];
 
 int main(int argc, char **argv) 
 {
@@ -34,18 +37,35 @@ int main(int argc, char **argv)
     char temp_dir[DIRPATH_MAX];
     memset(temp_dir, 0, DIRPATH_MAX);
     sprintf(temp_dir, "temp_%s", programName);
-    char *confName = "maxclients";
-    time_t start, end, finish; 
-    time(&start); 
-    printf("----------analysing variable(%s) use resource info-----------\n", confName);
-    //getVarUsedFunc("maxmemory", temp_dir);
-    confScore ret = buildConfScore(confName, temp_dir);
-    //confScore ret =  getFuncScore("configSetCommand");
-    printf("CPU: %d MEM: %d IO: %d NET: %d\n", ret.CPU, ret.MEM, ret.IO, ret.NET);
-    printf("------complete--------\n");
-    time(&end); 
-    finish = end - start;
-    printf("time is: %d second!\n", finish);
+    time_t start, end, finish;
+    char *confArray[] = { "port", "rdbcompression", "rdbchecksum", "maxclients", "hz", \
+    "maxmemory", "save" };
+    //char *confArray[] = {"tmp_table_size"};
+    int i;
+    for(i = 0; i < 7; i++)
+    {
+        time(&start); 
+        memset(log_info, 0, LOGINFO_LENGTH);
+        sprintf(log_info, "----------analysing variable(%s) use resource info-----------\n", confArray[i]);
+        //printf(log_info);
+        RecordLog(log_info);
+        //getVarUsedFunc("maxmemory", temp_dir);
+        confScore ret = buildConfScore(confArray[i], temp_dir);
+        //confScore ret =  getFuncScore("configSetCommand");
+        memset(log_info, 0, LOGINFO_LENGTH);
+        sprintf(log_info, "CPU: %d MEM: %d IO: %d NET: %d\n", ret.CPU, ret.MEM, ret.IO, ret.NET);
+        //printf(log_info);
+        RecordLog(log_info);
+        time(&end); 
+        finish = end - start;
+        memset(log_info, 0, LOGINFO_LENGTH);
+        sprintf(log_info, "time is: %d second\n", finish);
+        //printf(log_info);
+        RecordLog(log_info);
+        //printf("------complete--------\n");
+        RecordLog("------complete--------\n");
+    }
+    
     stopMysql();
     
     

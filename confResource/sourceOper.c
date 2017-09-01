@@ -39,7 +39,7 @@ bool judgeCSrcFile(char *filePath)
     int index = ExtractLastCharIndex(filePath, '.');
     if(index != -1)
     {
-        if(strcasecmp((char *)&filePath[index+1], "c") == 0 || strcasecmp((char *)&filePath[index+1], "cc") == 0)
+        if(strcasecmp((char *)&filePath[index+1], "c") == 0)
             return true;
     }
 
@@ -204,7 +204,7 @@ bool buildFuncScore()
     
     time(&end); 
     finish = end - start;
-    printf("time is: %d\n", finish);
+    printf("time is: %d second\n", finish);
     printf("update funcCall table finish\n");
     //对每个函数进行打分， 每个函数中直接使用到的库函数
     //MEM score

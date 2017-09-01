@@ -38,6 +38,10 @@ bool ExtractFuncFromXML(char *docName)
                 if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
                 {
                     xmlChar* attr_value = xmlGetProp(temp_cur, (xmlChar*)"line");
+                    /*针对ClassName::funcName类情况
+                    if(attr_value == NULL)
+                        attr_value = xmlGetProp(temp_cur->next, (xmlChar*)"line");
+                    */
                     //printf("%s: %s\t", (char*)xmlNodeGetContent(temp_cur), attr_value);
                     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
                     memset(src_dir, 0, DIRPATH_MAX);
@@ -143,9 +147,10 @@ funcList *ExtractVarUsedPos(char *varName, char *xmlFilePath)
                 if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
                 {
                     attr_value = xmlGetProp(temp_cur, (xmlChar*)"line");
-                    memset(src_dir, 0, DIRPATH_MAX);
-                    //删除开头的temp_和结尾的.xml
-                    strncpy(src_dir, (char *)&(xmlFilePath[5]), strlen(xmlFilePath)-9);
+                    /*针对ClassName::funcName类情况
+                    if(attr_value == NULL)
+                        attr_value = xmlGetProp(temp_cur->next, (xmlChar*)"line");
+                    */
                     break;
                 }
                 temp_cur = temp_cur->next;
@@ -164,6 +169,9 @@ funcList *ExtractVarUsedPos(char *varName, char *xmlFilePath)
                 }
                 else
                 {
+                    memset(src_dir, 0, DIRPATH_MAX);
+                    //删除开头的temp_和结尾的.xml
+                    strncpy(src_dir, (char *)&(xmlFilePath[5]), strlen(xmlFilePath)-9);
                     memset(error_info, 0, LOGINFO_LENGTH);
                     sprintf(error_info, "%s:%s(%s) function name length more than %d\n", src_dir, (char*)xmlNodeGetContent(temp_cur), attr_value, MAX_FUNCNAME_LENGTH);
                     RecordLog(error_info);
