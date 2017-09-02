@@ -1,3 +1,10 @@
+/******************************************************
+* Author       : fengzhimin
+* Email        : 374648064@qq.com
+* Filename     : confOper.h
+* Descripe     : configuration file operation
+******************************************************/
+
 #ifndef __CONFOPER_H__
 #define __CONFOPER_H__
 

@@ -1,3 +1,10 @@
+/******************************************************
+* Author       : fengzhimin
+* Email        : 374648064@qq.com
+* Filename     : sourceOper.h
+* Descripe     : parse source code
+******************************************************/
+
 #ifndef __SOURCEOPER_H__
 #define __SOURCEOPER_H__
 
@@ -5,7 +12,7 @@
 #include "logOper.h"
 #include "config.h"
 #include "strOper.h"
-#include "xmlOper.h"
+#include "CXmlOper.h"
 #include "mysqlOper.h"
 #include <unistd.h>
 #include <string.h>
@@ -29,6 +36,13 @@ bool getProgramName(char *sourcePath);
  * @para filePath: file Path
 ****************************************/
 bool judgeCSrcFile(char *filePath);
+
+/***************************************
+ * func: judge whether C language header file or not
+ * return: true = yes   false = no
+ * @para filePath: file Path
+****************************************/
+bool judgeCHeaderFile(char *filePath);
 
 /***************************************
  * func: convert source code to xml style

@@ -1,0 +1,1 @@
+srcml无法提取thd_start(redis-4.0.1/deps/jemalloc/test/unit/prof_reset.c)的函数类型。原因是无法处理TEST_END

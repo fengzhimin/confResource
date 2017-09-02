@@ -1,8 +1,15 @@
+/******************************************************
+* Author       : fengzhimin
+* Email        : 374648064@qq.com
+* Filename     : buildFuncLibrary.c
+* Descripe     : build library about relationship between function and system resource
+******************************************************/
+
 #include "buildFuncLibrary.h"
 
 static char error_info[LOGINFO_LENGTH];
 static char lineData[LINE_CHAR_MAX_NUM];
-static char subStr2[2][MAX_SUBSTR];
+static char subStr3[3][MAX_SUBSTR];
 static char insertCommand[LINE_CHAR_MAX_NUM];
 
 bool buildLibrary()
@@ -40,9 +47,9 @@ bool buildLibrary()
     while(ReadLine(fd, lineData) == -1)
     {
         removeChar(lineData, ' ');
-        cutStrByLabel(lineData, '/', subStr2, 2);
+        cutStrByLabel(lineData, '/', subStr3, 3);
         memset(insertCommand, 0, LINE_CHAR_MAX_NUM);
-        sprintf(insertCommand, "insert into funcLibrary value('%s', '%s')", subStr2[0], subStr2[1]);
+        sprintf(insertCommand, "insert into funcLibrary value('%s', '%s', %s)", subStr3[0], subStr3[1], subStr3[2]);
         if(executeCommand(insertCommand))
             ret = true;
         else

@@ -1,3 +1,10 @@
+/******************************************************
+* Author       : fengzhimin
+* Email        : 374648064@qq.com
+* Filename     : dirOper.c
+* Descripe     : common directory operation
+******************************************************/
+
 #include "dirOper.h"
 
 static char error_info[LOGINFO_LENGTH];

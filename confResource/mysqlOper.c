@@ -1,3 +1,10 @@
+/******************************************************
+* Author       : fengzhimin
+* Email        : 374648064@qq.com
+* Filename     : mysqlOper.c
+* Descripe     : operate mysql database
+******************************************************/
+
 #include "mysqlOper.h"
 
 static char error_info[LOGINFO_LENGTH];

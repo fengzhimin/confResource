@@ -11,8 +11,8 @@
     <File Name="main.c"/>
   </VirtualDirectory>
   <VirtualDirectory Name="xmlParse">
-    <File Name="xmlOper.h"/>
-    <File Name="xmlOper.c"/>
+    <File Name="CXmlOper.h"/>
+    <File Name="CXmlOper.c"/>
   </VirtualDirectory>
   <VirtualDirectory Name="mysql">
     <File Name="mysqlOper.h"/>

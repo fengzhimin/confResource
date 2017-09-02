@@ -1,3 +1,10 @@
+/******************************************************
+* Author       : fengzhimin
+* Email        : 374648064@qq.com
+* Filename     : logOper.h
+* Descripe     : record log
+******************************************************/
+
 #ifndef __LOGRECORD_H__
 #define __LOGRECORD_H__
 

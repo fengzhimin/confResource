@@ -1,3 +1,10 @@
+/******************************************************
+* Author       : fengzhimin
+* Email        : 374648064@qq.com
+* Filename     : dateOper.c
+* Descripe     : get current system time
+******************************************************/
+
 #include "dateOper.h"
 
 int GetLocalTime(char *buf, int fmt)

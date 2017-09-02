@@ -1,3 +1,10 @@
+/******************************************************
+* Author       : fengzhimin
+* Email        : 374648064@qq.com
+* Filename     : config.h
+* Descripe     : global variable
+******************************************************/
+
 #ifndef __CONFIG_H__
 #define __CONFIG_H__
 

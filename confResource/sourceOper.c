@@ -1,3 +1,10 @@
+/******************************************************
+* Author       : fengzhimin
+* Email        : 374648064@qq.com
+* Filename     : sourceOper.c
+* Descripe     : parse source code
+******************************************************/
+
 #include "sourceOper.h"
 
 static char error_info[LOGINFO_LENGTH];
@@ -40,6 +47,18 @@ bool judgeCSrcFile(char *filePath)
     if(index != -1)
     {
         if(strcasecmp((char *)&filePath[index+1], "c") == 0)
+            return true;
+    }
+
+    return false;
+}
+
+bool judgeCHeaderFile(char *filePath)
+{
+    int index = ExtractLastCharIndex(filePath, '.');
+    if(index != -1)
+    {
+        if(strcasecmp((char *)&filePath[index+1], "h") == 0)
             return true;
     }
 
@@ -144,14 +163,27 @@ bool convertProgram(char *dirPath)
             {
                 if(judgeCSrcFile(child_dir))
                 {
+                    printf("analysing file %s\n", child_dir);
                     memset(xml_dir, 0, DIRPATH_MAX);
                     sprintf(xml_dir, "%s/%s.xml", temp_dir, pdirent->d_name);
                     if(CodeToXML(child_dir, xml_dir))
                     {
                         ret = true;
                         ExtractFuncFromXML(xml_dir);
-                        printf("analysing file %s\n", child_dir);
                     }
+                    else
+                    {
+                        ret = false;
+                        return ret;
+                    }
+                }
+                else if(judgeCHeaderFile(child_dir))
+                {
+                    printf("analysing file %s\n", child_dir);
+                    memset(xml_dir, 0, DIRPATH_MAX);
+                    sprintf(xml_dir, "%s/%s.xml", temp_dir, pdirent->d_name);
+                    if(CodeToXML(child_dir, xml_dir))
+                        ret = true;
                     else
                     {
                         ret = false;
@@ -211,16 +243,30 @@ bool buildFuncScore()
     printf("MEM score calculating\n");
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
     strcpy(sqlCommand, "create table tmp_table (select * from funcCall where funcCall.calledFunc in\
-            (select funcName from funcLibrary where type='MEM'))");
+            (select funcName from funcLibrary where type='MEM') and type='L')");
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
         RecordLog(error_info);
     }
+    else
+    {
+        if(!executeCommand("alter table tmp_table add column score int"))
+        {
+            RecordLog("execute commad alter table tmp_table add column score int failure.");
+        }
+        else
+        {
+            if(!executeCommand("update tmp_table, funcLibrary set tmp_table.score=funcLibrary.score where tmp_table.calledFunc=funcLibrary.funcName"))
+            {
+                RecordLog("execute commad update tmp_table, funcLibrary set tmp_table.score=funcLibrary.score where tmp_table.calledFunc=funcLibrary.funcName failure.");
+            }
+        }
+    }
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    strcpy(sqlCommand, "update tmp_table, funcScore set funcScore.MEM=(select count(*) from tmp_table\
-            where tmp_table.funcName=funcScore.funcName) where tmp_table.funcName=funcScore.funcName and tmp_table.sourceFile=funcScore.sourceFile");
+    strcpy(sqlCommand, "update tmp_table, funcScore set funcScore.MEM=(select sum(score) from tmp_table where tmp_table.funcName=funcScore.funcName \
+    and tmp_table.sourceFile=funcScore.sourceFile) where tmp_table.funcName=funcScore.funcName and tmp_table.sourceFile=funcScore.sourceFile");
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -242,16 +288,30 @@ bool buildFuncScore()
     printf("CPU score calculating\n");
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
     strcpy(sqlCommand, "create table tmp_table (select * from funcCall where funcCall.calledFunc in \
-            (select funcName from funcLibrary where type='CPU'))");
+            (select funcName from funcLibrary where type='CPU') and type='L')");
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
         RecordLog(error_info);
     }
+    else
+    {
+        if(!executeCommand("alter table tmp_table add column score int"))
+        {
+            RecordLog("execute commad alter table tmp_table add column score int failure.");
+        }
+        else
+        {
+            if(!executeCommand("update tmp_table, funcLibrary set tmp_table.score=funcLibrary.score where tmp_table.calledFunc=funcLibrary.funcName"))
+            {
+                RecordLog("execute commad update tmp_table, funcLibrary set tmp_table.score=funcLibrary.score where tmp_table.calledFunc=funcLibrary.funcName failure.");
+            }
+        }
+    }
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    strcpy(sqlCommand, "update tmp_table, funcScore set funcScore.CPU=(select count(*) from tmp_table \
-            where tmp_table.funcName=funcScore.funcName) where tmp_table.funcName=funcScore.funcName and tmp_table.sourceFile=funcScore.sourceFile");
+    strcpy(sqlCommand, "update tmp_table, funcScore set funcScore.CPU=(select sum(score) from tmp_table where tmp_table.funcName=funcScore.funcName \
+    and tmp_table.sourceFile=funcScore.sourceFile) where tmp_table.funcName=funcScore.funcName and tmp_table.sourceFile=funcScore.sourceFile");
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -273,16 +333,30 @@ bool buildFuncScore()
     printf("NET score calculating\n");
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
     strcpy(sqlCommand, "create table tmp_table (select * from funcCall where funcCall.calledFunc in \
-            (select funcName from funcLibrary where type='NET'))");
+            (select funcName from funcLibrary where type='NET') and type='L')");
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
         RecordLog(error_info);
     }
+    else
+    {
+        if(!executeCommand("alter table tmp_table add column score int"))
+        {
+            RecordLog("execute commad alter table tmp_table add column score int failure.");
+        }
+        else
+        {
+            if(!executeCommand("update tmp_table, funcLibrary set tmp_table.score=funcLibrary.score where tmp_table.calledFunc=funcLibrary.funcName"))
+            {
+                RecordLog("execute commad update tmp_table, funcLibrary set tmp_table.score=funcLibrary.score where tmp_table.calledFunc=funcLibrary.funcName failure.");
+            }
+        }
+    }
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    strcpy(sqlCommand, "update tmp_table, funcScore set funcScore.NET=(select count(*) from tmp_table \
-            where tmp_table.funcName=funcScore.funcName) where tmp_table.funcName=funcScore.funcName and tmp_table.sourceFile=funcScore.sourceFile");
+    strcpy(sqlCommand, "update tmp_table, funcScore set funcScore.NET=(select sum(score) from tmp_table where tmp_table.funcName=funcScore.funcName \
+    and tmp_table.sourceFile=funcScore.sourceFile) where tmp_table.funcName=funcScore.funcName and tmp_table.sourceFile=funcScore.sourceFile");
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -304,16 +378,30 @@ bool buildFuncScore()
     printf("IO score calculating\n");
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
     strcpy(sqlCommand, "create table tmp_table (select * from funcCall where funcCall.calledFunc in \
-            (select funcName from funcLibrary where type='IO'))");
+            (select funcName from funcLibrary where type='IO') and type='L')");
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
         RecordLog(error_info);
     }
+    else
+    {
+        if(!executeCommand("alter table tmp_table add column score int"))
+        {
+            RecordLog("execute commad alter table tmp_table add column score int failure.");
+        }
+        else
+        {
+            if(!executeCommand("update tmp_table, funcLibrary set tmp_table.score=funcLibrary.score where tmp_table.calledFunc=funcLibrary.funcName"))
+            {
+                RecordLog("execute commad update tmp_table, funcLibrary set tmp_table.score=funcLibrary.score where tmp_table.calledFunc=funcLibrary.funcName failure.");
+            }
+        }
+    }
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    strcpy(sqlCommand, "update tmp_table, funcScore set funcScore.IO=(select count(*) from tmp_table \
-            where tmp_table.funcName=funcScore.funcName) where tmp_table.funcName=funcScore.funcName and tmp_table.sourceFile=funcScore.sourceFile");
+    strcpy(sqlCommand, "update tmp_table, funcScore set funcScore.IO=(select sum(score) from tmp_table where tmp_table.funcName=funcScore.funcName \
+    and tmp_table.sourceFile=funcScore.sourceFile) where tmp_table.funcName=funcScore.funcName and tmp_table.sourceFile=funcScore.sourceFile");
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -425,6 +513,7 @@ confScore getFuncScore(char *funcName)
         res_ptr1 = mysql_store_result(mysqlConnect);
         int rownum = mysql_num_rows(res_ptr1);
         
+        //count 为递归的最大深度
         if(rownum != 0 && count < 8)
         {
             while(sqlrow1 = mysql_fetch_row(res_ptr1))
@@ -439,7 +528,7 @@ confScore getFuncScore(char *funcName)
         }
         //get function score from funcScore table
         memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-        sprintf(sqlCommand, "select distinct * from funcScore where funcName='%s'", funcName);
+        sprintf(sqlCommand, "select distinct CPU, MEM, IO, NET from funcScore where funcName='%s'", funcName);
         if(!executeCommand(sqlCommand))
         {
             memset(error_info, 0, LOGINFO_LENGTH);
@@ -454,10 +543,10 @@ confScore getFuncScore(char *funcName)
             {
                 while(sqlrow2 = mysql_fetch_row(res_ptr2))
                 {
-                    ret.CPU += StrToInt(sqlrow2[3]);
-                    ret.MEM += StrToInt(sqlrow2[4]);
-                    ret.IO += StrToInt(sqlrow2[5]);
-                    ret.NET += StrToInt(sqlrow2[6]);
+                    ret.CPU += StrToInt(sqlrow2[0]);
+                    ret.MEM += StrToInt(sqlrow2[1]);
+                    ret.IO += StrToInt(sqlrow2[2]);
+                    ret.NET += StrToInt(sqlrow2[3]);
                 }
                 mysql_free_result(res_ptr2);
             }

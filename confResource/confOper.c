@@ -1,3 +1,10 @@
+/******************************************************
+* Author       : fengzhimin
+* Email        : 374648064@qq.com
+* Filename     : confOper.c
+* Descripe     : configuration file operation
+******************************************************/
+
 #include "confOper.h"
 
 static char subStr2[2][MAX_SUBSTR];

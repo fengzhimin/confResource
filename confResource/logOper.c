@@ -1,3 +1,10 @@
+/******************************************************
+* Author       : fengzhimin
+* Email        : 374648064@qq.com
+* Filename     : logOper.c
+* Descripe     : record log
+******************************************************/
+
 #include "logOper.h"
 
 char *CreateLogInfo(const char *logInfo, const char *file, const char* function, const int line)

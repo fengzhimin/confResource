@@ -1,3 +1,10 @@
+/******************************************************
+* Author       : fengzhimin
+* Email        : 374648064@qq.com
+* Filename     : strOper.h
+* Descripe     : common string operation
+******************************************************/
+
 #ifndef __STROPER_H__
 #define __STROPER_H__
 

@@ -1,3 +1,10 @@
+/******************************************************
+* Author       : fengzhimin
+* Email        : 374648064@qq.com
+* Filename     : CXmlOper.h
+* Descripe     : parse C language xml file
+******************************************************/
+
 #ifndef __XMLOPER_H__
 #define __XMLOPER_H__
 

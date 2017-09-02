@@ -1,3 +1,10 @@
+/******************************************************
+* Author       : fengzhimin
+* Email        : 374648064@qq.com
+* Filename     : mysqlOper.h
+* Descripe     : operate mysql database
+******************************************************/
+
 #ifndef __MYSQLOPER_H__
 #define __MYSQLOPER_H__
 

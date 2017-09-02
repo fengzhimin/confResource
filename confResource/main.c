@@ -1,5 +1,5 @@
 #include "mysqlOper.h"
-#include "xmlOper.h"
+#include "CXmlOper.h"
 #include "sourceOper.h"
 #include "strOper.h"
 #include "config.h"
@@ -12,6 +12,7 @@ static char log_info[LOGINFO_LENGTH];
 int main(int argc, char **argv) 
 {
     char config_value[CONFIG_VALUE_MAX_NUM];
+     time_t start, end, finish;
 	if(getConfValueByLabelAndKey("funcCall", "num", config_value))
     {
 		max_funcCallRecursive_NUM = StrToInt(config_value);
@@ -26,6 +27,10 @@ int main(int argc, char **argv)
     printf("rebuild program? yes or no: ");
     scanf("%s", str);
     getProgramName("/home/fzm/Downloads/Program source code/redis-4.0.1");
+    char temp_dir[DIRPATH_MAX];
+    memset(temp_dir, 0, DIRPATH_MAX);
+    sprintf(temp_dir, "temp_%s", programName);
+    time(&start); 
     if(strcasecmp(str, "yes") == 0)
     {
         deleteTempXMLFile();
@@ -34,10 +39,9 @@ int main(int argc, char **argv)
         convertProgram("/home/fzm/Downloads/Program source code/redis-4.0.1");
         buildFuncScore();
     }
-    char temp_dir[DIRPATH_MAX];
-    memset(temp_dir, 0, DIRPATH_MAX);
-    sprintf(temp_dir, "temp_%s", programName);
-    time_t start, end, finish;
+    time(&end); 
+    finish = end - start;
+    printf("build time is: %d second\n", finish);
     char *confArray[] = { "port", "rdbcompression", "rdbchecksum", "maxclients", "hz", \
     "maxmemory", "save" };
     //char *confArray[] = {"tmp_table_size"};

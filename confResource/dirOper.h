@@ -1,3 +1,10 @@
+/******************************************************
+* Author       : fengzhimin
+* Email        : 374648064@qq.com
+* Filename     : dirOper.h
+* Descripe     : common directory operation
+******************************************************/
+
 #ifndef __DIROPER_H__
 #define __DIROPER_H__
 

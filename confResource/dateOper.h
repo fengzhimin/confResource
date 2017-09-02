@@ -1,3 +1,10 @@
+/******************************************************
+* Author       : fengzhimin
+* Email        : 374648064@qq.com
+* Filename     : dateOper.h
+* Descripe     : get current system time
+******************************************************/
+
 #ifndef __DATEOPER_H__
 #define __DATEOPER_H__
 

@@ -1,3 +1,10 @@
+/******************************************************
+* Author       : fengzhimin
+* Email        : 374648064@qq.com
+* Filename     : buildTempTable.c
+* Descripe     : build funcScore table and funcCall table
+******************************************************/
+
 #include "buildTempTable.h"
 
 bool buildTempTable()

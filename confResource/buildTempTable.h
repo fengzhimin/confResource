@@ -1,3 +1,10 @@
+/******************************************************
+* Author       : fengzhimin
+* Email        : 374648064@qq.com
+* Filename     : buildTempTable.h
+* Descripe     : build funcScore table and funcCall table
+******************************************************/
+
 #ifndef __BUILDTEMPTABLE_H__
 #define __BUILDTEMPTABLE_H__
 

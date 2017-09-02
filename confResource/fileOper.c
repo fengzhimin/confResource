@@ -1,3 +1,10 @@
+/******************************************************
+* Author       : fengzhimin
+* Email        : 374648064@qq.com
+* Filename     : fileOper.c
+* Descripe     : common file operation
+******************************************************/
+
 #include "fileOper.h"
 
 int OpenFile(const char* fileName, int mode)

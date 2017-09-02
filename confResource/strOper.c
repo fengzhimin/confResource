@@ -1,3 +1,10 @@
+/******************************************************
+* Author       : fengzhimin
+* Email        : 374648064@qq.com
+* Filename     : strOper.c
+* Descripe     : common string operation
+******************************************************/
+
 #include "strOper.h"
 
 void removeChar(char *str, char ch)

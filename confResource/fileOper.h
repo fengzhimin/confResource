@@ -1,3 +1,10 @@
+/******************************************************
+* Author       : fengzhimin
+* Email        : 374648064@qq.com
+* Filename     : fileOper.h
+* Descripe     : common file operation
+******************************************************/
+
 #ifndef __FILEOPER_H__
 #define __FILEOPER_H__
 

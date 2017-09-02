@@ -1,4 +1,11 @@
-#include "xmlOper.h"
+/******************************************************
+* Author       : fengzhimin
+* Email        : 374648064@qq.com
+* Filename     : CXmlOper.c
+* Descripe     : parse C language xml file
+******************************************************/
+
+#include "CXmlOper.h"
 
 static char error_info[LOGINFO_LENGTH];
 static char src_dir[DIRPATH_MAX];
@@ -37,16 +44,11 @@ bool ExtractFuncFromXML(char *docName)
             {
                 if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
                 {
-                    xmlChar* attr_value = xmlGetProp(temp_cur, (xmlChar*)"line");
-                    /*针对ClassName::funcName类情况
-                    if(attr_value == NULL)
-                        attr_value = xmlGetProp(temp_cur->next, (xmlChar*)"line");
-                    */
-                    //printf("%s: %s\t", (char*)xmlNodeGetContent(temp_cur), attr_value);
-                    memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
                     memset(src_dir, 0, DIRPATH_MAX);
                     //删除开头的temp_和结尾的.xml
                     strncpy(src_dir, (char *)&(docName[5]), strlen(docName)-9);
+                    xmlChar* attr_value = xmlGetProp(temp_cur, (xmlChar*)"line");
+                    memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
                     sprintf(sqlCommand, "insert into funcScore (funcName, sourceFile, line) value('%s', '%s', %s)", \
                         (char*)xmlNodeGetContent(temp_cur), src_dir, attr_value);
                     if(!executeCommand(sqlCommand))
@@ -58,7 +60,6 @@ bool ExtractFuncFromXML(char *docName)
                     scanCallFunction(cur->children, (char*)xmlNodeGetContent(temp_cur), src_dir);
                     
                     break;
-                    //printf("\n");
                 }
                 temp_cur = temp_cur->next;
             }
@@ -81,21 +82,19 @@ void scanCallFunction(xmlNodePtr cur, char *funcName, char *srcPath)
             {
                 memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
                 xmlChar* attr_value = NULL;
+                char *callFuncName = NULL;
                 if(xmlStrcmp(cur->children->last->name, (const xmlChar*)"position"))
                 {
                     attr_value = xmlGetProp(cur->children->last, (xmlChar*)"line");
-                    //printf("%s(%s)\t", (char*)xmlNodeGetContent(cur->children->last), attr_value);
-                    sprintf(sqlCommand, "insert into funcCall value('%s', '%s', '%s', %s, 'L')", funcName, srcPath, \
-                        (char*)xmlNodeGetContent(cur->children->last), attr_value);
+                    callFuncName = (char*)xmlNodeGetContent(cur->children->last);
                 }
                 else
                 {
                     attr_value = xmlGetProp(cur->children, (xmlChar*)"line");
-                    //printf("%s(%s)\t", (char*)xmlNodeGetContent(cur->children), attr_value);
-                    sprintf(sqlCommand, "insert into funcCall value('%s', '%s', '%s', %s, 'L')", funcName, srcPath, \
-                        (char*)xmlNodeGetContent(cur->children), attr_value);
+                    callFuncName = (char*)xmlNodeGetContent(cur->children);
                 }
-                
+                sprintf(sqlCommand, "insert into funcCall value('%s', '%s', '%s', %s, 'L')", funcName, srcPath, \
+                    callFuncName, attr_value);
                 if(!executeCommand(sqlCommand))
                 {
                     memset(error_info, 0, LOGINFO_LENGTH);
