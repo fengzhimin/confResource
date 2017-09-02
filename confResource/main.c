@@ -35,18 +35,16 @@ int main(int argc, char **argv)
     {
         deleteTempXMLFile();
         buildLibrary();
-        buildTempTable();
-        convertProgram("/home/fzm/Downloads/Program source code/redis-4.0.1");
-        buildFuncScore();
+        initSoftware("/home/fzm/Downloads/Program source code/redis-4.0.1");
     }
     time(&end); 
     finish = end - start;
     printf("build time is: %d second\n", finish);
-    char *confArray[] = { "port", "rdbcompression", "rdbchecksum", "maxclients", "hz", \
+    char *confArray[] = {"rdbcompression", "rdbchecksum", "maxclients", "hz", \
     "maxmemory", "save" };
     //char *confArray[] = {"tmp_table_size"};
     int i;
-    for(i = 0; i < 7; i++)
+    for(i = 0; i < 6; i++)
     {
         time(&start); 
         memset(log_info, 0, LOGINFO_LENGTH);

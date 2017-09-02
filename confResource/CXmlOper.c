@@ -11,7 +11,7 @@ static char error_info[LOGINFO_LENGTH];
 static char src_dir[DIRPATH_MAX];
 static char sqlCommand[LINE_CHAR_MAX_NUM];
 
-bool ExtractFuncFromXML(char *docName)
+bool ExtractFuncFromSrcXML(char *docName)
 {
     xmlDocPtr doc;
     xmlNodePtr cur;
@@ -70,6 +70,90 @@ bool ExtractFuncFromXML(char *docName)
       
     xmlFreeDoc(doc);  
     return true;  
+}
+
+bool ExtractFuncFromHearderXML(char *docName)
+{
+    xmlDocPtr doc;
+    xmlNodePtr cur;
+    xmlKeepBlanksDefault(0);
+    doc = xmlParseFile(docName);
+    if(doc == NULL )
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "Document(%s) not parsed successfully. \n", docName);
+		RecordLog(error_info);
+        return false;
+    }
+    cur = xmlDocGetRootElement(doc);
+    if (cur == NULL)
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "empty document(%s). \n", docName);
+		RecordLog(error_info);  
+        xmlFreeDoc(doc);
+        return false;
+    }
+    
+    cur = cur->children;
+    while (cur != NULL)
+    {
+        if(!xmlStrcmp(cur->name, (const xmlChar*)"function_decl"))
+        {
+            xmlNodePtr temp_cur = cur->children;
+            while(temp_cur != NULL)
+            {
+                if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
+                {
+                    memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+                    sprintf(sqlCommand, "update funcScore set type='extern' where funcName='%s'", (char*)xmlNodeGetContent(temp_cur));
+                    if(!executeCommand(sqlCommand))
+                    {
+                        memset(error_info, 0, LOGINFO_LENGTH);
+                        sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+                        RecordLog(error_info);
+                    }
+                    
+                    break;
+                }
+                temp_cur = temp_cur->next;
+            }
+            
+        }
+        else if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
+        {
+            //考虑函数在头文件中定义
+            xmlNodePtr temp_cur = cur->children;
+            while(temp_cur != NULL)
+            {
+                if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
+                {
+                    memset(src_dir, 0, DIRPATH_MAX);
+                    //删除开头的temp_和结尾的.xml
+                    strncpy(src_dir, (char *)&(docName[5]), strlen(docName)-9);
+                    xmlChar* attr_value = xmlGetProp(temp_cur, (xmlChar*)"line");
+                    memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+                    sprintf(sqlCommand, "insert into funcScore (funcName, type, sourceFile, line) value('%s', 'extern', '%s', %s)", \
+                        (char*)xmlNodeGetContent(temp_cur), src_dir, attr_value);
+                    if(!executeCommand(sqlCommand))
+                    {
+                        memset(error_info, 0, LOGINFO_LENGTH);
+                        sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+                        RecordLog(error_info);
+                    }
+                    scanCallFunction(cur->children, (char*)xmlNodeGetContent(temp_cur), src_dir);
+                    
+                    break;
+                }
+                temp_cur = temp_cur->next;
+            }
+            
+        }
+        cur = cur->next;
+    }
+      
+    xmlFreeDoc(doc);  
+    return true; 
 }
 
 void scanCallFunction(xmlNodePtr cur, char *funcName, char *srcPath)

@@ -19,11 +19,18 @@
 #include "mysqlOper.h"
 
 /*******************************
- * func: Extract function Name from XML
+ * func: Extract function Name from source XML file
  * return: true = success    false = failure
  * @para docName: xml path
 ********************************/
-bool ExtractFuncFromXML(char *docName);
+bool ExtractFuncFromSrcXML(char *docName);
+
+/*******************************
+ * func: Extract function Name from header XML file
+ * return: true = success    false = failure
+ * @para docName: xml path
+********************************/
+bool ExtractFuncFromHearderXML(char *docName);
 
 /*******************************
  * func: scan call function

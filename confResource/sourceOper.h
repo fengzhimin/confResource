@@ -14,6 +14,7 @@
 #include "strOper.h"
 #include "CXmlOper.h"
 #include "mysqlOper.h"
+#include "buildTempTable.h"
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
@@ -45,6 +46,20 @@ bool judgeCSrcFile(char *filePath);
 bool judgeCHeaderFile(char *filePath);
 
 /***************************************
+ * func: judge whether C language source xml file or not
+ * return: true = yes   false = no
+ * @para filePath: file Path
+****************************************/
+bool judgeCSrcXmlFile(char *filePath);
+
+/***************************************
+ * func: judge whether C language header xml file or not
+ * return: true = yes   false = no
+ * @para filePath: file Path
+****************************************/
+bool judgeCHeaderXmlFile(char *filePath);
+
+/***************************************
  * func: convert source code to xml style
  * @return: true = success     false = failure
  * @para srcPath: source code path
@@ -58,6 +73,20 @@ bool CodeToXML(char *srcPath, char *desPath);
  * @para dirPath: program directory
 *****************************************/
 bool convertProgram(char *dirPath);
+
+/******************************************
+ * func: set function type
+ * return true = success   false = failure
+ * @para xmlPath: xml path
+******************************************/
+bool setFuncType(char *xmlPath);
+
+/********************************************
+ * func: initial software source code
+ * return: true = success   false = failure
+ * @para srcPath: source code path
+*********************************************/
+bool initSoftware(char *srcPath);
 
 /*****************************************
  * func: delete temp xml file
