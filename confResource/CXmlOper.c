@@ -106,13 +106,17 @@ void scanCallFunction(xmlNodePtr cur, char *funcName, char *funcType, char *srcP
                     attr_value = xmlGetProp(cur->children, (xmlChar*)"line");
                     callFuncName = (char*)xmlNodeGetContent(cur->children);
                 }
-                sprintf(sqlCommand, "insert into funcCall (funcName, funcCallType, sourceFile, calledFunc, line, type) \
-                    value('%s', '%s', '%s', '%s', %s, 'L')", funcName, funcType, srcPath, callFuncName, attr_value);
-                if(!executeCommand(sqlCommand))
+                //删除递归调用
+                if(strcasecmp(callFuncName, funcName) != 0)
                 {
-                    memset(error_info, 0, LOGINFO_LENGTH);
-                    sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
-                    RecordLog(error_info);
+                    sprintf(sqlCommand, "insert into funcCall (funcName, funcCallType, sourceFile, calledFunc, line, type) \
+                        value('%s', '%s', '%s', '%s', %s, 'L')", funcName, funcType, srcPath, callFuncName, attr_value);
+                    if(!executeCommand(sqlCommand))
+                    {
+                        memset(error_info, 0, LOGINFO_LENGTH);
+                        sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+                        RecordLog(error_info);
+                    }
                 }
             }
         }
