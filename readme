@@ -1,1 +1,2 @@
 srcml无法提取thd_start(redis-4.0.1/deps/jemalloc/test/unit/prof_reset.c)的函数类型。原因是无法处理TEST_END
+无法对源码中的预编译宏进行分析，也就是可能会出现两个完全一致的函数定义

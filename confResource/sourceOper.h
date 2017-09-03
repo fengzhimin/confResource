@@ -36,14 +36,7 @@ bool getProgramName(char *sourcePath);
  * return: true = yes   false = no
  * @para filePath: file Path
 ****************************************/
-bool judgeCSrcFile(char *filePath);
-
-/***************************************
- * func: judge whether C language header file or not
- * return: true = yes   false = no
- * @para filePath: file Path
-****************************************/
-bool judgeCHeaderFile(char *filePath);
+bool judgeCFile(char *filePath);
 
 /***************************************
  * func: judge whether C language source xml file or not
@@ -73,13 +66,6 @@ bool CodeToXML(char *srcPath, char *desPath);
  * @para dirPath: program directory
 *****************************************/
 bool convertProgram(char *dirPath);
-
-/******************************************
- * func: set function type
- * return true = success   false = failure
- * @para xmlPath: xml path
-******************************************/
-bool setFuncType(char *xmlPath);
 
 /********************************************
  * func: initial software source code
@@ -120,7 +106,9 @@ confScore buildConfScore(char *confName, char *xmlPath);
  * func: 配置项在一个函数中的资源分数(递归包含该函数所调用的函数)
  * return: score
  * @para funcName: function name
+ * @para funcType: function type   true = static    false = extern
+ * @para srcFile: function defined source file path
 *****************************************/
-confScore getFuncScore(char *funcName);
+confScore getFuncScore(char *funcName, bool funcType, char *srcFile);
 
 #endif

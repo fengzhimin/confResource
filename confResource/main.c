@@ -40,11 +40,11 @@ int main(int argc, char **argv)
     time(&end); 
     finish = end - start;
     printf("build time is: %d second\n", finish);
-    char *confArray[] = {"rdbcompression", "rdbchecksum", "maxclients", "hz", \
+    //char *confArray[] = {"rdbcompression", "rdbchecksum", "maxclients", "hz", \
     "maxmemory", "save" };
-    //char *confArray[] = {"tmp_table_size"};
+    char *confArray[] = {"maxmemory"};
     int i;
-    for(i = 0; i < 6; i++)
+    for(i = 0; i < 1; i++)
     {
         time(&start); 
         memset(log_info, 0, LOGINFO_LENGTH);

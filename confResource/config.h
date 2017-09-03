@@ -64,7 +64,9 @@ typedef struct configurationScore
 typedef struct functionList
 {
     char funcName[MAX_FUNCNAME_LENGTH];
+    bool funcType;     //false = extern    true = static
     int line;
+    char sourceFile[DIRPATH_MAX];
     struct functionList *next;
 } funcList;
 

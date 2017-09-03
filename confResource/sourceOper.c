@@ -41,24 +41,12 @@ bool getProgramName(char *sourcePath)
     return true;
 }
 
-bool judgeCSrcFile(char *filePath)
+bool judgeCFile(char *filePath)
 {
     int index = ExtractLastCharIndex(filePath, '.');
     if(index != -1)
     {
-        if(strcasecmp((char *)&filePath[index+1], "c") == 0)
-            return true;
-    }
-
-    return false;
-}
-
-bool judgeCHeaderFile(char *filePath)
-{
-    int index = ExtractLastCharIndex(filePath, '.');
-    if(index != -1)
-    {
-        if(strcasecmp((char *)&filePath[index+1], "h") == 0)
+        if(strcasecmp((char *)&filePath[index+1], "c") == 0 || strcasecmp((char *)&filePath[index+1], "h") == 0)
             return true;
     }
 
@@ -178,7 +166,7 @@ bool convertProgram(char *dirPath)
             }
             if(S_ISREG(statbuf.st_mode))
             {
-                if(judgeCSrcFile(child_dir))
+                if(judgeCFile(child_dir))
                 {
                     printf("analysing file %s\n", child_dir);
                     memset(xml_dir, 0, DIRPATH_MAX);
@@ -186,21 +174,8 @@ bool convertProgram(char *dirPath)
                     if(CodeToXML(child_dir, xml_dir))
                     {
                         ret = true;
-                        ExtractFuncFromSrcXML(xml_dir);
+                        ExtractFuncFromXML(xml_dir);
                     }
-                    else
-                    {
-                        ret = false;
-                        closedir(pdir);
-                        return ret;
-                    }
-                }
-                else if(judgeCHeaderFile(child_dir))
-                {
-                    memset(xml_dir, 0, DIRPATH_MAX);
-                    sprintf(xml_dir, "%s/%s.xml", temp_dir, pdirent->d_name);
-                    if(CodeToXML(child_dir, xml_dir))
-                        ret = true;
                     else
                     {
                         ret = false;
@@ -224,81 +199,6 @@ bool convertProgram(char *dirPath)
     return ret;
 }
 
-bool setFuncType(char *xmlPath)
-{
-    bool ret = true;
-    DIR *pdir;
-    struct dirent *pdirent;
-    struct stat statbuf;
-    char child_dir[DIRPATH_MAX];
-    pdir = opendir(xmlPath);
-    if(pdir)
-    {
-        while((pdirent = readdir(pdir)) != NULL)
-        {
-            //跳过"."和".."和隐藏文件夹
-            if(strcmp(pdirent->d_name, ".") == 0 || strcmp(pdirent->d_name, "..") == 0 || (pdirent->d_name[0] == '.'))
-                continue;
-            
-            memset(child_dir, 0, DIRPATH_MAX);
-            sprintf(child_dir, "%s/%s", xmlPath, pdirent->d_name);
-            if(lstat(child_dir, &statbuf) < 0)
-            {
-                memset(error_info, 0, LOGINFO_LENGTH);
-                sprintf(error_info, "lstat %s to failed: %s.\n", child_dir, strerror(errno));
-                RecordLog(error_info);
-                closedir(pdir);
-                
-                return false;
-            }
-            
-            //judge whether directory or not
-            if(S_ISDIR(statbuf.st_mode))
-            {
-                if(setFuncType(child_dir))
-                    ret = true;
-                else
-                {
-                    ret = false;
-                    closedir(pdir);
-                    return ret;
-                }
-            }
-            if(S_ISREG(statbuf.st_mode))
-            {
-                if(judgeCHeaderXmlFile(child_dir))
-                {
-                    memset(src_dir, 0, DIRPATH_MAX);
-                    //删除开头的temp_和结尾的.xml
-                    strncpy(src_dir, (char *)&(child_dir[5]), strlen(child_dir)-9);
-                    printf("analysing file %s\n", src_dir);
-                    if(ExtractFuncFromHearderXML(child_dir))
-                    {
-                        ret = true;
-                    }
-                    else
-                    {
-                        ret = false;
-                        closedir(pdir);
-                        return ret;
-                    }
-                }
-            }
-        }
-    }
-    else
-    {
-        memset(error_info, 0, LOGINFO_LENGTH);
-        sprintf(error_info, "open directory %s to failed: %s.\n", xmlPath, strerror(errno));
-        RecordLog(error_info);
-        
-        ret = false;
-    }
-    closedir(pdir);
-    
-    return ret;
-}
-
 bool initSoftware(char *srcPath)
 {
     bool ret = buildTempTable();
@@ -306,7 +206,6 @@ bool initSoftware(char *srcPath)
     char temp_dir[DIRPATH_MAX];
     memset(temp_dir, 0, DIRPATH_MAX);
     sprintf(temp_dir, "temp_%s", programName);
-    ret = setFuncType(temp_dir);
     ret = buildFuncScore();
     
     return ret;
@@ -339,11 +238,12 @@ bool buildFuncScore()
     }
     else
         ret = true;
-    
+
     time(&end); 
     finish = end - start;
     printf("time is: %d second\n", finish);
     printf("update funcCall table finish\n");
+    
     //对每个函数进行打分， 每个函数中直接使用到的库函数
     //MEM score
     printf("MEM score calculating\n");
@@ -525,6 +425,31 @@ bool buildFuncScore()
     else
         ret = true;
     
+    //delete funcCall table Library function record
+    memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+    strcpy(sqlCommand, "delete from funcCall where type='L'");
+    if(!executeCommand(sqlCommand))
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+        RecordLog(error_info);
+    }
+    else
+        ret = true;
+    
+    //set funcCall calledFunctype
+    memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+    strcpy(sqlCommand, "update funcScore, funcCall set funcCall.calledFuncType=funcScore.type \
+    where funcScore.sourceFile=funcCall.sourceFile and funcCall.calledFunc=funcScore.funcName");
+    if(!executeCommand(sqlCommand))
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+        RecordLog(error_info);
+    }
+    else
+        ret = true;
+        
     return ret;
 }
 
@@ -598,14 +523,21 @@ void getVarUsedFunc(char *varName, char *xmlPath)
     closedir(pdir);
 }
 
-confScore getFuncScore(char *funcName)
+confScore getFuncScore(char *funcName, bool funcType, char *srcFile)
 {
     count++;
     confScore ret;
     memset(&ret, 0, sizeof(confScore));
-    
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    sprintf(sqlCommand, "select distinct calledFunc from funcCall where funcName='%s' and type='S'", funcName);
+    //一个程序中只能有一个external函数
+    //一个程序中可能会存在多个名称相同的static函数
+    //一个源文件中不可能存在多个名称相同的static函数
+    if(funcType)
+        sprintf(sqlCommand, "select distinct calledFunc, calledFuncType from funcCall where \
+        funcName='%s' and funcCallType='static' and sourceFile='%s'", funcName, srcFile);
+    else
+        sprintf(sqlCommand, "select distinct calledFunc, calledFuncType from funcCall where \
+        funcName='%s' and funcCallType='extern'", funcName);
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -620,11 +552,16 @@ confScore getFuncScore(char *funcName)
         int rownum = mysql_num_rows(res_ptr1);
         
         //count 为递归的最大深度
-        if(rownum != 0 && count < 8)
+        if(rownum != 0 && count < max_funcCallRecursive_NUM)
         {
             while(sqlrow1 = mysql_fetch_row(res_ptr1))
             {
-                confScore temp_ret = getFuncScore(sqlrow1[0]);
+                bool temp_funcType = false;
+                if(strcasecmp(sqlrow1[1], "static") == 0)
+                {
+                    temp_funcType = true;
+                }
+                confScore temp_ret = getFuncScore(sqlrow1[0], temp_funcType, srcFile);
                 ret.CPU += temp_ret.CPU;
                 ret.MEM += temp_ret.MEM;
                 ret.IO += temp_ret.IO;
@@ -634,7 +571,12 @@ confScore getFuncScore(char *funcName)
         }
         //get function score from funcScore table
         memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-        sprintf(sqlCommand, "select distinct CPU, MEM, IO, NET from funcScore where funcName='%s'", funcName);
+        if(funcType)
+            sprintf(sqlCommand, "select distinct CPU, MEM, IO, NET from funcScore where \
+            funcName='%s' and type='static'  and sourceFile='%s'", funcName, srcFile);
+        else
+            sprintf(sqlCommand, "select distinct CPU, MEM, IO, NET from funcScore where \
+            funcName='%s' and type='extern'", funcName);
         if(!executeCommand(sqlCommand))
         {
             memset(error_info, 0, LOGINFO_LENGTH);
@@ -644,7 +586,7 @@ confScore getFuncScore(char *funcName)
         else
         {
             res_ptr2 = mysql_store_result(mysqlConnect);
-            rownum = mysql_num_rows(res_ptr1);
+            rownum = mysql_num_rows(res_ptr2);
             if(rownum != 0)
             {
                 while(sqlrow2 = mysql_fetch_row(res_ptr2))
@@ -706,13 +648,16 @@ confScore buildConfScore(char *confName, char *xmlPath)
             {
                 memset(xml_dir, 0, DIRPATH_MAX);
                 sprintf(xml_dir, "%s/%s", xmlPath, pdirent->d_name);
+                //跳过头文件
+                if(judgeCHeaderXmlFile(xml_dir))
+                    continue;
                 funcList * ret_begin = ExtractVarUsedPos(confName, xml_dir);
                 if(ret_begin != NULL)
                 {
                     funcList *current = ret_begin;
                     while(current != NULL)
                     {
-                        confScore temp_ret = getFuncScore(current->funcName);
+                        confScore temp_ret = getFuncScore(current->funcName, current->funcType, current->sourceFile);
                         ret.CPU += temp_ret.CPU;
                         ret.MEM += temp_ret.MEM;
                         ret.IO += temp_ret.IO;
