@@ -32,6 +32,8 @@
 
 #define MAX_FUNCNAME_LENGTH      50     //a function name max length
 
+#define MAX_VARIABLE_LENGTH      50     //a variable name max length
+
 #define LOGINFO_LENGTH           1024 
 
 extern char bind_address[CONFIG_VALUE_MAX_NUM];
@@ -69,5 +71,13 @@ typedef struct functionList
     char sourceFile[DIRPATH_MAX];
     struct functionList *next;
 } funcList;
+
+typedef struct variableType
+{
+    char varName[MAX_VARIABLE_LENGTH];
+    char type[MAX_VARIABLE_LENGTH];
+    int line;
+    struct variableType *next;
+} varType;
 
 #endif

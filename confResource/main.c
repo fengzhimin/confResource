@@ -36,15 +36,20 @@ int main(int argc, char **argv)
         deleteTempXMLFile();
         buildLibrary();
         initSoftware("/home/fzm/Downloads/Program source code/redis-4.0.1");
+        time(&end); 
+        finish = end - start;
+        printf("build time is: %d second\n", finish);
     }
-    time(&end); 
-    finish = end - start;
-    printf("build time is: %d second\n", finish);
-    //char *confArray[] = {"rdbcompression", "rdbchecksum", "maxclients", "hz", \
-    "maxmemory", "save" };
-    char *confArray[] = {"maxmemory"};
+    /*
+    ExtractGlobalVarDef("/home/fzm/confResource/confResource/Debug/temp_redis-4.0.1/src/adlist.c.xml");
+    ExtractFuncVarDef("/home/fzm/confResource/confResource/Debug/temp_redis-4.0.1/src/adlist.c.xml");
+    ExtractFuncVarUsedInfo("/home/fzm/confResource/confResource/Debug/temp_redis-4.0.1/src/adlist.c.xml");
+    */
+    Sclice("var", "/home/fzm/confResource/confResource/Debug/test.c.xml");
+    char *confArray[] = {"server.rdbcompression", "server.rdbchecksum", "server.maxclients", "server.hz", "server.maxmemory", "server.save" };
+    //char *confArray[] = {"server.maxmemory"};
     int i;
-    for(i = 0; i < 1; i++)
+    for(i = 0; i < 0; i++)
     {
         time(&start); 
         memset(log_info, 0, LOGINFO_LENGTH);

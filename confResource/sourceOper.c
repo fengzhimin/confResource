@@ -490,7 +490,7 @@ void getVarUsedFunc(char *varName, char *xmlPath)
             {
                 memset(xml_dir, 0, DIRPATH_MAX);
                 sprintf(xml_dir, "%s/%s", xmlPath, pdirent->d_name);
-                funcList * ret = ExtractVarUsedPos(varName, xml_dir);
+                funcList * ret = ExtractVarUsedFunc(varName, xml_dir);
                 if(ret != NULL)
                 {
                     funcList *current = ret;
@@ -651,7 +651,7 @@ confScore buildConfScore(char *confName, char *xmlPath)
                 //跳过头文件
                 if(judgeCHeaderXmlFile(xml_dir))
                     continue;
-                funcList * ret_begin = ExtractVarUsedPos(confName, xml_dir);
+                funcList * ret_begin = ExtractVarUsedFunc(confName, xml_dir);
                 if(ret_begin != NULL)
                 {
                     funcList *current = ret_begin;
