@@ -45,7 +45,8 @@ int main(int argc, char **argv)
     ExtractFuncVarDef("/home/fzm/confResource/confResource/Debug/temp_redis-4.0.1/src/adlist.c.xml");
     ExtractFuncVarUsedInfo("/home/fzm/confResource/confResource/Debug/temp_redis-4.0.1/src/adlist.c.xml");
     */
-    Sclice("var", "/home/fzm/confResource/confResource/Debug/test.c.xml");
+    //ExtractFuncVarUsedInfo("/home/fzm/confResource/confResource/Debug/childinfo.c.xml");
+    Sclice("c->sentlen", "/home/fzm/confResource/confResource/Debug/childinfo.c.xml");
     char *confArray[] = {"server.rdbcompression", "server.rdbchecksum", "server.maxclients", "server.hz", "server.maxmemory", "server.save" };
     //char *confArray[] = {"server.maxmemory"};
     int i;

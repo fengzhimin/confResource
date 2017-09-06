@@ -525,6 +525,8 @@ void ExtractVarUsedInfo(xmlNodePtr cur)
                     
                     printf("%s(%s)\n", (char*)xmlNodeGetContent(temp_cur), attr_value);
                 }
+                else
+                    ExtractVarUsedInfo(temp_cur->children);
                 temp_cur = temp_cur->next;
             }
         }
@@ -533,6 +535,41 @@ void ExtractVarUsedInfo(xmlNodePtr cur)
             
         cur = cur->next;
     }
+}
+
+bool JudgeVarUsedFromNode(xmlNodePtr cur, char *var, bool flag)
+{
+    while(cur != NULL)
+    {
+        if(!xmlStrcmp(cur->name, (const xmlChar*)"expr"))
+        {
+            xmlNodePtr temp_cur = cur->children;
+            xmlChar* attr_value = NULL;
+            while(temp_cur != NULL)
+            {
+                if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
+                {
+                    if(!xmlStrcmp(temp_cur->children->name, (const xmlChar*)"name"))
+                        attr_value = xmlGetProp(temp_cur->children, (xmlChar*)"line");
+                    else
+                        attr_value = xmlGetProp(temp_cur, (xmlChar*)"line");
+                        
+                    if(strcasecmp((char*)xmlNodeGetContent(temp_cur), var) == 0)
+                        return true;
+                }
+                else if(JudgeVarUsedFromNode(temp_cur->children, var, false))
+                    return true;
+                temp_cur = temp_cur->next;
+            }
+        }
+        else if(JudgeVarUsedFromNode(cur->children, var, false))
+                return true;
+        if(flag)
+            break;
+        cur = cur->next;
+    }
+    
+    return false;
 }
 
 void ExtractFuncVarUsedInfo(char *xmlFilePath)
@@ -587,7 +624,93 @@ void varSclice(char *varName, xmlNodePtr cur)
 {
     while(cur != NULL)
     {
-        if(!xmlStrcmp(cur->name, (const xmlChar*)"expr"))
+        bool recursive_flag = true;
+        if(!xmlStrcmp(cur->name, (const xmlChar*)"if"))
+        {
+            xmlNodePtr condition = cur->children;
+            while(condition != NULL)
+            {
+                if(!xmlStrcmp(condition->name, (const xmlChar*)"condition"))
+                {
+                    //判断if条件中是否使用了varName变量，如果使用则该变量影响整个if块
+                    if(JudgeVarUsed(condition, varName))
+                    {
+                        //打印整个if-else结构块
+                        scanCallFunc(cur->children);
+                        recursive_flag = false;
+                        break;
+                    }
+                }
+                condition = condition->next;
+            }
+        }
+        else if(!xmlStrcmp(cur->name, (const xmlChar*)"while"))
+        {
+            xmlNodePtr condition = cur->children;
+            while(condition != NULL)
+            {
+                if(!xmlStrcmp(condition->name, (const xmlChar*)"condition"))
+                {
+                    //判断while条件中是否使用了varName变量，如果使用则该变量影响整个while块
+                    if(JudgeVarUsed(condition, varName))
+                    {
+                        //打印整个while结构块
+                        scanCallFunc(cur->children);
+                        recursive_flag = false;
+                        break;
+                    }
+                }
+                condition = condition->next;
+            }
+        }
+        else if(!xmlStrcmp(cur->name, (const xmlChar*)"do"))
+        {
+            xmlNodePtr condition = cur->children;
+            while(condition != NULL)
+            {
+                if(!xmlStrcmp(condition->name, (const xmlChar*)"condition"))
+                {
+                    //判断do-while条件中是否使用了varName变量，如果使用则该变量影响整个do-while块
+                    if(JudgeVarUsed(condition, varName))
+                    {
+                        //打印整个do-while结构块
+                        scanCallFunc(cur->children);
+                        recursive_flag = false;
+                        break;
+                    }
+                }
+                condition = condition->next;
+            }
+        }
+        else if(!xmlStrcmp(cur->name, (const xmlChar*)"for"))
+        {
+            xmlNodePtr control = cur->children;
+            while(control != NULL)
+            {
+                if(!xmlStrcmp(control->name, (const xmlChar*)"control"))
+                {
+                    xmlNodePtr condition = control->children;
+                    while(condition != NULL)
+                    {
+                        //判断for条件中是否使用了varName变量，如果使用则该变量影响整个for块
+                        if(!xmlStrcmp(condition->name, (const xmlChar*)"condition"))
+                        {
+                            if(JudgeVarUsed(condition, varName))
+                            {
+                                //打印整个for结构块
+                                scanCallFunc(cur->children);
+                                recursive_flag = false;
+                                break;
+                            }
+                        }
+                        condition = condition->next;
+                    }
+                    break;
+                }
+                control = control->next;
+            }
+        }
+        else if(!xmlStrcmp(cur->name, (const xmlChar*)"expr"))
         {
             xmlNodePtr temp_cur = cur->children;
             xmlChar* attr_value = NULL;
@@ -600,89 +723,18 @@ void varSclice(char *varName, xmlNodePtr cur)
                     else
                         attr_value = xmlGetProp(temp_cur, (xmlChar*)"line");
                     
+                    recursive_flag = false;
                     if(strcasecmp((char*)xmlNodeGetContent(temp_cur), varName) == 0)
                         printf("%s\n", attr_value);
                 }
+                else
+                    varSclice(varName, temp_cur->children);
                 temp_cur = temp_cur->next;
             }
         }
-        else
-            varSclice(varName, cur->children);
         
-        if(!xmlStrcmp(cur->name, (const xmlChar*)"if"))
-        {
-            xmlNodePtr temp_cur = cur->children->next->children->next->children;
-            xmlChar* attr_value = NULL;
-            while(temp_cur != NULL)
-            {
-                if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
-                {
-                    if(!xmlStrcmp(temp_cur->children->name, (const xmlChar*)"name"))
-                        attr_value = xmlGetProp(temp_cur->children, (xmlChar*)"line");
-                    else
-                        attr_value = xmlGetProp(temp_cur, (xmlChar*)"line");
-                    
-                    if(strcasecmp((char*)xmlNodeGetContent(temp_cur), varName) == 0)
-                    {
-                        //打印整个if-else结构块
-                        //if
-                        scanCallFunc(cur->children);
-                        break;
-                    }
-                }
-                temp_cur = temp_cur->next;
-            }
-        }
-        else if(!xmlStrcmp(cur->name, (const xmlChar*)"while"))
-        {
-            xmlNodePtr temp_cur = cur->children->next->children->next->children;
-            xmlChar* attr_value = NULL;
-            while(temp_cur != NULL)
-            {
-                if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
-                {
-                    if(!xmlStrcmp(temp_cur->children->name, (const xmlChar*)"name"))
-                        attr_value = xmlGetProp(temp_cur->children, (xmlChar*)"line");
-                    else
-                        attr_value = xmlGetProp(temp_cur, (xmlChar*)"line");
-                    
-                    if(strcasecmp((char*)xmlNodeGetContent(temp_cur), varName) == 0)
-                    {
-                        //打印整个if-else结构块
-                        //if
-                        scanCallFunc(cur->children);
-                        break;
-                    }
-                    //printf("%s(%s)\n", (char*)xmlNodeGetContent(temp_cur), attr_value);
-                }
-                temp_cur = temp_cur->next;
-            }
-        }
-        else if(!xmlStrcmp(cur->name, (const xmlChar*)"for"))
-        {
-            xmlNodePtr temp_cur = cur->children->next->children->next->next->next->children->children;
-            xmlChar* attr_value = NULL;
-            while(temp_cur != NULL)
-            {
-                if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
-                {
-                    if(!xmlStrcmp(temp_cur->children->name, (const xmlChar*)"name"))
-                        attr_value = xmlGetProp(temp_cur->children, (xmlChar*)"line");
-                    else
-                        attr_value = xmlGetProp(temp_cur, (xmlChar*)"line");
-                    
-                    if(strcasecmp((char*)xmlNodeGetContent(temp_cur), varName) == 0)
-                    {
-                        //打印整个if-else结构块
-                        //if
-                        scanCallFunc(cur->children);
-                        break;
-                    }
-                    //printf("%s(%s)\n", (char*)xmlNodeGetContent(temp_cur), attr_value);
-                }
-                temp_cur = temp_cur->next;
-            }
-        }
+        if(recursive_flag)
+            varSclice(varName, cur->children);
             
         cur = cur->next;
     }

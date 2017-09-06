@@ -19,6 +19,7 @@
 #include "mysqlOper.h"
 
 #define ExtractVarDef(cur)  ExtractVarDefFromNode(cur, true) 
+#define JudgeVarUsed(cur, var)  JudgeVarUsedFromNode(cur, var, true)
 
 /*******************************
  * func: Extract function Name from XML file
@@ -74,6 +75,14 @@ varType *ExtractVarDefFromNode(xmlNodePtr cur, bool flag);
  * @para cur: current node
 **********************************/
 void ExtractVarUsedInfo(xmlNodePtr cur);
+
+/*********************************
+ * func: judge a variable whether be used in current node or not
+ * return: true = used    false = not used
+ * @para cur: current node
+ * @para var: variable
+**********************************/
+bool JudgeVarUsedFromNode(xmlNodePtr cur, char *var, bool flag);
 
 /*********************************
  * func: Extract function all variable define info from a xml file
