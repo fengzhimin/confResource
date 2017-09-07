@@ -61,6 +61,7 @@ bool ExtractFuncFromXML(char *docName)
                     else
                         sprintf(sqlCommand, "insert into funcScore (funcName, sourceFile, line) value('%s', '%s', %s)", \
                         (char*)xmlNodeGetContent(temp_cur), src_dir, attr_value);
+                        
                     if(!executeCommand(sqlCommand))
                     {
                         memset(error_info, 0, LOGINFO_LENGTH);
@@ -120,8 +121,8 @@ void scanCallFunction(xmlNodePtr cur, char *funcName, char *funcType, char *srcP
                 }
             }
         }
-        else
-            scanCallFunction(cur->children, funcName, funcType, srcPath);
+        
+        scanCallFunction(cur->children, funcName, funcType, srcPath);
         cur = cur->next;
     }
 }
@@ -150,8 +151,8 @@ void scanCallFunc(xmlNodePtr cur)
                 printf("%s(%s)\n", callFuncName, attr_value);
             }
         }
-        else
-            scanCallFunc(cur->children);
+        
+        scanCallFunc(cur->children);
         cur = cur->next;
     }
 }
@@ -265,6 +266,8 @@ bool scanVarIsUsed(xmlNodePtr cur, char *varName)
                         ret = true;
                     }
                 }
+                else
+                    ret |= scanVarIsUsed(cur->children, varName);
                 temp_cur = temp_cur->next;
             }
         }

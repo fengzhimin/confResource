@@ -490,25 +490,28 @@ void getVarUsedFunc(char *varName, char *xmlPath)
             {
                 memset(xml_dir, 0, DIRPATH_MAX);
                 sprintf(xml_dir, "%s/%s", xmlPath, pdirent->d_name);
-                funcList * ret = ExtractVarUsedFunc(varName, xml_dir);
-                if(ret != NULL)
+                if(judgeCSrcXmlFile(xml_dir))
                 {
-                    funcList *current = ret;
-                    while(current != NULL)
+                    funcList * ret = ExtractVarUsedFunc(varName, xml_dir);
+                    if(ret != NULL)
                     {
-                        memset(src_dir, 0, DIRPATH_MAX);
-                        //删除开头的temp_和结尾的.xml
-                        strncpy(src_dir, (char *)&(xml_dir[5]), strlen(xml_dir)-9);
-                        printf("%s: %s(%d)\n", src_dir, current->funcName, current->line);
-                        current = current->next;
-                    }
-                    //delete funcList value
-                    current = ret;
-                    while(current != NULL)
-                    {
-                        ret = ret->next;
-                        free(current);
+                        funcList *current = ret;
+                        while(current != NULL)
+                        {
+                            memset(src_dir, 0, DIRPATH_MAX);
+                            //删除开头的temp_和结尾的.xml
+                            strncpy(src_dir, (char *)&(xml_dir[5]), strlen(xml_dir)-9);
+                            printf("%s: %s(%d)\n", src_dir, current->funcName, current->line);
+                            current = current->next;
+                        }
+                        //delete funcList value
                         current = ret;
+                        while(current != NULL)
+                        {
+                            ret = ret->next;
+                            free(current);
+                            current = ret;
+                        }
                     }
                 }
             }
@@ -649,28 +652,29 @@ confScore buildConfScore(char *confName, char *xmlPath)
                 memset(xml_dir, 0, DIRPATH_MAX);
                 sprintf(xml_dir, "%s/%s", xmlPath, pdirent->d_name);
                 //跳过头文件
-                if(judgeCHeaderXmlFile(xml_dir))
-                    continue;
-                funcList * ret_begin = ExtractVarUsedFunc(confName, xml_dir);
-                if(ret_begin != NULL)
+                if(judgeCSrcXmlFile(xml_dir))
                 {
-                    funcList *current = ret_begin;
-                    while(current != NULL)
+                    funcList * ret_begin = ExtractVarUsedFunc(confName, xml_dir);
+                    if(ret_begin != NULL)
                     {
-                        confScore temp_ret = getFuncScore(current->funcName, current->funcType, current->sourceFile);
-                        ret.CPU += temp_ret.CPU;
-                        ret.MEM += temp_ret.MEM;
-                        ret.IO += temp_ret.IO;
-                        ret.NET += temp_ret.NET;
-                        current = current->next;
-                    }
-                    //delete funcList value
-                    current = ret_begin;
-                    while(current != NULL)
-                    {
-                        ret_begin = ret_begin->next;
-                        free(current);
+                        funcList *current = ret_begin;
+                        while(current != NULL)
+                        {
+                            confScore temp_ret = getFuncScore(current->funcName, current->funcType, current->sourceFile);
+                            ret.CPU += temp_ret.CPU;
+                            ret.MEM += temp_ret.MEM;
+                            ret.IO += temp_ret.IO;
+                            ret.NET += temp_ret.NET;
+                            current = current->next;
+                        }
+                        //delete funcList value
                         current = ret_begin;
+                        while(current != NULL)
+                        {
+                            ret_begin = ret_begin->next;
+                            free(current);
+                            current = ret_begin;
+                        }
                     }
                 }
             }
