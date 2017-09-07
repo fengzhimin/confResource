@@ -18,8 +18,14 @@
 #include "config.h"
 #include "mysqlOper.h"
 
-#define ExtractVarDef(cur)  ExtractVarDefFromNode(cur, true) 
+#define scanCallFunction(cur, funcName, funcType, srcPath)   scanCallFunctionFromNode(cur, funcName, funcType, srcPath, true)
+#define scanCallFunc(cur)    scanCallFuncFromNode(cur, true)
+#define scanVarIsUsed(cur, varName)    scanVarIsUsedFromNode(cur, varName, true)
+#define ExtractVarDef(cur)  ExtractVarDefFromNode(cur, true)
+#define ExtractVarUsedInfo(cur)    ExtractVarUsedInfoFromNode(cur, true)
 #define JudgeVarUsed(cur, var)  JudgeVarUsedFromNode(cur, var, true)
+#define JudgeExistChildNode(cur, nodeName)   JudgeExistChildNodeFromNode(cur, nodeName, true)
+#define varSclice(varName, cur)   varScliceFromNode(varName, cur, true)
 
 /*******************************
  * func: Extract function Name from XML file
@@ -36,14 +42,21 @@ bool ExtractFuncFromXML(char *docName);
  * @para funcType: current self-define function type(extern or static)
  * @para srcPath: function source file path
 ********************************/
-void scanCallFunction(xmlNodePtr cur, char *funcName, char *funcType, char *srcPath);
+void scanCallFunctionFromNode(xmlNodePtr cur, char *funcName, char *funcType, char *srcPath, bool flag);
 
 /*******************************
- * func: scan call function
+ * func: scan call function from current node
  * return: void
  * @para cur: current  Node
 ********************************/
-void scanCallFunc(xmlNodePtr cur);
+void scanCallFuncFromNode(xmlNodePtr cur, bool flag);
+
+/*******************************
+ * func: scan called function from current node back node
+ * return: void
+ * @para cur: current Node
+*******************************/
+void scanBackCallFunc(xmlNodePtr cur);
 
 /*******************************
  * func: extract variable used function from a xml file(function and line)
@@ -59,7 +72,7 @@ funcList *ExtractVarUsedFunc(char *varName, char *xmlFilePath);
  * @para cur: current node
  * @para varName: variable name
 ********************************/
-bool scanVarIsUsed(xmlNodePtr cur, char *varName);
+bool scanVarIsUsedFromNode(xmlNodePtr cur, char *varName, bool flag);
 
 /*********************************
  * func: Extract variable define info
@@ -74,7 +87,7 @@ varType *ExtractVarDefFromNode(xmlNodePtr cur, bool flag);
  * return: void
  * @para cur: current node
 **********************************/
-void ExtractVarUsedInfo(xmlNodePtr cur);
+void ExtractVarUsedInfoFromNode(xmlNodePtr cur, bool flag);
 
 /*********************************
  * func: judge a variable whether be used in current node or not
@@ -105,12 +118,20 @@ void ExtractGlobalVarDef(char *xmlFilePath);
 *********************************/
 void ExtractFuncVarUsedInfo(char *xmlFilePath);
 
+/********************************
+ * func: judge a node whether exist specfic node or not
+ * return: true = exist    false = not exist
+ * @para cur: current node
+ * @para nodeName: judged node name
+********************************/
+bool JudgeExistChildNodeFromNode(xmlNodePtr cur, char *nodeName, bool flag);
+
 /*********************************
  * return: void
  * @para varName: variable name
  * @para xmlFilePath: xml file path
 **********************************/
-void varSclice(char *varName, xmlNodePtr cur);
+void varScliceFromNode(char *varName, xmlNodePtr cur, bool flag);
 
 /**********************************
  * func: variable slice

@@ -69,9 +69,9 @@ bool ExtractFuncFromXML(char *docName)
                         RecordLog(error_info);
                     }
                     if(funcType)
-                        scanCallFunction(cur->children, (char*)xmlNodeGetContent(temp_cur), "static", src_dir);
+                        scanCallFunction(cur, (char*)xmlNodeGetContent(temp_cur), "static", src_dir);
                     else
-                        scanCallFunction(cur->children, (char*)xmlNodeGetContent(temp_cur), "extern", src_dir);
+                        scanCallFunction(cur, (char*)xmlNodeGetContent(temp_cur), "extern", src_dir);
                     
                     break;
                 }
@@ -86,7 +86,7 @@ bool ExtractFuncFromXML(char *docName)
     return true;  
 }
 
-void scanCallFunction(xmlNodePtr cur, char *funcName, char *funcType, char *srcPath)
+void scanCallFunctionFromNode(xmlNodePtr cur, char *funcName, char *funcType, char *srcPath, bool flag)
 {
     while(cur != NULL)
     {
@@ -122,12 +122,14 @@ void scanCallFunction(xmlNodePtr cur, char *funcName, char *funcType, char *srcP
             }
         }
         
-        scanCallFunction(cur->children, funcName, funcType, srcPath);
+        scanCallFunctionFromNode(cur->children, funcName, funcType, srcPath, false);
+        if(flag)
+            break;
         cur = cur->next;
     }
 }
 
-void scanCallFunc(xmlNodePtr cur)
+void scanCallFuncFromNode(xmlNodePtr cur, bool flag)
 {
     while(cur != NULL)
     {
@@ -152,9 +154,29 @@ void scanCallFunc(xmlNodePtr cur)
             }
         }
         
-        scanCallFunc(cur->children);
+        scanCallFuncFromNode(cur->children, false);
+        
+        if(flag)
+            break;
         cur = cur->next;
     }
+}
+
+void scanBackCallFunc(xmlNodePtr cur)
+{
+    if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
+    {
+        return ;
+    }
+    xmlNodePtr temp_cur = cur;
+    cur = cur->next;
+    while(cur != NULL)
+    {
+        scanCallFunc(cur);
+        cur = cur->next;
+    }
+    
+    scanBackCallFunc(temp_cur->parent);
 }
 
 funcList *ExtractVarUsedFunc(char *varName, char *xmlFilePath)
@@ -209,6 +231,7 @@ funcList *ExtractVarUsedFunc(char *varName, char *xmlFilePath)
                 temp_cur = temp_cur->next;
             }
             //对函数体分析
+            //block
             if(scanVarIsUsed(temp_cur->next->next, varName))
             {
                 memset(src_dir, 0, DIRPATH_MAX);
@@ -242,7 +265,7 @@ funcList *ExtractVarUsedFunc(char *varName, char *xmlFilePath)
     return begin;  
 }
 
-bool scanVarIsUsed(xmlNodePtr cur, char *varName)
+bool scanVarIsUsedFromNode(xmlNodePtr cur, char *varName, bool flag)
 { 
     bool ret = false;
     while(cur != NULL)
@@ -267,13 +290,15 @@ bool scanVarIsUsed(xmlNodePtr cur, char *varName)
                     }
                 }
                 else
-                    ret |= scanVarIsUsed(cur->children, varName);
+                    ret |= scanVarIsUsedFromNode(temp_cur->children, varName, false);
                 temp_cur = temp_cur->next;
             }
         }
         else
-            ret |= scanVarIsUsed(cur->children, varName);
+            ret |= scanVarIsUsedFromNode(cur->children, varName, false);
         
+        if(flag)
+            break;
         cur = cur->next;
     }
     
@@ -509,7 +534,7 @@ void ExtractGlobalVarDef(char *xmlFilePath)
     xmlFreeDoc(doc); 
 }
 
-void ExtractVarUsedInfo(xmlNodePtr cur)
+void ExtractVarUsedInfoFromNode(xmlNodePtr cur, bool flag)
 {
     while(cur != NULL)
     {
@@ -529,13 +554,15 @@ void ExtractVarUsedInfo(xmlNodePtr cur)
                     printf("%s(%s)\n", (char*)xmlNodeGetContent(temp_cur), attr_value);
                 }
                 else
-                    ExtractVarUsedInfo(temp_cur->children);
+                    ExtractVarUsedInfoFromNode(temp_cur->children, false);
                 temp_cur = temp_cur->next;
             }
         }
         else
-            ExtractVarUsedInfo(cur->children);
-            
+            ExtractVarUsedInfoFromNode(cur->children, false);
+        
+        if(flag)
+            break;
         cur = cur->next;
     }
 }
@@ -560,13 +587,13 @@ bool JudgeVarUsedFromNode(xmlNodePtr cur, char *var, bool flag)
                     if(strcasecmp((char*)xmlNodeGetContent(temp_cur), var) == 0)
                         return true;
                 }
-                else if(JudgeVarUsedFromNode(temp_cur->children, var, false))
-                    return true;
+                
                 temp_cur = temp_cur->next;
             }
         }
-        else if(JudgeVarUsedFromNode(cur->children, var, false))
-                return true;
+        
+        if(JudgeVarUsedFromNode(cur->children, var, false))
+            return true;
         if(flag)
             break;
         cur = cur->next;
@@ -615,7 +642,8 @@ void ExtractFuncVarUsedInfo(char *xmlFilePath)
                 }
                 temp_cur = temp_cur->next;
             }
-            ExtractVarUsedInfo(temp_cur);
+            //function block
+            ExtractVarUsedInfo(temp_cur->next->next);
         }
         cur = cur->next;
     }
@@ -623,7 +651,23 @@ void ExtractFuncVarUsedInfo(char *xmlFilePath)
     xmlFreeDoc(doc); 
 }
 
-void varSclice(char *varName, xmlNodePtr cur)
+bool JudgeExistChildNodeFromNode(xmlNodePtr cur, char *nodeName, bool flag)
+{
+    while(cur != NULL)
+    {
+        if(!xmlStrcmp(cur->name, (const xmlChar*)nodeName))
+            return true;
+        else if(JudgeExistChildNodeFromNode(cur->children, nodeName, false))
+            return true;
+        if(flag)
+            break;
+        cur = cur->next;
+    }
+    
+    return false;
+}
+
+void varScliceFromNode(char *varName, xmlNodePtr cur, bool flag)
 {
     while(cur != NULL)
     {
@@ -639,7 +683,17 @@ void varSclice(char *varName, xmlNodePtr cur)
                     if(JudgeVarUsed(condition, varName))
                     {
                         //打印整个if-else结构块
-                        scanCallFunc(cur->children);
+                        scanCallFunc(cur);
+                        xmlNodePtr then = condition->next;
+                        while(then != NULL)
+                        {
+                            if(JudgeExistChildNode(then, "return"))
+                            {
+                                scanBackCallFunc(cur);
+                                break;
+                            }
+                            then = then->next;
+                        }
                         recursive_flag = false;
                         break;
                     }
@@ -658,7 +712,17 @@ void varSclice(char *varName, xmlNodePtr cur)
                     if(JudgeVarUsed(condition, varName))
                     {
                         //打印整个while结构块
-                        scanCallFunc(cur->children);
+                        scanCallFunc(cur);
+                        xmlNodePtr block = condition->next;
+                        while(block != NULL)
+                        {
+                            if(JudgeExistChildNode(block, "return"))
+                            {
+                                scanBackCallFunc(cur);
+                                break;
+                            }
+                            block = block->next;
+                        }
                         recursive_flag = false;
                         break;
                     }
@@ -677,7 +741,17 @@ void varSclice(char *varName, xmlNodePtr cur)
                     if(JudgeVarUsed(condition, varName))
                     {
                         //打印整个do-while结构块
-                        scanCallFunc(cur->children);
+                        scanCallFunc(cur);
+                        xmlNodePtr block = condition->prev;
+                        while(block != NULL)
+                        {
+                            if(JudgeExistChildNode(block, "return"))
+                            {
+                                scanBackCallFunc(cur);
+                                break;
+                            }
+                            block = block->prev;
+                        }
                         recursive_flag = false;
                         break;
                     }
@@ -701,7 +775,17 @@ void varSclice(char *varName, xmlNodePtr cur)
                             if(JudgeVarUsed(condition, varName))
                             {
                                 //打印整个for结构块
-                                scanCallFunc(cur->children);
+                                scanCallFunc(cur);
+                                xmlNodePtr block = control->next;
+                                while(block != NULL)
+                                {
+                                    if(JudgeExistChildNode(block, "return"))
+                                    {
+                                        scanBackCallFunc(cur);
+                                        break;
+                                    }
+                                    block = block->next;
+                                }
                                 recursive_flag = false;
                                 break;
                             }
@@ -715,6 +799,7 @@ void varSclice(char *varName, xmlNodePtr cur)
         }
         else if(!xmlStrcmp(cur->name, (const xmlChar*)"expr"))
         {
+            recursive_flag = false;
             xmlNodePtr temp_cur = cur->children;
             xmlChar* attr_value = NULL;
             while(temp_cur != NULL)
@@ -726,19 +811,23 @@ void varSclice(char *varName, xmlNodePtr cur)
                     else
                         attr_value = xmlGetProp(temp_cur, (xmlChar*)"line");
                     
-                    recursive_flag = false;
                     if(strcasecmp((char*)xmlNodeGetContent(temp_cur), varName) == 0)
+                    {
                         printf("%s\n", attr_value);
+                    }
                 }
                 else
-                    varSclice(varName, temp_cur->children);
+                    varScliceFromNode(varName, temp_cur->children, false);
+                
                 temp_cur = temp_cur->next;
             }
         }
         
         if(recursive_flag)
-            varSclice(varName, cur->children);
-            
+            varScliceFromNode(varName, cur->children, false);
+        
+        if(flag)
+            break;
         cur = cur->next;
     }
 }
@@ -783,7 +872,7 @@ void Sclice(char *varName, char *xmlFilePath)
                 }
                 temp_cur = temp_cur->next;
             }
-            varSclice(varName, temp_cur);
+            varSclice(varName, cur);
         }
         cur = cur->next;
     }
