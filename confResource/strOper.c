@@ -145,3 +145,16 @@ int ExtractLastCharIndex(char *str, char ch)
     
     return ret;
 }
+
+char *ExtractStringFromLiteral(char *str)
+{
+    int strlength = 0;
+    while(str[strlength] != '\0')
+        strlength++;
+    
+    char *ret = malloc(sizeof(char)*(strlength-1));
+    memset(ret, 0, sizeof(char)*(strlength-1));
+    strncpy(ret, &str[1], strlength-2);
+    
+    return ret;
+}

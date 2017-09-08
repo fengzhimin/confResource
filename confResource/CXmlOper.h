@@ -20,12 +20,15 @@
 
 #define scanCallFunction(cur, funcName, funcType, srcPath)   scanCallFunctionFromNode(cur, funcName, funcType, srcPath, true)
 #define scanCallFunc(cur)    scanCallFuncFromNode(cur, true)
+#define scanAssignVar(cur)   scanAssignVarFromNode(cur, true)
 #define scanVarIsUsed(cur, varName)    scanVarIsUsedFromNode(cur, varName, true)
 #define ExtractVarDef(cur)  ExtractVarDefFromNode(cur, true)
 #define ExtractVarUsedInfo(cur)    ExtractVarUsedInfoFromNode(cur, true)
 #define JudgeVarUsed(cur, var)  JudgeVarUsedFromNode(cur, var, true)
 #define JudgeExistChildNode(cur, nodeName)   JudgeExistChildNodeFromNode(cur, nodeName, true)
-#define varSclice(varName, cur)   varScliceFromNode(varName, cur, true)
+#define varScliceFunc(varName, cur)   varScliceFuncFromNode(varName, cur, true)
+#define ExtractConfKeyUsedInfo(cur, confKey)   ExtractConfKeyUsedInfoFromNode(cur, confKey, true)
+#define literalScliceVar(literalName, cur)   literalScliceVarFromNode(literalName, cur, true)
 
 /*******************************
  * func: Extract function Name from XML file
@@ -50,6 +53,13 @@ void scanCallFunctionFromNode(xmlNodePtr cur, char *funcName, char *funcType, ch
  * @para cur: current  Node
 ********************************/
 void scanCallFuncFromNode(xmlNodePtr cur, bool flag);
+
+/*******************************
+ * func: scan assignment variable from current node
+ * return: void
+ * @para cur: current  Node
+********************************/
+void scanAssignVarFromNode(xmlNodePtr cur, bool flag);
 
 /*******************************
  * func: scan called function from current node back node
@@ -127,11 +137,12 @@ void ExtractFuncVarUsedInfo(char *xmlFilePath);
 bool JudgeExistChildNodeFromNode(xmlNodePtr cur, char *nodeName, bool flag);
 
 /*********************************
+ * func: sclice variable influence function call
  * return: void
  * @para varName: variable name
- * @para xmlFilePath: xml file path
+ * @para cur: current node
 **********************************/
-void varScliceFromNode(char *varName, xmlNodePtr cur, bool flag);
+void varScliceFuncFromNode(char *varName, xmlNodePtr cur, bool flag);
 
 /**********************************
  * func: variable slice
@@ -140,5 +151,23 @@ void varScliceFromNode(char *varName, xmlNodePtr cur, bool flag);
  * @para xmlFilePath: xml file path
 **********************************/
 void Sclice(char *varName, char *xmlFilePath);
+
+/**********************************
+ * func: extract configuration key used info in current node
+ * return: true = used    false = not used
+ * @para cur: current node
+ * @para confKey: configuration key name
+**********************************/
+bool ExtractConfKeyUsedInfoFromNode(xmlNodePtr cur, char *confKey, bool flag);
+
+/*********************************
+ * func: sclice constant influence variable
+ * return: void
+ * @para literalName: constant name
+ * @para cur: current node
+**********************************/
+void literalScliceVarFromNode(char *literalName, xmlNodePtr cur, bool flag);
+
+void scanConfVar(char *confName, char *xmlFilePath);
 
 #endif

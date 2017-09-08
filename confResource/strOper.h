@@ -66,4 +66,12 @@ int StrToInt(char *str);
 ***********************************/
 int ExtractLastCharIndex(char *str, char ch);
 
+/**********************************
+ * func: extract string from string literal
+ * return: string point
+ * @para str: string literal
+ * example: ""maxmemory""     ---->   "maxmemory"
+***********************************/
+char *ExtractStringFromLiteral(char *str);
+
 #endif
