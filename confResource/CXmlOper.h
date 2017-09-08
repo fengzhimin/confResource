@@ -69,6 +69,13 @@ void scanAssignVarFromNode(xmlNodePtr cur, bool flag);
 void scanBackCallFunc(xmlNodePtr cur);
 
 /*******************************
+ * func: scan assignment from current node back node
+ * return: void
+ * @para cur: current Node
+*******************************/
+void scanBackAssignVar(xmlNodePtr cur);
+
+/*******************************
  * func: extract variable used function from a xml file(function and line)
  * return: save use variable funcName    NULL = xmlFilePath not exist use varName
  * @para varName: variable name
@@ -145,7 +152,7 @@ bool JudgeExistChildNodeFromNode(xmlNodePtr cur, char *nodeName, bool flag);
 void varScliceFuncFromNode(char *varName, xmlNodePtr cur, bool flag);
 
 /**********************************
- * func: variable slice
+ * func: variable sclice
  * return: void
  * @para varName: variable name
  * @para xmlFilePath: xml file path
@@ -168,6 +175,12 @@ bool ExtractConfKeyUsedInfoFromNode(xmlNodePtr cur, char *confKey, bool flag);
 **********************************/
 void literalScliceVarFromNode(char *literalName, xmlNodePtr cur, bool flag);
 
-void scanConfVar(char *confName, char *xmlFilePath);
+/**********************************
+ * func: constant sclice
+ * return: void
+ * @para confName: configuration key name
+ * @para xmlFilePath: xml file path
+**********************************/
+void ScliceConfKey(char *confName, char *xmlFilePath);
 
 #endif

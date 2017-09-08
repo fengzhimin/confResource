@@ -46,9 +46,9 @@ int main(int argc, char **argv)
     ExtractFuncVarUsedInfo("/home/fzm/confResource/confResource/Debug/temp_redis-4.0.1/src/adlist.c.xml");
     */
     //scanConfVar("var", "/home/fzm/confResource/confResource/Debug/childinfo.c.xml");
-    //Sclice("maxmemory", "/home/fzm/confResource/confResource/Debug/temp_redis-4.0.1/src/config.c.xml");
+    //Sclice("server.maxmemory", "/home/fzm/confResource/confResource/Debug/temp_redis-4.0.1/src/config.c.xml");
     //getVarUsedFunc("var", "/home/fzm/confResource/confResource/Debug");
-    scanConfVar("maxmemory", "/home/fzm/confResource/confResource/Debug/temp_redis-4.0.1/src/config.c.xml");
+    ScliceConfKey("maxmemory", "/home/fzm/confResource/confResource/Debug/temp_redis-4.0.1/src/config.c.xml");
     char *confArray[] = {"server.rdbcompression", "server.rdbchecksum", "server.maxclients", "server.hz", "server.maxmemory", "server.save" };
     //char *confArray[] = {"server.maxmemory"};
     int i;

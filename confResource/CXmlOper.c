@@ -224,6 +224,23 @@ void scanBackCallFunc(xmlNodePtr cur)
     scanBackCallFunc(temp_cur->parent);
 }
 
+void scanBackAssignVar(xmlNodePtr cur)
+{
+    if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
+    {
+        return ;
+    }
+    xmlNodePtr temp_cur = cur;
+    cur = cur->next;
+    while(cur != NULL)
+    {
+        scanAssignVar(cur);
+        cur = cur->next;
+    }
+    
+    scanBackAssignVar(temp_cur->parent);
+}
+
 funcList *ExtractVarUsedFunc(char *varName, char *xmlFilePath)
 {
     funcList *begin = NULL;
@@ -729,12 +746,14 @@ void varScliceFuncFromNode(char *varName, xmlNodePtr cur, bool flag)
                     {
                         //打印整个if-else结构块
                         scanCallFunc(cur);
+                        scanAssignVar(cur);
                         xmlNodePtr then = condition->next;
                         while(then != NULL)
                         {
                             if(JudgeExistChildNode(then, "return"))
                             {
                                 scanBackCallFunc(cur);
+                                scanBackAssignVar(cur);
                                 break;
                             }
                             then = then->next;
@@ -758,12 +777,14 @@ void varScliceFuncFromNode(char *varName, xmlNodePtr cur, bool flag)
                     {
                         //打印整个while结构块
                         scanCallFunc(cur);
+                        scanAssignVar(cur);
                         xmlNodePtr block = condition->next;
                         while(block != NULL)
                         {
                             if(JudgeExistChildNode(block, "return"))
                             {
                                 scanBackCallFunc(cur);
+                                scanBackAssignVar(cur);
                                 break;
                             }
                             block = block->next;
@@ -787,12 +808,14 @@ void varScliceFuncFromNode(char *varName, xmlNodePtr cur, bool flag)
                     {
                         //打印整个do-while结构块
                         scanCallFunc(cur);
+                        scanAssignVar(cur);
                         xmlNodePtr block = condition->prev;
                         while(block != NULL)
                         {
                             if(JudgeExistChildNode(block, "return"))
                             {
                                 scanBackCallFunc(cur);
+                                scanBackAssignVar(cur);
                                 break;
                             }
                             block = block->prev;
@@ -821,12 +844,14 @@ void varScliceFuncFromNode(char *varName, xmlNodePtr cur, bool flag)
                             {
                                 //打印整个for结构块
                                 scanCallFunc(cur);
+                                scanAssignVar(cur);
                                 xmlNodePtr block = control->next;
                                 while(block != NULL)
                                 {
                                     if(JudgeExistChildNode(block, "return"))
                                     {
                                         scanBackCallFunc(cur);
+                                        scanBackAssignVar(cur);
                                         break;
                                     }
                                     block = block->next;
@@ -982,7 +1007,7 @@ void literalScliceVarFromNode(char *literalName, xmlNodePtr cur, bool flag)
                         {
                             if(JudgeExistChildNode(then, "return"))
                             {
-                                scanBackCallFunc(cur);
+                                scanBackAssignVar(cur);
                                 break;
                             }
                             then = then->next;
@@ -1011,7 +1036,7 @@ void literalScliceVarFromNode(char *literalName, xmlNodePtr cur, bool flag)
                         {
                             if(JudgeExistChildNode(block, "return"))
                             {
-                                scanBackCallFunc(cur);
+                                scanBackAssignVar(cur);
                                 break;
                             }
                             block = block->next;
@@ -1040,7 +1065,7 @@ void literalScliceVarFromNode(char *literalName, xmlNodePtr cur, bool flag)
                         {
                             if(JudgeExistChildNode(block, "return"))
                             {
-                                scanBackCallFunc(cur);
+                                scanBackAssignVar(cur);
                                 break;
                             }
                             block = block->prev;
@@ -1074,7 +1099,7 @@ void literalScliceVarFromNode(char *literalName, xmlNodePtr cur, bool flag)
                                 {
                                     if(JudgeExistChildNode(block, "return"))
                                     {
-                                        scanBackCallFunc(cur);
+                                        scanBackAssignVar(cur);
                                         break;
                                     }
                                     block = block->next;
@@ -1105,17 +1130,17 @@ void literalScliceVarFromNode(char *literalName, xmlNodePtr cur, bool flag)
                 }
                 else if(!xmlStrcmp(argument_list->name, (const xmlChar*)"argument_list"))
                 {
-                    if(strcasecmp(attr_value, "1222") == 0)
-                        printf("debug");
                     xmlNodePtr argument = argument_list->children;
                     if(ExtractConfKeyUsedInfo(argument_list, literalName))
                     {
+                        printf("%s(%s): ", calledFuncName, attr_value);
                         while(argument != NULL)
                         {
                             if(!xmlStrcmp(argument->name, (const xmlChar*)"argument"))
-                                printf("%s(%s)\n", (char*)xmlNodeGetContent(argument), attr_value);
+                                printf("%s(%s)\t", (char*)xmlNodeGetContent(argument), attr_value);
                             argument = argument->next;
                         }
+                        printf("\n");
                     }
                     
                     //handle function call as argument
@@ -1140,7 +1165,7 @@ void literalScliceVarFromNode(char *literalName, xmlNodePtr cur, bool flag)
     }
 }
 
-void scanConfVar(char *confName, char *xmlFilePath)
+void ScliceConfKey(char *confName, char *xmlFilePath)
 {
     xmlDocPtr doc;
     xmlNodePtr cur;
