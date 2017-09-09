@@ -111,4 +111,12 @@ confScore buildConfScore(char *confName, char *xmlPath);
 *****************************************/
 confScore getFuncScore(char *funcName, bool funcType, char *srcFile);
 
+/****************************************
+ * func: get configuration key influence variable and function info
+ * return: void
+ * @para confKeyName: configuration key name
+ * @para dirPath: program path
+****************************************/
+void getConfKeyInfluence(char *confKeyName, char *dirPath);
+
 #endif

@@ -169,18 +169,18 @@ bool ExtractConfKeyUsedInfoFromNode(xmlNodePtr cur, char *confKey, bool flag);
 
 /*********************************
  * func: sclice constant influence variable
- * return: void
+ * return: true = used    false = not used
  * @para literalName: constant name
  * @para cur: current node
 **********************************/
-void literalScliceVarFromNode(char *literalName, xmlNodePtr cur, bool flag);
+bool literalScliceVarFromNode(char *literalName, xmlNodePtr cur, bool flag);
 
 /**********************************
  * func: constant sclice
- * return: void
+ * return: true = used    false = not used
  * @para confName: configuration key name
  * @para xmlFilePath: xml file path
 **********************************/
-void ScliceConfKey(char *confName, char *xmlFilePath);
+bool ScliceConfKey(char *confName, char *xmlFilePath);
 
 #endif

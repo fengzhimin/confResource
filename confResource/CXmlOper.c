@@ -985,8 +985,10 @@ bool ExtractConfKeyUsedInfoFromNode(xmlNodePtr cur, char *confName, bool flag)
     return  false;
 }
 
-void literalScliceVarFromNode(char *literalName, xmlNodePtr cur, bool flag)
+bool literalScliceVarFromNode(char *literalName, xmlNodePtr cur, bool flag)
 {
+    bool ret = false;
+    
     while(cur != NULL)
     {
         bool recursive_flag = true;
@@ -1013,6 +1015,7 @@ void literalScliceVarFromNode(char *literalName, xmlNodePtr cur, bool flag)
                             then = then->next;
                         }
                         recursive_flag = false;
+                        ret = true;
                         break;
                     }
                 }
@@ -1042,6 +1045,7 @@ void literalScliceVarFromNode(char *literalName, xmlNodePtr cur, bool flag)
                             block = block->next;
                         }
                         recursive_flag = false;
+                        ret = true;
                         break;
                     }
                 }
@@ -1071,6 +1075,7 @@ void literalScliceVarFromNode(char *literalName, xmlNodePtr cur, bool flag)
                             block = block->prev;
                         }
                         recursive_flag = false;
+                        ret = true;
                         break;
                     }
                 }
@@ -1105,6 +1110,7 @@ void literalScliceVarFromNode(char *literalName, xmlNodePtr cur, bool flag)
                                     block = block->next;
                                 }
                                 recursive_flag = false;
+                                ret = true;
                                 break;
                             }
                         }
@@ -1141,6 +1147,7 @@ void literalScliceVarFromNode(char *literalName, xmlNodePtr cur, bool flag)
                             argument = argument->next;
                         }
                         printf("\n");
+                        ret = true;
                     }
                     
                     //handle function call as argument
@@ -1148,7 +1155,7 @@ void literalScliceVarFromNode(char *literalName, xmlNodePtr cur, bool flag)
                     while(argument != NULL)
                     {
                         if(!xmlStrcmp(argument->name, (const xmlChar*)"argument"))
-                            literalScliceVarFromNode(literalName, argument->children, false);
+                            ret |= literalScliceVarFromNode(literalName, argument->children, false);
                         argument = argument->next;
                     }
                 }
@@ -1157,16 +1164,19 @@ void literalScliceVarFromNode(char *literalName, xmlNodePtr cur, bool flag)
         }
         
         if(recursive_flag)
-            literalScliceVarFromNode(literalName, cur->children, false);
+            ret |= literalScliceVarFromNode(literalName, cur->children, false);
         
         if(flag)
             break;
         cur = cur->next;
     }
+    
+    return ret;
 }
 
-void ScliceConfKey(char *confName, char *xmlFilePath)
+bool ScliceConfKey(char *confName, char *xmlFilePath)
 {
+    bool ret = false;
     xmlDocPtr doc;
     xmlNodePtr cur;
     xmlKeepBlanksDefault(0);
@@ -1200,15 +1210,21 @@ void ScliceConfKey(char *confName, char *xmlFilePath)
                 if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
                 {
                     attr_value = xmlGetProp(temp_cur, (xmlChar*)"line");
-                    printf("function: %s(%s)\n", (char*)xmlNodeGetContent(temp_cur), attr_value);
                     break;
                 }
                 temp_cur = temp_cur->next;
             }
-            literalScliceVar(confName, cur);
+            
+            if(literalScliceVar(confName, cur))
+            {
+                printf("function: %s(%s)\n", (char*)xmlNodeGetContent(temp_cur), attr_value);
+                ret = true;
+            }
         }
         cur = cur->next;
     }
       
-    xmlFreeDoc(doc); 
+    xmlFreeDoc(doc);
+    
+    return ret;
 }

@@ -688,3 +688,52 @@ confScore buildConfScore(char *confName, char *xmlPath)
     
     return ret;
 }
+
+void getConfKeyInfluence(char *confKeyName, char *dirPath)
+{
+    DIR *pdir;
+    struct dirent *pdirent;
+    struct stat statbuf;
+    
+    char child_dir[DIRPATH_MAX];
+    pdir = opendir(dirPath);
+    if(pdir)
+    {
+        while((pdirent = readdir(pdir)) != NULL)
+        {
+            //跳过"."和".."和隐藏文件夹
+            if(strcmp(pdirent->d_name, ".") == 0 || strcmp(pdirent->d_name, "..") == 0 || (pdirent->d_name[0] == '.'))
+                continue;
+            
+            memset(child_dir, 0, DIRPATH_MAX);
+            sprintf(child_dir, "%s/%s", dirPath, pdirent->d_name);
+            if(lstat(child_dir, &statbuf) < 0)
+            {
+                memset(error_info, 0, LOGINFO_LENGTH);
+                sprintf(error_info, "lstat %s to failed: %s.\n", child_dir, strerror(errno));
+                RecordLog(error_info);
+                closedir(pdir);
+                
+                return ;
+            }
+            
+            //judge whether directory or not
+            if(S_ISDIR(statbuf.st_mode))
+            {
+                getConfKeyInfluence(confKeyName, child_dir);
+            }
+            if(S_ISREG(statbuf.st_mode))
+            {
+                if(ScliceConfKey(confKeyName, child_dir))
+                    printf("-----file Name = %s-----\n", child_dir);
+            }
+        }
+    }
+    else
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "open directory %s to failed: %s.\n", dirPath, strerror(errno));
+        RecordLog(error_info);
+    }
+    closedir(pdir);
+}
