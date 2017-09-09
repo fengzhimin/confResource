@@ -32,11 +32,11 @@
 bool getProgramName(char *sourcePath);
 
 /***************************************
- * func: judge whether C language source file or not
+ * func: judge whether C language preprocess file or not
  * return: true = yes   false = no
  * @para filePath: file Path
 ****************************************/
-bool judgeCFile(char *filePath);
+bool judgeCPreprocessFile(char *filePath);
 
 /***************************************
  * func: judge whether C language source xml file or not

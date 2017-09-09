@@ -48,11 +48,12 @@ int main(int argc, char **argv)
     //scanConfVar("var", "/home/fzm/confResource/confResource/Debug/childinfo.c.xml");
     //Sclice("server.maxmemory", "/home/fzm/confResource/confResource/Debug/temp_redis-4.0.1/src/config.c.xml");
     //getVarUsedFunc("var", "/home/fzm/confResource/confResource/Debug");
-    ScliceConfKey("maxmemory", "/home/fzm/confResource/confResource/Debug/temp_redis-4.0.1/src/config.c.xml");
+    //ExtractGlobalVarDef("/home/fzm/confResource/confResource/Debug/config.E.c.xml");
+    //ScliceConfKey("maxmemory", "/home/fzm/confResource/confResource/Debug/config.E.c.xml");
     char *confArray[] = {"server.rdbcompression", "server.rdbchecksum", "server.maxclients", "server.hz", "server.maxmemory", "server.save" };
     //char *confArray[] = {"server.maxmemory"};
     int i;
-    for(i = 0; i < 0; i++)
+    for(i = 0; i < 6; i++)
     {
         time(&start); 
         memset(log_info, 0, LOGINFO_LENGTH);

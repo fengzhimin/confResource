@@ -41,16 +41,15 @@ bool getProgramName(char *sourcePath)
     return true;
 }
 
-bool judgeCFile(char *filePath)
+bool judgeCPreprocessFile(char *filePath)
 {
-    int index = ExtractLastCharIndex(filePath, '.');
-    if(index != -1)
-    {
-        if(strcasecmp((char *)&filePath[index+1], "c") == 0 || strcasecmp((char *)&filePath[index+1], "h") == 0)
-            return true;
-    }
-
-    return false;
+    //strlen(".E.c") == 4
+    if(strlen(filePath) <= 4)
+        return false;
+    if(strcasecmp((char *)&filePath[strlen(filePath)-4], ".E.c") == 0)
+        return true;
+    else
+        return false;
 }
 
 bool judgeCSrcXmlFile(char *filePath)
@@ -166,7 +165,7 @@ bool convertProgram(char *dirPath)
             }
             if(S_ISREG(statbuf.st_mode))
             {
-                if(judgeCFile(child_dir))
+                if(judgeCPreprocessFile(child_dir))
                 {
                     printf("analysing file %s\n", child_dir);
                     memset(xml_dir, 0, DIRPATH_MAX);
@@ -203,9 +202,6 @@ bool initSoftware(char *srcPath)
 {
     bool ret = buildTempTable();
     ret = convertProgram(srcPath);
-    char temp_dir[DIRPATH_MAX];
-    memset(temp_dir, 0, DIRPATH_MAX);
-    sprintf(temp_dir, "temp_%s", programName);
     ret = buildFuncScore();
     
     return ret;
@@ -213,12 +209,14 @@ bool initSoftware(char *srcPath)
 
 bool deleteTempXMLFile()
 {
+    bool ret = false;
+    //delete xml file
     char temp[MAX_PROGRAMNAME_NUM] = "temp_";
     strcat(temp, programName);
     if(access(temp, F_OK) == 0)
-        return deleteDir(temp);
-    else
-        return true;
+        ret = deleteDir(temp);
+        
+    return ret;
 }
 
 bool buildFuncScore()
