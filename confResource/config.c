@@ -32,7 +32,7 @@ char *deleteFuncScoreTable = "drop table if exists funcScore";
 //line: 调用的行号
 //type: calledFunc类型  'L' = 库函数    'S' = 自定义函数
 char *createFuncCallTable = "create table funcCall(funcName varchar(128), funcCallType varchar(128) default 'extern', \
-        sourceFile text, calledFunc varchar(128), calledFuncType varchar(128) default 'extern', line int, type char(1))";
+        sourceFile text, calledFunc varchar(128), calledFuncType varchar(128) default 'extern', CalledSrcFile text, line int, type char(1))";
 char *deleteFuncCallTable = "drop table if exists funcCall";
 
 char programName[MAX_PROGRAMNAME_NUM] = "";

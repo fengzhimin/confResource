@@ -36,7 +36,7 @@ int main(int argc, char **argv)
         deleteTempXMLFile();
         buildLibrary();
         initSoftware("/home/fzm/Downloads/Programsourcecode/redis-4.0.1");
-        time(&end); 
+        time(&end);
         finish = end - start;
         printf("build time is: %d second\n", finish);
     }
@@ -50,8 +50,8 @@ int main(int argc, char **argv)
     //getVarUsedFunc("var", "/home/fzm/confResource/confResource/Debug");
     //ExtractGlobalVarDef("/home/fzm/confResource/confResource/Debug/config.E.c.xml");
     getConfKeyInfluence("maxmemory", temp_dir);
-    char *confArray[] = {"server.rdbcompression", "server.rdbchecksum", "server.maxclients", "server.hz", "server.maxmemory", "server.save" };
-    //char *confArray[] = {"server.maxmemory"};
+    //char *confArray[] = {"server.rdbcompression", "server.rdbchecksum", "server.maxclients", "server.hz", "server.maxmemory", "server.save" };
+    char *confArray[] = {"server.maxmemory"};
     int i;
     for(i = 0; i < 0; i++)
     {

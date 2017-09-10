@@ -110,8 +110,8 @@ void scanCallFunctionFromNode(xmlNodePtr cur, char *funcName, char *funcType, ch
                 //删除递归调用
                 if(strcasecmp(callFuncName, funcName) != 0)
                 {
-                    sprintf(sqlCommand, "insert into funcCall (funcName, funcCallType, sourceFile, calledFunc, line, type) \
-                        value('%s', '%s', '%s', '%s', %s, 'L')", funcName, funcType, srcPath, callFuncName, attr_value);
+                    sprintf(sqlCommand, "insert into funcCall (funcName, funcCallType, sourceFile, calledFunc, CalledSrcFile, line, type) \
+                        value('%s', '%s', '%s', '%s', '%s', %s, 'L')", funcName, funcType, srcPath, callFuncName, srcPath, attr_value);
                     if(!executeCommand(sqlCommand))
                     {
                         memset(error_info, 0, LOGINFO_LENGTH);
@@ -317,7 +317,7 @@ funcList *ExtractVarUsedFunc(char *varName, char *xmlFilePath)
                     sprintf(error_info, "%s:%s(%s) function name length more than %d\n", src_dir, (char*)xmlNodeGetContent(temp_cur), attr_value, MAX_FUNCNAME_LENGTH);
                     RecordLog(error_info);
                 }
-                printf("%s(%s): %s\n", (char*)xmlNodeGetContent(temp_cur), attr_value, src_dir);
+                //printf("%s(%s): %s\n", (char*)xmlNodeGetContent(temp_cur), attr_value, src_dir);
             }
         }
         cur = cur->next;
