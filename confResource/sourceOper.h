@@ -53,6 +53,27 @@ bool judgeCSrcXmlFile(char *filePath);
 bool judgeCHeaderXmlFile(char *filePath);
 
 /***************************************
+ * func: judge whether C Plus Plus language preprocess file or not
+ * return: true = yes   false = no
+ * @para filePath: file Path
+****************************************/
+bool judgeCPPPreprocessFile(char *filePath);
+
+/***************************************
+ * func: judge whether C Plus Plus language source xml file or not
+ * return: true = yes   false = no
+ * @para filePath: file Path
+****************************************/
+bool judgeCPPSrcXmlFile(char *filePath);
+
+/***************************************
+ * func: judge whether C Plus Plus language header xml file or not
+ * return: true = yes   false = no
+ * @para filePath: file Path
+****************************************/
+bool judgeCPPHeaderXmlFile(char *filePath);
+
+/***************************************
  * func: convert source code to xml style
  * @return: true = success     false = failure
  * @para srcPath: source code path
@@ -118,5 +139,13 @@ confScore getFuncScore(char *funcName, bool funcType, char *srcFile);
  * @para dirPath: program path
 ****************************************/
 void getConfKeyInfluence(char *confKeyName, char *dirPath);
+
+/****************************************
+ * func: get variable influence variable and function info
+ * return: void
+ * @para var: variable name
+ * @para dirPath: program path
+****************************************/
+void getVarInfluence(char *var, char *dirPath);
 
 #endif

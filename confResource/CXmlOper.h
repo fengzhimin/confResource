@@ -31,11 +31,11 @@
 #define literalScliceVar(literalName, cur)   literalScliceVarFromNode(literalName, cur, true)
 
 /*******************************
- * func: Extract function Name from XML file
+ * func: Extract function Name from C language XML file
  * return: true = success    false = failure
  * @para docName: xml path
 ********************************/
-bool ExtractFuncFromXML(char *docName);
+bool ExtractFuncFromCXML(char *docName);
 
 /*******************************
  * func: self-define function scan call function
@@ -49,10 +49,10 @@ void scanCallFunctionFromNode(xmlNodePtr cur, char *funcName, char *funcType, ch
 
 /*******************************
  * func: scan call function from current node
- * return: void
+ * return: call function list header point
  * @para cur: current  Node
 ********************************/
-void scanCallFuncFromNode(xmlNodePtr cur, bool flag);
+funcCallList *scanCallFuncFromNode(xmlNodePtr cur, bool flag);
 
 /*******************************
  * func: scan assignment variable from current node
@@ -63,10 +63,10 @@ void scanAssignVarFromNode(xmlNodePtr cur, bool flag);
 
 /*******************************
  * func: scan called function from current node back node
- * return: void
+ * return: call function list header point
  * @para cur: current Node
 *******************************/
-void scanBackCallFunc(xmlNodePtr cur);
+funcCallList *scanBackCallFunc(xmlNodePtr cur);
 
 /*******************************
  * func: scan assignment from current node back node
@@ -145,19 +145,19 @@ bool JudgeExistChildNodeFromNode(xmlNodePtr cur, char *nodeName, bool flag);
 
 /*********************************
  * func: sclice variable influence function call
- * return: void
+ * return: influence call function header point
  * @para varName: variable name
  * @para cur: current node
 **********************************/
-void varScliceFuncFromNode(char *varName, xmlNodePtr cur, bool flag);
+funcCallList *varScliceFuncFromNode(char *varName, xmlNodePtr cur, bool flag);
 
 /**********************************
  * func: variable sclice
- * return: void
+ * return: true = exist influence   false = not exist influence
  * @para varName: variable name
  * @para xmlFilePath: xml file path
 **********************************/
-void Sclice(char *varName, char *xmlFilePath);
+funcList *Sclice(char *varName, char *xmlFilePath);
 
 /**********************************
  * func: extract configuration key used info in current node

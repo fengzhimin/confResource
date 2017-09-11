@@ -26,7 +26,8 @@ int main(int argc, char **argv)
     char str[10] = "";
     printf("rebuild program? yes or no: ");
     scanf("%s", str);
-    getProgramName("/home/fzm/Downloads/Program source code/redis-4.0.1");
+    //getProgramName("/home/fzm/Downloads/Program source code/redis-4.0.1");
+    getProgramName("/home/fzm/Downloads/Program source code/mysql-5.5.36");
     char temp_dir[DIRPATH_MAX];
     memset(temp_dir, 0, DIRPATH_MAX);
     sprintf(temp_dir, "temp_%s", programName);
@@ -35,7 +36,7 @@ int main(int argc, char **argv)
     {
         deleteTempXMLFile();
         buildLibrary();
-        initSoftware("/home/fzm/Downloads/Programsourcecode/redis-4.0.1");
+        initSoftware("/home/fzm/Downloads/Programsourcecode/mysql-5.5.36");
         time(&end);
         finish = end - start;
         printf("build time is: %d second\n", finish);
@@ -49,11 +50,13 @@ int main(int argc, char **argv)
     //Sclice("server.maxmemory", "/home/fzm/confResource/confResource/Debug/temp_redis-4.0.1/src/config.c.xml");
     //getVarUsedFunc("var", "/home/fzm/confResource/confResource/Debug");
     //ExtractGlobalVarDef("/home/fzm/confResource/confResource/Debug/config.E.c.xml");
-    getConfKeyInfluence("maxmemory", temp_dir);
+    //getVarInfluence("server.maxmemory", temp_dir);
     //char *confArray[] = {"server.rdbcompression", "server.rdbchecksum", "server.maxclients", "server.hz", "server.maxmemory", "server.save" };
-    char *confArray[] = {"server.maxmemory"};
+    //char *confArray[] = {"ap_daemons_to_start", "ap_daemons_limit", "server_limit", "max_workers", "threads_per_child", "ap_threads_per_child" };
+    char *confArray[] = {"thd->variables.tmp_table_size", "key_cache->param_buff_size", "thd->variables.max_heap_table_size", "thd->variables.sortbuff_size"};
+    //char *confArray[] = {"server.maxmemory"};
     int i;
-    for(i = 0; i < 0; i++)
+    for(i = 0; i < 4; i++)
     {
         time(&start); 
         memset(log_info, 0, LOGINFO_LENGTH);
@@ -74,7 +77,7 @@ int main(int argc, char **argv)
         //printf(log_info);
         RecordLog(log_info);
         //printf("------complete--------\n");
-        RecordLog("------complete--------\n");
+        RecordLog("------complete--------\n\n");
     }
     
     stopMysql();

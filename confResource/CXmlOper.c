@@ -11,7 +11,7 @@ static char error_info[LOGINFO_LENGTH];
 static char src_dir[DIRPATH_MAX];
 static char sqlCommand[LINE_CHAR_MAX_NUM];
 
-bool ExtractFuncFromXML(char *docName)
+bool ExtractFuncFromCXML(char *docName)
 {
     xmlDocPtr doc;
     xmlNodePtr cur;
@@ -129,8 +129,10 @@ void scanCallFunctionFromNode(xmlNodePtr cur, char *funcName, char *funcType, ch
     }
 }
 
-void scanCallFuncFromNode(xmlNodePtr cur, bool flag)
+funcCallList *scanCallFuncFromNode(xmlNodePtr cur, bool flag)
 {
+    funcCallList *begin = NULL;
+    funcCallList *end = NULL;
     while(cur != NULL)
     {
         if(!xmlStrcmp(cur->name, (const xmlChar*)"call"))
@@ -149,17 +151,36 @@ void scanCallFuncFromNode(xmlNodePtr cur, bool flag)
                     attr_value = xmlGetProp(cur->children, (xmlChar*)"line");
                     callFuncName = (char*)xmlNodeGetContent(cur->children);
                 }
-                
+                if(begin == NULL)
+                    begin = end = malloc(sizeof(funcCallList));
+                else
+                    end = end->next = malloc(sizeof(funcCallList));
+                memset(end, 0, sizeof(funcCallList));
+                strcpy(end->funcName, callFuncName);
+                end->line = StrToInt(attr_value);
+#if DEBUG == 1                
                 printf("%s(%s)\n", callFuncName, attr_value);
+#endif
             }
         }
         
-        scanCallFuncFromNode(cur->children, false);
-        
+        funcCallList *current = scanCallFuncFromNode(cur->children, false);
+        if(begin == NULL)
+            begin = end = current;
+        else
+            end->next = current;
+        //update end value
+        while(current != NULL)
+        {
+            end = current;
+            current = current->next;
+        }
         if(flag)
             break;
         cur = cur->next;
     }
+    
+    return begin;
 }
 
 void scanAssignVarFromNode(xmlNodePtr cur, bool flag)
@@ -207,8 +228,11 @@ void scanAssignVarFromNode(xmlNodePtr cur, bool flag)
     }
 }
 
-void scanBackCallFunc(xmlNodePtr cur)
+funcCallList *scanBackCallFunc(xmlNodePtr cur)
 {
+    funcCallList *begin = NULL;
+    funcCallList *end = NULL;
+    funcCallList *current = NULL;
     if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
     {
         return ;
@@ -217,11 +241,33 @@ void scanBackCallFunc(xmlNodePtr cur)
     cur = cur->next;
     while(cur != NULL)
     {
-        scanCallFunc(cur);
+        current = scanCallFunc(cur);
+        if(begin == NULL)
+            begin = end = current;
+        else
+            end->next = current;
+        //update end value
+        while(current != NULL)
+        {
+            end = current;
+            current = current->next;
+        }
         cur = cur->next;
     }
     
-    scanBackCallFunc(temp_cur->parent);
+    current = scanBackCallFunc(temp_cur->parent);
+    if(begin == NULL)
+        begin = end = current;
+    else
+        end->next = current;
+    //update end value
+    while(current != NULL)
+    {
+        end = current;
+        current = current->next;
+    }
+    
+    return begin;
 }
 
 void scanBackAssignVar(xmlNodePtr cur)
@@ -729,8 +775,11 @@ bool JudgeExistChildNodeFromNode(xmlNodePtr cur, char *nodeName, bool flag)
     return false;
 }
 
-void varScliceFuncFromNode(char *varName, xmlNodePtr cur, bool flag)
+funcCallList *varScliceFuncFromNode(char *varName, xmlNodePtr cur, bool flag)
 {
+    funcCallList *begin = NULL;
+    funcCallList *end = NULL;
+    funcCallList *current = NULL;
     while(cur != NULL)
     {
         bool recursive_flag = true;
@@ -744,16 +793,34 @@ void varScliceFuncFromNode(char *varName, xmlNodePtr cur, bool flag)
                     //判断if条件中是否使用了varName变量，如果使用则该变量影响整个if块
                     if(JudgeVarUsed(condition, varName))
                     {
-                        //打印整个if-else结构块
-                        scanCallFunc(cur);
-                        scanAssignVar(cur);
+                        //打印整个if-else结构块                   
+                        current = scanCallFunc(cur);                       
+                        if(begin == NULL)
+                            begin = end = current;
+                        else if(current != NULL)
+                            end = end->next = current;
+                        while(current != NULL)
+                        {
+                            end = current;
+                            current = current->next;
+                        }
+                        //scanAssignVar(cur);
                         xmlNodePtr then = condition->next;
                         while(then != NULL)
                         {
                             if(JudgeExistChildNode(then, "return"))
-                            {
-                                scanBackCallFunc(cur);
-                                scanBackAssignVar(cur);
+                            {                              
+                                current = scanBackCallFunc(cur);
+                                if(begin == NULL)
+                                    begin = end = current;
+                                else if(current != NULL)
+                                    end = end->next = current;
+                                while(current != NULL)
+                                {
+                                    end = current;
+                                    current = current->next;
+                                }                       
+                                //scanBackAssignVar(cur);
                                 break;
                             }
                             then = then->next;
@@ -775,16 +842,34 @@ void varScliceFuncFromNode(char *varName, xmlNodePtr cur, bool flag)
                     //判断while条件中是否使用了varName变量，如果使用则该变量影响整个while块
                     if(JudgeVarUsed(condition, varName))
                     {
-                        //打印整个while结构块
-                        scanCallFunc(cur);
-                        scanAssignVar(cur);
+                        //打印整个while结构块                       
+                        current = scanCallFunc(cur);                       
+                        if(begin == NULL)
+                            begin = end = current;
+                        else if(current != NULL)
+                            end = end->next = current;
+                        while(current != NULL)
+                        {
+                            end = current;
+                            current = current->next;
+                        }                      
+                        //scanAssignVar(cur);
                         xmlNodePtr block = condition->next;
                         while(block != NULL)
                         {
                             if(JudgeExistChildNode(block, "return"))
-                            {
-                                scanBackCallFunc(cur);
-                                scanBackAssignVar(cur);
+                            {                               
+                                current = scanBackCallFunc(cur);
+                                if(begin == NULL)
+                                    begin = end = current;
+                                else if(current != NULL)
+                                    end = end->next = current;
+                                while(current != NULL)
+                                {
+                                    end = current;
+                                    current = current->next;
+                                }                                
+                                //scanBackAssignVar(cur);
                                 break;
                             }
                             block = block->next;
@@ -807,15 +892,33 @@ void varScliceFuncFromNode(char *varName, xmlNodePtr cur, bool flag)
                     if(JudgeVarUsed(condition, varName))
                     {
                         //打印整个do-while结构块
-                        scanCallFunc(cur);
-                        scanAssignVar(cur);
+                        current = scanCallFunc(cur);                       
+                        if(begin == NULL)
+                            begin = end = current;
+                        else if(current != NULL)
+                            end = end->next = current;
+                        while(current != NULL)
+                        {
+                            end = current;
+                            current = current->next;
+                        }
+                        //scanAssignVar(cur);
                         xmlNodePtr block = condition->prev;
                         while(block != NULL)
                         {
                             if(JudgeExistChildNode(block, "return"))
                             {
-                                scanBackCallFunc(cur);
-                                scanBackAssignVar(cur);
+                                current = scanBackCallFunc(cur);
+                                if(begin == NULL)
+                                    begin = end = current;
+                                else if(current != NULL)
+                                    end = end->next = current;
+                                while(current != NULL)
+                                {
+                                    end = current;
+                                    current = current->next;
+                                }
+                                //scanBackAssignVar(cur);
                                 break;
                             }
                             block = block->prev;
@@ -843,15 +946,33 @@ void varScliceFuncFromNode(char *varName, xmlNodePtr cur, bool flag)
                             if(JudgeVarUsed(condition, varName))
                             {
                                 //打印整个for结构块
-                                scanCallFunc(cur);
-                                scanAssignVar(cur);
+                                current = scanCallFunc(cur);                       
+                                if(begin == NULL)
+                                    begin = end = current;
+                                else if(current != NULL)
+                                    end = end->next = current;
+                                while(current != NULL)
+                                {
+                                    end = current;
+                                    current = current->next;
+                                }
+                                //scanAssignVar(cur);
                                 xmlNodePtr block = control->next;
                                 while(block != NULL)
                                 {
                                     if(JudgeExistChildNode(block, "return"))
                                     {
-                                        scanBackCallFunc(cur);
-                                        scanBackAssignVar(cur);
+                                        current = scanBackCallFunc(cur);
+                                        if(begin == NULL)
+                                            begin = end = current;
+                                        else if(current != NULL)
+                                            end = end->next = current;
+                                        while(current != NULL)
+                                        {
+                                            end = current;
+                                            current = current->next;
+                                        }
+                                        //scanBackAssignVar(cur);
                                         break;
                                     }
                                     block = block->next;
@@ -883,14 +1004,36 @@ void varScliceFuncFromNode(char *varName, xmlNodePtr cur, bool flag)
                 else if(!xmlStrcmp(argument_list->name, (const xmlChar*)"argument_list"))
                 {
                     if(scanVarIsUsed(argument_list, varName))
+                    {
+                        if(begin == NULL)
+                            begin = end = malloc(sizeof(funcCallList));
+                        else
+                            end = end->next = malloc(sizeof(funcCallList));
+                        memset(end, 0, sizeof(funcCallList));
+                        strcpy(end->funcName, calledFuncName);
+                        end->line = StrToInt(attr_value);
+#if DEBUG == 1
                         printf("%s(%s)\n", calledFuncName, attr_value);
+#endif
+                    }
                     
                     //handle function call as argument
                     xmlNodePtr argument = argument_list->children;
                     while(argument != NULL)
                     {
                         if(!xmlStrcmp(argument->name, (const xmlChar*)"argument"))
-                            varScliceFuncFromNode(varName, argument->children, false);
+                        {
+                            current = varScliceFuncFromNode(varName, argument->children, false);
+                            if(begin == NULL)
+                                begin = end = current;
+                            else if(current != NULL)
+                                end = end->next = current;
+                            while(current != NULL)
+                            {
+                                end = current;
+                                current = current->next;
+                            }
+                        }
                         argument = argument->next;
                     }
                 }
@@ -899,16 +1042,33 @@ void varScliceFuncFromNode(char *varName, xmlNodePtr cur, bool flag)
         }
         
         if(recursive_flag)
-            varScliceFuncFromNode(varName, cur->children, false);
+        {
+            current = varScliceFuncFromNode(varName, cur->children, false);
+            if(begin == NULL)
+                begin = end = current;
+            else if(current != NULL)
+                end = end->next = current;
+            while(current != NULL)
+            {
+                end = current;
+                current = current->next;
+            }
+        }
         
         if(flag)
             break;
         cur = cur->next;
     }
+    
+    return begin;
 }
 
-void Sclice(char *varName, char *xmlFilePath)
+funcList *Sclice(char *varName, char *xmlFilePath)
 {
+    funcCallList *begin = NULL;
+    funcCallList *end = NULL;
+    funcCallList *current = NULL;
+    funcList *ret = NULL;
     xmlDocPtr doc;
     xmlNodePtr cur;
     xmlKeepBlanksDefault(0);
@@ -942,17 +1102,69 @@ void Sclice(char *varName, char *xmlFilePath)
                 if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
                 {
                     attr_value = xmlGetProp(temp_cur, (xmlChar*)"line");
-                    printf("function: %s(%s)\n", (char*)xmlNodeGetContent(temp_cur), attr_value);
                     break;
                 }
                 temp_cur = temp_cur->next;
             }
-            varScliceFunc(varName, cur);
+            current = varScliceFunc(varName, cur);
+            if(begin == NULL)
+                begin = end = current;
+            else if(current != NULL)
+                end = end->next = current;
+            while(current != NULL)
+            {
+                end = current;
+                current = current->next;
+            }
+#if DEBUG == 1
+            if(current != NULL)
+                printf("function: %s(%s)\n", (char*)xmlNodeGetContent(temp_cur), attr_value);
+#endif
         }
         cur = cur->next;
     }
       
-    xmlFreeDoc(doc); 
+    xmlFreeDoc(doc);
+    
+    current = begin;
+    while(current != NULL)
+    {
+        memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+        sprintf(sqlCommand, "select calledFuncType, CalledSrcFile from funcCall where calledFunc='%s' and line=%d", current->funcName, current->line);
+        if(!executeCommand(sqlCommand))
+        {
+            memset(error_info, 0, LOGINFO_LENGTH);
+            sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+            RecordLog(error_info);
+        }
+        else
+        {
+            MYSQL_RES *res_ptr = mysql_store_result(mysqlConnect);
+            MYSQL_ROW sqlrow;
+            int rownum = mysql_num_rows(res_ptr);
+            if(rownum == 1)
+            {
+                sqlrow = mysql_fetch_row(res_ptr);
+                if(ret == NULL)
+                    ret = malloc(sizeof(funcList));
+                else
+                    ret = ret->next = malloc(sizeof(funcList));
+                memset(ret, 0, sizeof(funcList));
+                strcpy(ret->funcName, current->funcName);
+                strcpy(ret->sourceFile, sqlrow[1]);
+                if(strcasecmp(sqlrow[0], "extern") == 0)
+                    ret->funcType = false;
+                else
+                    ret->funcType = true;
+
+                mysql_free_result(res_ptr);
+            }
+        }
+        begin = begin->next;
+        free(current);
+        current = begin;
+    }
+    return ret;
 }
 
 bool ExtractConfKeyUsedInfoFromNode(xmlNodePtr cur, char *confName, bool flag)
