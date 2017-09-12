@@ -18,4 +18,11 @@
 #include "config.h"
 #include "mysqlOper.h"
 
+/*******************************
+ * func: Extract function Name from C Plus Plus language XML file
+ * return: true = success    false = failure
+ * @para docName: xml path
+********************************/
+bool ExtractFuncFromCPPXML(char *docName);
+
 #endif

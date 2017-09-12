@@ -18,7 +18,6 @@
 #include "config.h"
 #include "mysqlOper.h"
 
-#define scanCallFunction(cur, funcName, funcType, srcPath)   scanCallFunctionFromNode(cur, funcName, funcType, srcPath, true)
 #define scanCallFunc(cur)    scanCallFuncFromNode(cur, true)
 #define scanAssignVar(cur)   scanAssignVarFromNode(cur, true)
 #define scanVarIsUsed(cur, varName)    scanVarIsUsedFromNode(cur, varName, true)
@@ -36,16 +35,6 @@
  * @para docName: xml path
 ********************************/
 bool ExtractFuncFromCXML(char *docName);
-
-/*******************************
- * func: self-define function scan call function
- * return: void
- * @para cur: current self-define function Node
- * @para funcName: current self-define function name
- * @para funcType: current self-define function type(extern or static)
- * @para srcPath: function source file path
-********************************/
-void scanCallFunctionFromNode(xmlNodePtr cur, char *funcName, char *funcType, char *srcPath, bool flag);
 
 /*******************************
  * func: scan call function from current node

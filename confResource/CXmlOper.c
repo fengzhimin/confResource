@@ -11,6 +11,10 @@ static char error_info[LOGINFO_LENGTH];
 static char src_dir[DIRPATH_MAX];
 static char sqlCommand[LINE_CHAR_MAX_NUM];
 
+#define scanCallFunction(cur, funcName, funcType, srcPath)   scanCallFunctionFromNode(cur, funcName, funcType, srcPath, true)
+
+static void scanCallFunctionFromNode(xmlNodePtr cur, char *funcName, char *funcType, char *srcPath, bool flag);
+
 bool ExtractFuncFromCXML(char *docName)
 {
     xmlDocPtr doc;
@@ -47,8 +51,10 @@ bool ExtractFuncFromCXML(char *docName)
                 {
                     if(strcasecmp((char*)xmlNodeGetContent(temp_cur), "static") == 0)
                         funcType = true;
+                    else if(strcasecmp((char*)xmlNodeGetContent(temp_cur), "inline") == 0)
+                        break;
                 }
-                if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
+                else if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
                 {
                     memset(src_dir, 0, DIRPATH_MAX);
                     //删除开头的temp_和结尾的.xml
@@ -82,11 +88,35 @@ bool ExtractFuncFromCXML(char *docName)
         cur = cur->next;
     }
       
-    xmlFreeDoc(doc);  
+    xmlFreeDoc(doc);
+    memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+    strcpy(sqlCommand, "delete from funcScore where funcName not in (select calledFunc from funcCall) and type='static'");
+    if(!executeCommand(sqlCommand))
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+        RecordLog(error_info);
+    }
+    memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+    strcpy(sqlCommand, "delete from funcCall where funcName not in (select funcName from funcScore)");
+    if(!executeCommand(sqlCommand))
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+        RecordLog(error_info);
+    }
     return true;  
 }
 
-void scanCallFunctionFromNode(xmlNodePtr cur, char *funcName, char *funcType, char *srcPath, bool flag)
+/*******************************
+ * func: self-define function scan call function
+ * return: void
+ * @para cur: current self-define function Node
+ * @para funcName: current self-define function name
+ * @para funcType: current self-define function type(extern or static)
+ * @para srcPath: function source file path
+********************************/
+static void scanCallFunctionFromNode(xmlNodePtr cur, char *funcName, char *funcType, char *srcPath, bool flag)
 {
     while(cur != NULL)
     {

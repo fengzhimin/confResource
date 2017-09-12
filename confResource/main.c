@@ -1,5 +1,6 @@
 #include "mysqlOper.h"
 #include "CXmlOper.h"
+#include "CPPXmlOper.h"
 #include "sourceOper.h"
 #include "strOper.h"
 #include "config.h"
@@ -48,6 +49,8 @@ int main(int argc, char **argv)
     */
     //scanConfVar("var", "/home/fzm/confResource/confResource/Debug/childinfo.c.xml");
     //Sclice("server.maxmemory", "/home/fzm/confResource/confResource/Debug/temp_redis-4.0.1/src/config.c.xml");
+    ExtractFuncFromCPPXML("/home/fzm/confResource/confResource/Debug/item_timefunc.E.cc.xml");
+    //buildFuncScore();
     //getVarUsedFunc("var", "/home/fzm/confResource/confResource/Debug");
     //ExtractGlobalVarDef("/home/fzm/confResource/confResource/Debug/config.E.c.xml");
     //getVarInfluence("server.maxmemory", temp_dir);
@@ -56,7 +59,7 @@ int main(int argc, char **argv)
     char *confArray[] = {"thd->variables.tmp_table_size", "key_cache->param_buff_size", "thd->variables.max_heap_table_size", "thd->variables.sortbuff_size"};
     //char *confArray[] = {"server.maxmemory"};
     int i;
-    for(i = 0; i < 4; i++)
+    for(i = 0; i < 0; i++)
     {
         time(&start); 
         memset(log_info, 0, LOGINFO_LENGTH);
