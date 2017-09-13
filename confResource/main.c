@@ -28,7 +28,7 @@ int main(int argc, char **argv)
     printf("rebuild program? yes or no: ");
     scanf("%s", str);
     //getProgramName("/home/fzm/Downloads/Program source code/redis-4.0.1");
-    getProgramName("/home/fzm/Downloads/Program source code/mysql-5.5.36");
+    getProgramName("/home/fzm/Downloads/Programsourcecode/mysql-5.5.36");
     char temp_dir[DIRPATH_MAX];
     memset(temp_dir, 0, DIRPATH_MAX);
     sprintf(temp_dir, "temp_%s", programName);
@@ -49,10 +49,9 @@ int main(int argc, char **argv)
     */
     //scanConfVar("var", "/home/fzm/confResource/confResource/Debug/childinfo.c.xml");
     //Sclice("server.maxmemory", "/home/fzm/confResource/confResource/Debug/temp_redis-4.0.1/src/config.c.xml");
+    //ExtractClassInheritFromCPPXML("/home/fzm/confResource/confResource/Debug/item_timefunc.E.cc.xml");
     buildTempTable();
-    ExtractClassInheritFromCPPXML("/home/fzm/confResource/confResource/Debug/item_timefunc.E.cc.xml");
-    //buildFuncScore();
-    //getVarUsedFunc("var", "/home/fzm/confResource/confResource/Debug");
+    ExtractFuncFromCPPXML("/home/fzm/confResource/confResource/Debug/item_func.E.cc.xml");
     //ExtractGlobalVarDef("/home/fzm/confResource/confResource/Debug/config.E.c.xml");
     //getVarInfluence("server.maxmemory", temp_dir);
     //char *confArray[] = {"server.rdbcompression", "server.rdbchecksum", "server.maxclients", "server.hz", "server.maxmemory", "server.save" };

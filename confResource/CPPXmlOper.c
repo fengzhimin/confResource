@@ -44,7 +44,7 @@ bool ExtractFuncFromCPPXML(char *docName)
         if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
         {
             xmlNodePtr temp_cur = cur->children;
-            bool funcType = false;
+            char *funcType = "extern";
             while(temp_cur != NULL)
             {
                 if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"template"))
@@ -52,7 +52,7 @@ bool ExtractFuncFromCPPXML(char *docName)
                 else if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"specifier"))
                 {
                     if(strcasecmp((char*)xmlNodeGetContent(temp_cur), "static") == 0)
-                        funcType = true;
+                        funcType = "static";
                     else if(strcasecmp((char*)xmlNodeGetContent(temp_cur), "inline") == 0)
                         break;
                 }
@@ -74,12 +74,8 @@ bool ExtractFuncFromCPPXML(char *docName)
                         attr_value = xmlGetProp(temp_cur, (xmlChar*)"line");
 
                     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-                    if(funcType)
-                        sprintf(sqlCommand, "insert into funcScore (funcName, type, sourceFile, line) value('%s', 'static', '%s', %s)", \
-                        (char*)xmlNodeGetContent(temp_cur), src_dir, attr_value);
-                    else
-                        sprintf(sqlCommand, "insert into funcScore (funcName, sourceFile, line) value('%s', '%s', %s)", \
-                        (char*)xmlNodeGetContent(temp_cur), src_dir, attr_value);
+                    sprintf(sqlCommand, "insert into funcScore (funcName, type, sourceFile, line) value('%s', '%s', '%s', %s)", \
+                        (char*)xmlNodeGetContent(temp_cur), funcType, src_dir, attr_value);
                         
                     if(!executeCommand(sqlCommand))
                     {
@@ -87,10 +83,44 @@ bool ExtractFuncFromCPPXML(char *docName)
                         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
                         RecordLog(error_info);
                     }
-                    if(funcType)
-                        scanCallFunction(cur, (char*)xmlNodeGetContent(temp_cur), "static", src_dir);
-                    else
-                        scanCallFunction(cur, (char*)xmlNodeGetContent(temp_cur), "extern", src_dir);
+                    scanCallFunction(cur, (char*)xmlNodeGetContent(temp_cur), funcType, src_dir);
+                    
+                    break;
+                }
+                temp_cur = temp_cur->next;
+            }
+            
+        }
+        else if(!xmlStrcmp(cur->name, (const xmlChar*)"class"))
+        {
+            xmlNodePtr temp_cur = cur->children;
+            char *className = NULL;
+            char *inheritType = NULL;
+            char *inheritClassName = NULL;
+            while(temp_cur != NULL)
+            {
+                if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
+                    className = (char *)xmlNodeGetContent(temp_cur);
+                else if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"super"))
+                {
+                    xmlNodePtr inherit = temp_cur->children;
+                    while(inherit != NULL)
+                    {
+                        if(!xmlStrcmp(inherit->name, (const xmlChar*)"specifier"))
+                            inheritType = (char *)xmlNodeGetContent(inherit);
+                        if(!xmlStrcmp(inherit->name, (const xmlChar*)"name"))
+                        {
+                            inheritClassName = (char *)xmlNodeGetContent(inherit);
+                            memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+                            sprintf(sqlCommand, "insert into classInheritTable (className, inheritType, inheritClassName) value('%s', '%s', '%s')", \
+                            className, inheritType, inheritClassName);
+
+                            mysql_real_query(mysqlConnect, sqlCommand, strlen(sqlCommand));
+                            break;
+                        }
+                        
+                        inherit = inherit->next;
+                    }
                     
                     break;
                 }
@@ -111,14 +141,7 @@ bool ExtractFuncFromCPPXML(char *docName)
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
         RecordLog(error_info);
     }
-    memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    strcpy(sqlCommand, "delete from funcCall where funcName not in (select funcName from funcScore)");
-    if(!executeCommand(sqlCommand))
-    {
-        memset(error_info, 0, LOGINFO_LENGTH);
-        sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
-        RecordLog(error_info);
-    }
+
     return true;  
 }
 
@@ -220,11 +243,7 @@ bool ExtractClassInheritFromCPPXML(char *docName)
                         if(!xmlStrcmp(inherit->name, (const xmlChar*)"name"))
                         {
                             inheritClassName = (char *)xmlNodeGetContent(inherit);
-                            memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-                            sprintf(sqlCommand, "insert into classInheritTable (className, inheritType, inheritClassName) value('%s', '%s', '%s')", \
-                            className, inheritType, inheritClassName);
-
-                            mysql_real_query(mysqlConnect, sqlCommand, strlen(sqlCommand));
+                            printf("%s, %s, %s", className, inheritType, inheritClassName);
                             break;
                         }
                         

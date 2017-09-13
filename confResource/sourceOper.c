@@ -222,6 +222,7 @@ bool convertProgram(char *dirPath)
             {
                 if(judgeCPreprocessFile(child_dir))
                 {
+                    //handle C language preprocess file
                     printf("analysing file %s\n", child_dir);
                     memset(xml_dir, 0, DIRPATH_MAX);
                     sprintf(xml_dir, "%s/%s.xml", temp_dir, pdirent->d_name);
@@ -229,6 +230,24 @@ bool convertProgram(char *dirPath)
                     {
                         ret = true;
                         ExtractFuncFromCXML(xml_dir);
+                    }
+                    else
+                    {
+                        ret = false;
+                        closedir(pdir);
+                        return ret;
+                    }
+                }
+                else if(judgeCPPPreprocessFile(child_dir))
+                {
+                    //handle C++ language preprocess file
+                    printf("analysing file %s\n", child_dir);
+                    memset(xml_dir, 0, DIRPATH_MAX);
+                    sprintf(xml_dir, "%s/%s.xml", temp_dir, pdirent->d_name);
+                    if(CodeToXML(child_dir, xml_dir))
+                    {
+                        ret = true;
+                        ExtractFuncFromCPPXML(xml_dir);
                     }
                     else
                     {
@@ -279,7 +298,16 @@ bool buildFuncScore()
     bool ret = false;
     printf("updating funcCall table\n");
     time_t start, end, finish; 
-    time(&start); 
+    time(&start);
+    // delete library function call record from funcCall
+    memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+    strcpy(sqlCommand, "delete from funcCall where funcName not in (select funcName from funcScore)");
+    if(!executeCommand(sqlCommand))
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+        RecordLog(error_info);
+    }
     //update funcCall table type field
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
     strcpy(sqlCommand, "update funcScore, funcCall set funcCall.type='S' where funcScore.funcName=funcCall.calledFunc");
