@@ -173,3 +173,74 @@ static void scanCallFunctionFromNode(xmlNodePtr cur, char *funcName, char *funcT
         cur = cur->next;
     }
 }
+
+bool ExtractClassInheritFromCPPXML(char *docName)
+{
+    xmlDocPtr doc;
+    xmlNodePtr cur;
+    xmlKeepBlanksDefault(0);
+    doc = xmlParseFile(docName);
+    if(doc == NULL )
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "Document(%s) not parsed successfully. \n", docName);
+		RecordLog(error_info);
+        return false;
+    }
+    cur = xmlDocGetRootElement(doc);
+    if (cur == NULL)
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "empty document(%s). \n", docName);
+		RecordLog(error_info);  
+        xmlFreeDoc(doc);
+        return false;
+    }
+    
+    cur = cur->children;
+    while (cur != NULL)
+    {
+        if(!xmlStrcmp(cur->name, (const xmlChar*)"class"))
+        {
+            xmlNodePtr temp_cur = cur->children;
+            char *className = NULL;
+            char *inheritType = NULL;
+            char *inheritClassName = NULL;
+            while(temp_cur != NULL)
+            {
+                if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
+                    className = (char *)xmlNodeGetContent(temp_cur);
+                else if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"super"))
+                {
+                    xmlNodePtr inherit = temp_cur->children;
+                    while(inherit != NULL)
+                    {
+                        if(!xmlStrcmp(inherit->name, (const xmlChar*)"specifier"))
+                            inheritType = (char *)xmlNodeGetContent(inherit);
+                        if(!xmlStrcmp(inherit->name, (const xmlChar*)"name"))
+                        {
+                            inheritClassName = (char *)xmlNodeGetContent(inherit);
+                            memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+                            sprintf(sqlCommand, "insert into classInheritTable (className, inheritType, inheritClassName) value('%s', '%s', '%s')", \
+                            className, inheritType, inheritClassName);
+
+                            mysql_real_query(mysqlConnect, sqlCommand, strlen(sqlCommand));
+                            break;
+                        }
+                        
+                        inherit = inherit->next;
+                    }
+                    
+                    break;
+                }
+                temp_cur = temp_cur->next;
+            }
+            
+        }
+        cur = cur->next;
+    }
+      
+    xmlFreeDoc(doc);
+
+    return true;  
+}

@@ -25,4 +25,11 @@
 ********************************/
 bool ExtractFuncFromCPPXML(char *docName);
 
+/*******************************
+ * func: Extract class inherit from C Plus Plus language XML file
+ * return: true = success    false = failure
+ * @para docName: xml path
+********************************/
+bool ExtractClassInheritFromCPPXML(char *docName);
+
 #endif

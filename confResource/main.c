@@ -49,7 +49,8 @@ int main(int argc, char **argv)
     */
     //scanConfVar("var", "/home/fzm/confResource/confResource/Debug/childinfo.c.xml");
     //Sclice("server.maxmemory", "/home/fzm/confResource/confResource/Debug/temp_redis-4.0.1/src/config.c.xml");
-    ExtractFuncFromCPPXML("/home/fzm/confResource/confResource/Debug/item_timefunc.E.cc.xml");
+    buildTempTable();
+    ExtractClassInheritFromCPPXML("/home/fzm/confResource/confResource/Debug/item_timefunc.E.cc.xml");
     //buildFuncScore();
     //getVarUsedFunc("var", "/home/fzm/confResource/confResource/Debug");
     //ExtractGlobalVarDef("/home/fzm/confResource/confResource/Debug/config.E.c.xml");

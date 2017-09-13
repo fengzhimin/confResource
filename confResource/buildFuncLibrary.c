@@ -17,7 +17,7 @@ bool buildLibrary()
     bool ret = false;
     
     //judge funcLibrary whether exist or not
-    if(executeCommand("drop table if exists funcLibrary"))
+    if(executeCommand(deleteFuncLibraryTable))
         ret = true;
     else
     {

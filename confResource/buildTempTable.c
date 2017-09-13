@@ -21,6 +21,15 @@ bool buildTempTable()
         ret = false;
     }
     
+    //create class inherit table
+    if(executeCommand(createClassInheritTable))
+        ret = true;
+    else
+    {
+        RecordLog("create class inherit table failure!\n");
+        ret = false;
+    }
+    
     //create function call table
     if(executeCommand(createFuncCallTable))
         ret = true;
@@ -43,6 +52,15 @@ bool deleteTempTable()
     else
     {
         RecordLog("delete funcScore table failure!\n");
+        ret = false;
+    }
+    
+    //create class inherit table
+    if(executeCommand(deleteClassInheritTable))
+        ret = true;
+    else
+    {
+        RecordLog("delete class inherit table failure!\n");
         ret = false;
     }
     

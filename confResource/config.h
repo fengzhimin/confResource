@@ -46,8 +46,11 @@ extern char database[CONFIG_VALUE_MAX_NUM];
 extern MYSQL db;
 extern MYSQL *mysqlConnect;
 extern char *createFuncLibraryTable;
+extern char *deleteFuncLibraryTable;
 extern char *createFuncScoreTable;
 extern char *deleteFuncScoreTable;
+extern char *createClassInheritTable;
+extern char *deleteClassInheritTable;
 extern char *createFuncCallTable;
 extern char *deleteFuncCallTable;
 

@@ -18,12 +18,19 @@ MYSQL *mysqlConnect = NULL;
 //建立函数与资源关系的库
 //字段解释 funcName = 函数名称   type = 类型 分别为CPU、MEM、IO、NET
 char *createFuncLibraryTable = "create table funcLibrary(funcName varchar(128), type varchar(128), score int)";
+char *deleteFuncLibraryTable = "drop table if exists funcLibrary";
 //存放已经打分的函数
 //每个函数对应的各项资源的分数
 //type: extern 全局的函数    static 局部的函数
 char *createFuncScoreTable = "create table funcScore(funcName varchar(128), type varchar(128) default 'extern', sourceFile text, line int,\
         CPU int default 0, MEM int  default 0, IO int default 0, NET int default 0)";
 char *deleteFuncScoreTable = "drop table if exists funcScore";
+//存放类继承的关系
+//每个函数对应的各项资源的分数
+//type: extern 全局的函数    static 局部的函数
+char *createClassInheritTable = "create table classInheritTable(className varchar(128) primary key, inheritType varchar(128) default 'public', \
+        inheritClassName varchar(128))";
+char *deleteClassInheritTable = "drop table if exists classInheritTable";
 //存放函数调用关系图
 //funcName: 自定义函数
 //sourceFile: 自定义函数的源文件
