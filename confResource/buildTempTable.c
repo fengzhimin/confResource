@@ -20,6 +20,13 @@ bool buildTempTable()
         RecordLog("create funcScore table failure!\n");
         ret = false;
     }
+    if(executeCommand(createTempFuncScoreTable))
+        ret = true;
+    else
+    {
+        RecordLog("create tempFuncScore table failure!\n");
+        ret = false;
+    }
     
     //create class inherit table
     if(executeCommand(createClassInheritTable))
@@ -38,6 +45,13 @@ bool buildTempTable()
         RecordLog("create funcCall table failure!\n");
         ret = false;
     }
+    if(executeCommand(createTempFuncCallTable))
+        ret = true;
+    else
+    {
+        RecordLog("create tempFuncCall table failure!\n");
+        ret = false;
+    }
     
     return ret;
 }
@@ -52,6 +66,13 @@ bool deleteTempTable()
     else
     {
         RecordLog("delete funcScore table failure!\n");
+        ret = false;
+    }
+    if(executeCommand(deleteTempFuncScoreTable))
+        ret = true;
+    else
+    {
+        RecordLog("delete tempFuncScore table failure!\n");
         ret = false;
     }
     
@@ -70,6 +91,13 @@ bool deleteTempTable()
     else
     {
         RecordLog("delete funcCall table failure!\n");
+        ret = false;
+    }
+    if(executeCommand(deleteTempFuncCallTable))
+        ret = true;
+    else
+    {
+        RecordLog("delete tempFuncCall table failure!\n");
         ret = false;
     }
     

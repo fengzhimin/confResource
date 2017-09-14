@@ -25,6 +25,9 @@ char *deleteFuncLibraryTable = "drop table if exists funcLibrary";
 char *createFuncScoreTable = "create table funcScore(funcName varchar(128), type varchar(128) default 'extern', sourceFile text, line int,\
         CPU int default 0, MEM int  default 0, IO int default 0, NET int default 0)";
 char *deleteFuncScoreTable = "drop table if exists funcScore";
+char *createTempFuncScoreTable = "create table tempFuncScore(funcName varchar(128), type varchar(128) default 'extern', sourceFile text, line int,\
+        CPU int default 0, MEM int  default 0, IO int default 0, NET int default 0)";
+char *deleteTempFuncScoreTable = "drop table if exists tempFuncScore";
 //存放类继承的关系
 //每个函数对应的各项资源的分数
 //type: extern 全局的函数    static 局部的函数
@@ -41,6 +44,9 @@ char *deleteClassInheritTable = "drop table if exists classInheritTable";
 char *createFuncCallTable = "create table funcCall(funcName varchar(128), funcCallType varchar(128) default 'extern', \
         sourceFile text, calledFunc varchar(128), calledFuncType varchar(128) default 'extern', CalledSrcFile text, line int, type char(1))";
 char *deleteFuncCallTable = "drop table if exists funcCall";
+char *createTempFuncCallTable = "create table tempFuncCall(funcName varchar(128), funcCallType varchar(128) default 'extern', \
+        sourceFile text, calledFunc varchar(128), calledFuncType varchar(128) default 'extern', CalledSrcFile text, line int, type char(1))";
+char *deleteTempFuncCallTable = "drop table if exists tempFuncCall";
 
 char programName[MAX_PROGRAMNAME_NUM] = "";
 

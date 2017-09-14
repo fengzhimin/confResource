@@ -84,7 +84,7 @@ bool scanVarIsUsedFromNode(xmlNodePtr cur, char *varName, bool flag);
  * func: Extract variable define info
  * return: varType list
  * @para cur: current node
- * @para flag: wether scan next node or not
+ * @para flag: whether scan next node or not
 *********************************/
 varType *ExtractVarDefFromNode(xmlNodePtr cur, bool flag);
 

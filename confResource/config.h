@@ -49,10 +49,14 @@ extern char *createFuncLibraryTable;
 extern char *deleteFuncLibraryTable;
 extern char *createFuncScoreTable;
 extern char *deleteFuncScoreTable;
+extern char *createTempFuncScoreTable;
+extern char *deleteTempFuncScoreTable;
 extern char *createClassInheritTable;
 extern char *deleteClassInheritTable;
 extern char *createFuncCallTable;
 extern char *deleteFuncCallTable;
+extern char *createTempFuncCallTable;
+extern char *deleteTempFuncCallTable;
 
 //函数递归的最大深度
 extern int max_funcCallRecursive_NUM;

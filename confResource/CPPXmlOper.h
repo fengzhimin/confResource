@@ -32,4 +32,12 @@ bool ExtractFuncFromCPPXML(char *docName);
 ********************************/
 bool ExtractClassInheritFromCPPXML(char *docName);
 
+/*********************************
+ * func: Extract variable type
+ * return: varType list
+ * @para cur: current node
+ * @para flag: whether scan next node or not
+*********************************/
+varType *ExtractVarTypeFromNode(xmlNodePtr cur, bool flag);
+
 #endif
