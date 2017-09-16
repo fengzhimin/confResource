@@ -88,6 +88,13 @@ bool CodeToXML(char *srcPath, char *desPath);
 *****************************************/
 bool convertProgram(char *dirPath);
 
+/*****************************************
+ * func: get the total number of analyze file
+ * return: total number
+ * @para dirPath: program directory
+*****************************************/
+int getTotalAnalyzeFileNum(char *dirPath);
+
 /********************************************
  * func: initial software source code
  * return: true = success   false = failure

@@ -7,6 +7,50 @@
 
 #include "buildTempTable.h"
 
+static char createFuncScoreTable[1024] = "";
+static char createTempFuncScoreTable[1024] = "";
+static char createClassInheritTable[1024] = "";
+static char createFuncCallTable[1024] = "";
+static char createTempFuncCallTable[1024] = "";
+static char deleteFuncScoreTable[1024] = "";
+static char deleteTempFuncScoreTable[1024] = "";
+static char deleteClassInheritTable[1024] = "";
+static char deleteFuncCallTable[1024] = "";
+static char deleteTempFuncCallTable[1024] = "";
+
+void initTableName()
+{
+    //set temp table name
+    sprintf(funcScoreTableName, "%s_funcScore", programName);
+    replaceChar(funcScoreTableName, '-', '_');
+    replaceChar(funcScoreTableName, '.', '_');
+    sprintf(tempFuncScoreTableName, "temp_%s_funcScore", programName);
+    replaceChar(tempFuncScoreTableName, '-', '_');
+    replaceChar(tempFuncScoreTableName, '.', '_');
+    sprintf(classInheritTableName, "%s_classInheritTable", programName);
+    replaceChar(classInheritTableName, '-', '_');
+    replaceChar(classInheritTableName, '.', '_');
+    sprintf(funcCallTableName, "%s_funcCall", programName);
+    replaceChar(funcCallTableName, '-', '_');
+    replaceChar(funcCallTableName, '.', '_');
+    sprintf(tempFuncCallTableName, "temp_%s_funcCall", programName);
+    replaceChar(tempFuncCallTableName, '-', '_');
+    replaceChar(tempFuncCallTableName, '.', '_');
+    
+    //create temp table command
+    sprintf(createFuncScoreTable, createFuncScoreTableTemplate, funcScoreTableName);
+    sprintf(createTempFuncScoreTable, createTempFuncScoreTableTemplate, tempFuncScoreTableName);
+    sprintf(createClassInheritTable, createClassInheritTableTemplate, classInheritTableName);
+    sprintf(createFuncCallTable, createFuncCallTableTemplate, funcCallTableName);
+    sprintf(createTempFuncCallTable, createTempFuncCallTableTemplate, tempFuncCallTableName);
+    
+    sprintf(deleteFuncScoreTable, deleteFuncScoreTableTemplate, funcScoreTableName);
+    sprintf(deleteTempFuncScoreTable, deleteTempFuncScoreTableTemplate, tempFuncScoreTableName);
+    sprintf(deleteClassInheritTable, deleteClassInheritTableTemplate, classInheritTableName);
+    sprintf(deleteFuncCallTable, deleteFuncCallTableTemplate, funcCallTableName);
+    sprintf(deleteTempFuncCallTable, deleteTempFuncCallTableTemplate, tempFuncCallTableName);
+}
+
 bool buildTempTable()
 {
     //delete already exist temp table

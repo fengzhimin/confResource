@@ -47,16 +47,22 @@ extern MYSQL db;
 extern MYSQL *mysqlConnect;
 extern char *createFuncLibraryTable;
 extern char *deleteFuncLibraryTable;
-extern char *createFuncScoreTable;
-extern char *deleteFuncScoreTable;
-extern char *createTempFuncScoreTable;
-extern char *deleteTempFuncScoreTable;
-extern char *createClassInheritTable;
-extern char *deleteClassInheritTable;
-extern char *createFuncCallTable;
-extern char *deleteFuncCallTable;
-extern char *createTempFuncCallTable;
-extern char *deleteTempFuncCallTable;
+extern char *createFuncScoreTableTemplate;
+extern char *deleteFuncScoreTableTemplate;
+extern char *createTempFuncScoreTableTemplate;
+extern char *deleteTempFuncScoreTableTemplate;
+extern char *createClassInheritTableTemplate;
+extern char *deleteClassInheritTableTemplate;
+extern char *createFuncCallTableTemplate;
+extern char *deleteFuncCallTableTemplate;
+extern char *createTempFuncCallTableTemplate;
+extern char *deleteTempFuncCallTableTemplate;
+
+extern char funcScoreTableName[MAX_PROGRAMNAME_NUM*2];
+extern char tempFuncScoreTableName[MAX_PROGRAMNAME_NUM*2];
+extern char classInheritTableName[MAX_PROGRAMNAME_NUM*2];
+extern char funcCallTableName[MAX_PROGRAMNAME_NUM*2];
+extern char tempFuncCallTableName[MAX_PROGRAMNAME_NUM*2];
 
 //函数递归的最大深度
 extern int max_funcCallRecursive_NUM;

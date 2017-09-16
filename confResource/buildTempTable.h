@@ -12,6 +12,11 @@
 #include "logOper.h"
 #include "config.h"
 
+/******************************************
+ * func: initial table name
+*******************************************/
+void initTableName();
+
 /***************************************
  * func: build temp table(funcScoreTable and funcCallTable)
  * return: true = success    false = failure

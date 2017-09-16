@@ -74,4 +74,13 @@ int ExtractLastCharIndex(char *str, char ch);
 ***********************************/
 char *ExtractStringFromLiteral(char *str);
 
+/**********************************
+ * func: char[] replace char ch1 to char ch2
+ * return: replace number
+ * @para str: char []
+ * @para ch1: old char
+ * @para ch2: new char
+**********************************/
+int replaceChar(char *str, char ch1, char ch2);
+
 #endif

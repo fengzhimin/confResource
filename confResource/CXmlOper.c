@@ -61,7 +61,7 @@ bool ExtractFuncFromCXML(char *docName)
                     strncpy(src_dir, (char *)&(docName[5]), strlen(docName)-9);
                     xmlChar* attr_value = xmlGetProp(temp_cur, (xmlChar*)"line");
                     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-                    sprintf(sqlCommand, "insert into tempFuncScore (funcName, type, sourceFile, line) value('%s', '%s', '%s', %s)", \
+                    sprintf(sqlCommand, "insert into %s (funcName, type, sourceFile, line) value('%s', '%s', '%s', %s)",  tempFuncScoreTableName,\
                         (char*)xmlNodeGetContent(temp_cur), funcType, src_dir, attr_value);
                         
                     if(!executeCommand(sqlCommand))
@@ -70,9 +70,9 @@ bool ExtractFuncFromCXML(char *docName)
                         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
                         RecordLog(error_info);
                     }
-                    printf("start scan call function\n");
+                    //printf("start scan call function\n");
                     scanCallFunction(cur, (char*)xmlNodeGetContent(temp_cur), funcType, src_dir);
-                    printf("complete scan call function\n");
+                    //printf("complete scan call function\n");
                     break;
                 }
                 temp_cur = temp_cur->next;
@@ -84,7 +84,7 @@ bool ExtractFuncFromCXML(char *docName)
       
     xmlFreeDoc(doc);
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    sprintf(sqlCommand, "delete from tempFuncScore where funcName not in (select calledFunc from tempFuncCall) and type='static'");
+    sprintf(sqlCommand, "delete from %s where funcName not in (select calledFunc from %s) and type='static'", tempFuncScoreTableName, tempFuncCallTableName);
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -93,7 +93,7 @@ bool ExtractFuncFromCXML(char *docName)
     }
     //merge tempFuncScore into funcScore
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    sprintf(sqlCommand, "insert into funcScore select distinct * from tempFuncScore");
+    sprintf(sqlCommand, "insert into %s select distinct * from %s", funcScoreTableName, tempFuncScoreTableName);
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -102,7 +102,7 @@ bool ExtractFuncFromCXML(char *docName)
     }
     //clear tempFuncScore
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    sprintf(sqlCommand, "truncate table tempFuncScore");
+    sprintf(sqlCommand, "truncate table %s", tempFuncScoreTableName);
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -111,7 +111,7 @@ bool ExtractFuncFromCXML(char *docName)
     }
     // delete library function call record from funcCall
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    strcpy(sqlCommand, "delete from tempFuncCall where funcName not in (select funcName from tempFuncScore) and funcCallType='static'");
+    sprintf(sqlCommand, "delete from %s where funcName not in (select funcName from %s) and funcCallType='static'", tempFuncCallTableName, tempFuncScoreTableName);
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -120,7 +120,7 @@ bool ExtractFuncFromCXML(char *docName)
     }
     //merge tempFuncCall into funcCall
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    sprintf(sqlCommand, "insert into funcCall select distinct * from tempFuncCall");
+    sprintf(sqlCommand, "insert into %s select distinct * from %s", funcCallTableName, tempFuncCallTableName);
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -129,7 +129,7 @@ bool ExtractFuncFromCXML(char *docName)
     }
     //clear tempFuncCall
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    sprintf(sqlCommand, "truncate table tempFuncCall");
+    sprintf(sqlCommand, "truncate table %s", tempFuncCallTableName);
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -171,8 +171,8 @@ static void scanCallFunctionFromNode(xmlNodePtr cur, char *funcName, char *funcT
                 //删除递归调用
                 if(strcasecmp(callFuncName, funcName) != 0)
                 {
-                    sprintf(sqlCommand, "insert into tempFuncCall (funcName, funcCallType, sourceFile, calledFunc, CalledSrcFile, line, type) \
-                        value('%s', '%s', '%s', '%s', '%s', %s, 'L')", funcName, funcType, srcPath, callFuncName, srcPath, attr_value);
+                    sprintf(sqlCommand, "insert into %s (funcName, funcCallType, sourceFile, calledFunc, CalledSrcFile, line, type) \
+                        value('%s', '%s', '%s', '%s', '%s', %s, 'L')", tempFuncCallTableName, funcName, funcType, srcPath, callFuncName, srcPath, attr_value);
                     if(!executeCommand(sqlCommand))
                     {
                         memset(error_info, 0, LOGINFO_LENGTH);
@@ -546,7 +546,11 @@ varType *ExtractVarDefFromNode(xmlNodePtr cur, bool flag)
                             //handle stu1
                             else if(!xmlStrcmp(temp->name, (const xmlChar*)"name"))
                             {
-                                strcat(end->varName, (char*)xmlNodeGetContent(temp));
+                                xmlNodePtr temp_name = temp->children;
+                                if(!xmlStrcmp(temp_name->name, (const xmlChar*)"text"))
+                                    strcat(end->varName, (char*)xmlNodeGetContent(temp));
+                                else
+                                    strcat(end->varName, (char*)xmlNodeGetContent(temp_name));
                                 end->line = StrToInt(attr_value);
                                 if(strlen(end->type) == 0)
                                 {
@@ -563,7 +567,11 @@ varType *ExtractVarDefFromNode(xmlNodePtr cur, bool flag)
                         memset(end, 0, sizeof(varType));
                         strcat(end->type, type);
                         end->line = StrToInt(attr_value);
-                        strcat(end->varName, (char*)xmlNodeGetContent(temp_cur->children->next));
+                        xmlNodePtr temp_name = temp_cur->children->next->children;
+                        if(!xmlStrcmp(temp_name->name, (const xmlChar*)"text"))
+                            strcat(end->varName, (char*)xmlNodeGetContent(temp_cur->children->next));
+                        else
+                            strcat(end->varName, (char*)xmlNodeGetContent(temp_name));
                     }
                 }
                 else if(xmlStrcmp(temp_cur->name, (const xmlChar*)"text") && xmlStrcmp(temp_cur->name, (const xmlChar*)"position"))
@@ -578,7 +586,11 @@ varType *ExtractVarDefFromNode(xmlNodePtr cur, bool flag)
                         strcat(end->type, (char*)xmlNodeGetContent(temp_cur));
                         end->line = StrToInt(attr_value);
                         temp_cur = temp_cur->next;
-                        strcat(end->varName, (char*)xmlNodeGetContent(temp_cur));
+                        xmlNodePtr temp_name = temp_cur->children;
+                        if(!xmlStrcmp(temp_name->name, (const xmlChar*)"text"))
+                            strcat(end->varName, (char*)xmlNodeGetContent(temp_cur));
+                        else
+                            strcat(end->varName, (char*)xmlNodeGetContent(temp_name));
                     }
                 }
                 temp_cur = temp_cur->next;
@@ -1135,6 +1147,7 @@ funcList *Sclice(char *varName, char *xmlFilePath)
     funcCallList *end = NULL;
     funcCallList *current = NULL;
     funcList *ret = NULL;
+    funcList *curFuncList = NULL;
     xmlDocPtr doc;
     xmlNodePtr cur;
     xmlKeepBlanksDefault(0);
@@ -1173,6 +1186,10 @@ funcList *Sclice(char *varName, char *xmlFilePath)
                 temp_cur = temp_cur->next;
             }
             current = varScliceFunc(varName, cur);
+#if DEBUG == 1
+            if(current != NULL)
+                printf("function: %s(%s)\n", (char*)xmlNodeGetContent(temp_cur), attr_value);
+#endif
             if(begin == NULL)
                 begin = end = current;
             else if(current != NULL)
@@ -1182,10 +1199,6 @@ funcList *Sclice(char *varName, char *xmlFilePath)
                 end = current;
                 current = current->next;
             }
-#if DEBUG == 1
-            if(current != NULL)
-                printf("function: %s(%s)\n", (char*)xmlNodeGetContent(temp_cur), attr_value);
-#endif
         }
         cur = cur->next;
     }
@@ -1196,7 +1209,7 @@ funcList *Sclice(char *varName, char *xmlFilePath)
     while(current != NULL)
     {
         memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-        sprintf(sqlCommand, "select calledFuncType, CalledSrcFile from funcCall where calledFunc='%s' and line=%d", current->funcName, current->line);
+        sprintf(sqlCommand, "select calledFuncType, CalledSrcFile from %s where calledFunc='%s' and line=%d", funcCallTableName, current->funcName, current->line);
         if(!executeCommand(sqlCommand))
         {
             memset(error_info, 0, LOGINFO_LENGTH);
@@ -1212,16 +1225,16 @@ funcList *Sclice(char *varName, char *xmlFilePath)
             {
                 sqlrow = mysql_fetch_row(res_ptr);
                 if(ret == NULL)
-                    ret = malloc(sizeof(funcList));
+                    ret = curFuncList = malloc(sizeof(funcList));
                 else
-                    ret = ret->next = malloc(sizeof(funcList));
-                memset(ret, 0, sizeof(funcList));
-                strcpy(ret->funcName, current->funcName);
-                strcpy(ret->sourceFile, sqlrow[1]);
+                    curFuncList = curFuncList->next = malloc(sizeof(funcList));
+                memset(curFuncList, 0, sizeof(funcList));
+                strcpy(curFuncList->funcName, current->funcName);
+                strcpy(curFuncList->sourceFile, sqlrow[1]);
                 if(strcasecmp(sqlrow[0], "extern") == 0)
-                    ret->funcType = false;
+                    curFuncList->funcType = false;
                 else
-                    ret->funcType = true;
+                    curFuncList->funcType = true;
 
                 mysql_free_result(res_ptr);
             }

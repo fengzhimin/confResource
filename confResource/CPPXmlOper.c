@@ -74,7 +74,7 @@ bool ExtractFuncFromCPPXML(char *docName)
                         attr_value = xmlGetProp(temp_cur, (xmlChar*)"line");
 
                     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-                    sprintf(sqlCommand, "insert into tempFuncScore (funcName, type, sourceFile, line) value('%s', '%s', '%s', %s)", \
+                    sprintf(sqlCommand, "insert into %s (funcName, type, sourceFile, line) value('%s', '%s', '%s', %s)", tempFuncScoreTableName,\
                         (char*)xmlNodeGetContent(temp_cur), funcType, src_dir, attr_value);
                         
                     if(!executeCommand(sqlCommand))
@@ -121,8 +121,8 @@ bool ExtractFuncFromCPPXML(char *docName)
                         {
                             inheritClassName = (char *)xmlNodeGetContent(inherit);
                             memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-                            sprintf(sqlCommand, "insert into classInheritTable (className, inheritType, inheritClassName) value('%s', '%s', '%s')", \
-                            className, inheritType, inheritClassName);
+                            sprintf(sqlCommand, "insert into %s (className, inheritType, inheritClassName) value('%s', '%s', '%s')", \
+                            classInheritTableName, className, inheritType, inheritClassName);
 
                             mysql_real_query(mysqlConnect, sqlCommand, strlen(sqlCommand));
                             break;
@@ -143,7 +143,7 @@ bool ExtractFuncFromCPPXML(char *docName)
     xmlFreeDoc(doc);
     
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    sprintf(sqlCommand, "delete from tempFuncScore where funcName not in (select calledFunc from tempFuncCall) and type='static'");
+    sprintf(sqlCommand, "delete from %s where funcName not in (select calledFunc from %s) and type='static'", tempFuncScoreTableName, tempFuncCallTableName);
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -152,7 +152,7 @@ bool ExtractFuncFromCPPXML(char *docName)
     }
     //merge tempFuncScore into funcScore
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    sprintf(sqlCommand, "insert into funcScore select distinct * from tempFuncScore");
+    sprintf(sqlCommand, "insert into %s select distinct * from %s", funcScoreTableName, tempFuncScoreTableName);
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -161,7 +161,7 @@ bool ExtractFuncFromCPPXML(char *docName)
     }
     //clear tempFuncScore
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    sprintf(sqlCommand, "truncate table tempFuncScore");
+    sprintf(sqlCommand, "truncate table %s", tempFuncScoreTableName);
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -170,7 +170,7 @@ bool ExtractFuncFromCPPXML(char *docName)
     }
     // delete library function call record from funcCall
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    strcpy(sqlCommand, "delete from tempFuncCall where funcName not in (select funcName from tempFuncScore) and funcCallType='static'");
+    sprintf(sqlCommand, "delete from %s where funcName not in (select funcName from %s) and funcCallType='static'", tempFuncCallTableName, tempFuncScoreTableName);
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -179,7 +179,7 @@ bool ExtractFuncFromCPPXML(char *docName)
     }
     //merge tempFuncCall into funcCall
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    sprintf(sqlCommand, "insert into funcCall select distinct * from tempFuncCall");
+    sprintf(sqlCommand, "insert into %s select distinct * from %s", funcCallTableName, tempFuncCallTableName);
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -188,7 +188,7 @@ bool ExtractFuncFromCPPXML(char *docName)
     }
     //clear tempFuncCall
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    sprintf(sqlCommand, "truncate table tempFuncCall");
+    sprintf(sqlCommand, "truncate table %s", tempFuncCallTableName);
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -213,8 +213,6 @@ static void scanCallFunctionFromNode(xmlNodePtr cur, char *funcName, char *funcT
     {
         if(!xmlStrcmp(cur->name, (const xmlChar*)"call"))
         {
-            if(strcasecmp(funcName, "Item_func_curdate::fix_length_and_dec") == 0)
-                printf("debug");
             if(cur->children->last != NULL)
             {
                 memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
@@ -236,6 +234,9 @@ static void scanCallFunctionFromNode(xmlNodePtr cur, char *funcName, char *funcT
                     {
                         varType *current = varTypeBegin;
                         char *varName = (char*)xmlNodeGetContent(cur->children->last->prev->prev);
+                        //handle new List<Index_hint>();
+                        if(varName == NULL)
+                            varName = (char*)xmlNodeGetContent(cur->children->last->prev);
                         while(current != NULL)
                         {
                             if(strcasecmp(current->varName, varName) == 0)
@@ -253,8 +254,8 @@ static void scanCallFunctionFromNode(xmlNodePtr cur, char *funcName, char *funcT
                 //删除递归调用
                 if(strcasecmp(callFuncName, funcName) != 0)
                 {
-                    sprintf(sqlCommand, "insert into tempFuncCall (funcName, funcCallType, sourceFile, calledFunc, CalledSrcFile, line, type) \
-                        value('%s', '%s', '%s', '%s', '%s', %s, 'L')", funcName, funcType, srcPath, callFuncName, srcPath, attr_value);
+                    sprintf(sqlCommand, "insert into %s (funcName, funcCallType, sourceFile, calledFunc, CalledSrcFile, line, type) \
+                        value('%s', '%s', '%s', '%s', '%s', %s, 'L')", tempFuncCallTableName, funcName, funcType, srcPath, callFuncName, srcPath, attr_value);
                     if(!executeCommand(sqlCommand))
                     {
                         memset(error_info, 0, LOGINFO_LENGTH);
@@ -356,12 +357,7 @@ varType *ExtractVarTypeFromNode(xmlNodePtr cur, bool flag)
             memset(end, 0, sizeof(varType));
             
             xmlNodePtr temp_cur = cur->children;
-            xmlChar* attr_value = xmlGetProp(cur->last, (xmlChar*)"line");
-            if(attr_value == NULL)
-            {
-                //handle parameter
-                attr_value = xmlGetProp(cur->children->last, (xmlChar*)"line");
-            }
+            xmlChar* attr_value = NULL;//xmlGetProp(cur->last, (xmlChar*)"line");
             char type[MAX_VARIABLE_LENGTH];
             memset(type, 0, MAX_VARIABLE_LENGTH);
             while(temp_cur != NULL)
@@ -408,7 +404,18 @@ varType *ExtractVarTypeFromNode(xmlNodePtr cur, bool flag)
                             //handle stu1
                             else if(!xmlStrcmp(temp->name, (const xmlChar*)"name"))
                             {
-                                strcat(end->varName, (char*)xmlNodeGetContent(temp));
+                                xmlNodePtr temp_name = temp->children;
+                                if(!xmlStrcmp(temp_name->name, (const xmlChar*)"text"))
+                                {
+                                    strcat(end->varName, (char*)xmlNodeGetContent(temp));
+                                    attr_value = xmlGetProp(temp, (xmlChar*)"line");
+                                }
+                                else
+                                {
+                                    strcat(end->varName, (char*)xmlNodeGetContent(temp_name));
+                                    attr_value = xmlGetProp(temp_name, (xmlChar*)"line");
+                                }
+                                
                                 end->line = StrToInt(attr_value);
                                 strcat(end->type, type);
                             }
@@ -421,8 +428,18 @@ varType *ExtractVarTypeFromNode(xmlNodePtr cur, bool flag)
                         end = end->next = malloc(sizeof(varType));
                         memset(end, 0, sizeof(varType));
                         strcat(end->type, type);
+                        xmlNodePtr temp_name = temp_cur->children->next->children;
+                        if(!xmlStrcmp(temp_name->name, (const xmlChar*)"text"))
+                        {
+                            strcat(end->varName, (char*)xmlNodeGetContent(temp_cur->children->next));
+                            attr_value = xmlGetProp(temp_cur->children->next, (xmlChar*)"line");
+                        }
+                        else
+                        {
+                            strcat(end->varName, (char*)xmlNodeGetContent(temp_name));
+                            attr_value = xmlGetProp(temp_name, (xmlChar*)"line");
+                        }
                         end->line = StrToInt(attr_value);
-                        strcat(end->varName, (char*)xmlNodeGetContent(temp_cur->children->next));
                     }
                 }
                 temp_cur = temp_cur->next;

@@ -142,7 +142,7 @@ funcCallList *varScliceFuncFromNode(char *varName, xmlNodePtr cur, bool flag);
 
 /**********************************
  * func: variable sclice
- * return: true = exist influence   false = not exist influence
+ * return: not null = exist influence   null = not exist influence
  * @para varName: variable name
  * @para xmlFilePath: xml file path
 **********************************/

@@ -12,6 +12,8 @@ static char xml_dir[DIRPATH_MAX];
 static char sqlCommand[LINE_CHAR_MAX_NUM];
 static char src_dir[DIRPATH_MAX];
 static int count = 0;
+static int totalAnalyzeFileNum = 0;
+static int curAnalyzeFileNum = 0;
 
 bool getProgramName(char *sourcePath)
 {
@@ -223,7 +225,8 @@ bool convertProgram(char *dirPath)
                 if(judgeCPreprocessFile(child_dir))
                 {
                     //handle C language preprocess file
-                    printf("analysing file %s\n", child_dir);
+                    curAnalyzeFileNum++;
+                    printf("analysing file %s(%d/%d)\n", child_dir, curAnalyzeFileNum, totalAnalyzeFileNum);
                     memset(xml_dir, 0, DIRPATH_MAX);
                     sprintf(xml_dir, "%s/%s.xml", temp_dir, pdirent->d_name);
                     if(CodeToXML(child_dir, xml_dir))
@@ -241,7 +244,8 @@ bool convertProgram(char *dirPath)
                 else if(judgeCPPPreprocessFile(child_dir))
                 {
                     //handle C++ language preprocess file
-                    printf("analysing file %s\n", child_dir);
+                    curAnalyzeFileNum++;
+                    printf("analysing file %s(%d/%d)\n", child_dir, curAnalyzeFileNum, totalAnalyzeFileNum);
                     memset(xml_dir, 0, DIRPATH_MAX);
                     sprintf(xml_dir, "%s/%s.xml", temp_dir, pdirent->d_name);
                     if(CodeToXML(child_dir, xml_dir))
@@ -272,9 +276,72 @@ bool convertProgram(char *dirPath)
     return ret;
 }
 
+int getTotalAnalyzeFileNum(char *dirPath)
+{
+    DIR *pdir;
+    struct dirent *pdirent;
+    struct stat statbuf;
+    int ret = 0;
+    
+    char child_dir[DIRPATH_MAX];
+    pdir = opendir(dirPath);
+    if(pdir)
+    {
+        while((pdirent = readdir(pdir)) != NULL)
+        {
+            //跳过"."和".."和隐藏文件夹
+            if(strcmp(pdirent->d_name, ".") == 0 || strcmp(pdirent->d_name, "..") == 0 || (pdirent->d_name[0] == '.'))
+                continue;
+            
+            memset(child_dir, 0, DIRPATH_MAX);
+            sprintf(child_dir, "%s/%s", dirPath, pdirent->d_name);
+            if(lstat(child_dir, &statbuf) < 0)
+            {
+                memset(error_info, 0, LOGINFO_LENGTH);
+                sprintf(error_info, "lstat %s to failed: %s.\n", child_dir, strerror(errno));
+                RecordLog(error_info);
+                closedir(pdir);
+                
+                return 0;
+            }
+            
+            //judge whether directory or not
+            if(S_ISDIR(statbuf.st_mode))
+            {
+                ret += getTotalAnalyzeFileNum(child_dir);
+            }
+            if(S_ISREG(statbuf.st_mode))
+            {
+                if(judgeCPreprocessFile(child_dir))
+                {
+                    ret++;
+                }
+                else if(judgeCPPPreprocessFile(child_dir))
+                {
+                    ret++;
+                }
+            }
+        }
+    }
+    else
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "open directory %s to failed: %s.\n", dirPath, strerror(errno));
+        RecordLog(error_info);
+    }
+    closedir(pdir);
+    
+    return ret;
+}
+
 bool initSoftware(char *srcPath)
 {
-    bool ret = buildTempTable();
+    bool ret = getProgramName(srcPath);
+    ret = deleteTempXMLFile();
+    ret = buildLibrary();
+    ret = buildTempTable();
+    curAnalyzeFileNum = 0;
+    totalAnalyzeFileNum = getTotalAnalyzeFileNum(srcPath);
     ret = convertProgram(srcPath);
     ret = buildFuncScore();
     
@@ -301,7 +368,7 @@ bool buildFuncScore()
     time(&start);
     // delete library function call record from funcCall
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    strcpy(sqlCommand, "delete from funcCall where funcName not in (select funcName from funcScore)");
+    sprintf(sqlCommand, "delete from %s where funcName not in (select funcName from %s)", funcCallTableName, funcScoreTableName);
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -310,7 +377,7 @@ bool buildFuncScore()
     }
     //update funcCall table type field
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    strcpy(sqlCommand, "update funcScore, funcCall set funcCall.type='S' where funcScore.funcName=funcCall.calledFunc");
+    sprintf(sqlCommand, "update %s as funcScore, %s as funcCall set funcCall.type='S' where funcScore.funcName=funcCall.calledFunc", funcScoreTableName, funcCallTableName);
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -326,11 +393,25 @@ bool buildFuncScore()
     printf("update funcCall table finish\n");
     
     //对每个函数进行打分， 每个函数中直接使用到的库函数
+    char tmp_table[MAX_PROGRAMNAME_NUM*2] = "";
+    sprintf(tmp_table, "tmp_%s_table", programName);
+    replaceChar(tmp_table, '-', '_');
+    replaceChar(tmp_table, '.', '_');
+    
+    //防止程序中途退出，导致临时表没有被及时删除
+    memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+    sprintf(sqlCommand, "drop table if exists %s", tmp_table);
+    if(!executeCommand(sqlCommand))
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+        RecordLog(error_info);
+    }
     //MEM score
     printf("MEM score calculating\n");
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    strcpy(sqlCommand, "create table tmp_table (select * from funcCall where funcCall.calledFunc in\
-            (select funcName from funcLibrary where type='MEM') and type='L')");
+    sprintf(sqlCommand, "create table %s (select * from %s as funcCall where funcCall.calledFunc in\
+            (select funcName from funcLibrary where type='MEM') and type='L')", tmp_table, funcCallTableName);
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -339,21 +420,26 @@ bool buildFuncScore()
     }
     else
     {
-        if(!executeCommand("alter table tmp_table add column score int"))
+        memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+        sprintf(sqlCommand, "alter table %s add column score int", tmp_table);
+        if(!executeCommand(sqlCommand))
         {
             RecordLog("execute commad alter table tmp_table add column score int failure.");
         }
         else
         {
-            if(!executeCommand("update tmp_table, funcLibrary set tmp_table.score=funcLibrary.score where tmp_table.calledFunc=funcLibrary.funcName"))
+            memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+            sprintf(sqlCommand, "update %s as tmp_table, funcLibrary set tmp_table.score=funcLibrary.score where \
+                tmp_table.calledFunc=funcLibrary.funcName", tmp_table);
+            if(!executeCommand(sqlCommand))
             {
                 RecordLog("execute commad update tmp_table, funcLibrary set tmp_table.score=funcLibrary.score where tmp_table.calledFunc=funcLibrary.funcName failure.");
             }
         }
     }
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    strcpy(sqlCommand, "update tmp_table, funcScore set funcScore.MEM=(select sum(score) from tmp_table where tmp_table.funcName=funcScore.funcName \
-    and tmp_table.sourceFile=funcScore.sourceFile) where tmp_table.funcName=funcScore.funcName and tmp_table.sourceFile=funcScore.sourceFile");
+    sprintf(sqlCommand, "update %s as tmp_table, %s as funcScore set funcScore.MEM=(select sum(score) from %s as tmp_table where tmp_table.funcName=funcScore.funcName \
+    and tmp_table.sourceFile=funcScore.sourceFile) where tmp_table.funcName=funcScore.funcName and tmp_table.sourceFile=funcScore.sourceFile", tmp_table, funcScoreTableName, tmp_table);
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -361,7 +447,7 @@ bool buildFuncScore()
         RecordLog(error_info);
     }
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    strcpy(sqlCommand, "drop table tmp_table");
+    sprintf(sqlCommand, "drop table %s", tmp_table);
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -374,8 +460,9 @@ bool buildFuncScore()
     //CPU score
     printf("CPU score calculating\n");
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    strcpy(sqlCommand, "create table tmp_table (select * from funcCall where funcCall.calledFunc in \
-            (select funcName from funcLibrary where type='CPU') and type='L')");
+
+    sprintf(sqlCommand, "create table %s (select * from %s as funcCall where funcCall.calledFunc in\
+            (select funcName from funcLibrary where type='CPU') and type='L')", tmp_table, funcCallTableName);
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -384,21 +471,26 @@ bool buildFuncScore()
     }
     else
     {
-        if(!executeCommand("alter table tmp_table add column score int"))
+        memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+        sprintf(sqlCommand, "alter table %s add column score int", tmp_table);
+        if(!executeCommand(sqlCommand))
         {
             RecordLog("execute commad alter table tmp_table add column score int failure.");
         }
         else
         {
-            if(!executeCommand("update tmp_table, funcLibrary set tmp_table.score=funcLibrary.score where tmp_table.calledFunc=funcLibrary.funcName"))
+            memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+            sprintf(sqlCommand, "update %s as tmp_table, funcLibrary set tmp_table.score=funcLibrary.score where \
+                tmp_table.calledFunc=funcLibrary.funcName", tmp_table);
+            if(!executeCommand(sqlCommand))
             {
                 RecordLog("execute commad update tmp_table, funcLibrary set tmp_table.score=funcLibrary.score where tmp_table.calledFunc=funcLibrary.funcName failure.");
             }
         }
     }
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    strcpy(sqlCommand, "update tmp_table, funcScore set funcScore.CPU=(select sum(score) from tmp_table where tmp_table.funcName=funcScore.funcName \
-    and tmp_table.sourceFile=funcScore.sourceFile) where tmp_table.funcName=funcScore.funcName and tmp_table.sourceFile=funcScore.sourceFile");
+    sprintf(sqlCommand, "update %s as tmp_table, %s as funcScore set funcScore.CPU=(select sum(score) from %s as tmp_table where tmp_table.funcName=funcScore.funcName \
+    and tmp_table.sourceFile=funcScore.sourceFile) where tmp_table.funcName=funcScore.funcName and tmp_table.sourceFile=funcScore.sourceFile", tmp_table, funcScoreTableName, tmp_table);
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -406,7 +498,7 @@ bool buildFuncScore()
         RecordLog(error_info);
     }
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    strcpy(sqlCommand, "drop table tmp_table");
+    sprintf(sqlCommand, "drop table %s", tmp_table);
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -419,8 +511,8 @@ bool buildFuncScore()
     //NET score
     printf("NET score calculating\n");
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    strcpy(sqlCommand, "create table tmp_table (select * from funcCall where funcCall.calledFunc in \
-            (select funcName from funcLibrary where type='NET') and type='L')");
+    sprintf(sqlCommand, "create table %s (select * from %s as funcCall where funcCall.calledFunc in\
+            (select funcName from funcLibrary where type='NET') and type='L')", tmp_table, funcCallTableName);
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -429,21 +521,26 @@ bool buildFuncScore()
     }
     else
     {
-        if(!executeCommand("alter table tmp_table add column score int"))
+        memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+        sprintf(sqlCommand, "alter table %s add column score int", tmp_table);
+        if(!executeCommand(sqlCommand))
         {
             RecordLog("execute commad alter table tmp_table add column score int failure.");
         }
         else
         {
-            if(!executeCommand("update tmp_table, funcLibrary set tmp_table.score=funcLibrary.score where tmp_table.calledFunc=funcLibrary.funcName"))
+            memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+            sprintf(sqlCommand, "update %s as tmp_table, funcLibrary set tmp_table.score=funcLibrary.score where \
+                tmp_table.calledFunc=funcLibrary.funcName", tmp_table);
+            if(!executeCommand(sqlCommand))
             {
                 RecordLog("execute commad update tmp_table, funcLibrary set tmp_table.score=funcLibrary.score where tmp_table.calledFunc=funcLibrary.funcName failure.");
             }
         }
     }
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    strcpy(sqlCommand, "update tmp_table, funcScore set funcScore.NET=(select sum(score) from tmp_table where tmp_table.funcName=funcScore.funcName \
-    and tmp_table.sourceFile=funcScore.sourceFile) where tmp_table.funcName=funcScore.funcName and tmp_table.sourceFile=funcScore.sourceFile");
+    sprintf(sqlCommand, "update %s as tmp_table, %s as funcScore set funcScore.NET=(select sum(score) from %s as tmp_table where tmp_table.funcName=funcScore.funcName \
+    and tmp_table.sourceFile=funcScore.sourceFile) where tmp_table.funcName=funcScore.funcName and tmp_table.sourceFile=funcScore.sourceFile", tmp_table, funcScoreTableName, tmp_table);
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -451,7 +548,7 @@ bool buildFuncScore()
         RecordLog(error_info);
     }
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    strcpy(sqlCommand, "drop table tmp_table");
+    sprintf(sqlCommand, "drop table %s", tmp_table);
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -464,8 +561,8 @@ bool buildFuncScore()
     //IO score
     printf("IO score calculating\n");
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    strcpy(sqlCommand, "create table tmp_table (select * from funcCall where funcCall.calledFunc in \
-            (select funcName from funcLibrary where type='IO') and type='L')");
+    sprintf(sqlCommand, "create table %s (select * from %s as funcCall where funcCall.calledFunc in\
+            (select funcName from funcLibrary where type='IO') and type='L')", tmp_table, funcCallTableName);
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -474,21 +571,26 @@ bool buildFuncScore()
     }
     else
     {
-        if(!executeCommand("alter table tmp_table add column score int"))
+        memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+        sprintf(sqlCommand, "alter table %s add column score int", tmp_table);
+        if(!executeCommand(sqlCommand))
         {
             RecordLog("execute commad alter table tmp_table add column score int failure.");
         }
         else
         {
-            if(!executeCommand("update tmp_table, funcLibrary set tmp_table.score=funcLibrary.score where tmp_table.calledFunc=funcLibrary.funcName"))
+            memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+            sprintf(sqlCommand, "update %s as tmp_table, funcLibrary set tmp_table.score=funcLibrary.score where \
+                tmp_table.calledFunc=funcLibrary.funcName", tmp_table);
+            if(!executeCommand(sqlCommand))
             {
                 RecordLog("execute commad update tmp_table, funcLibrary set tmp_table.score=funcLibrary.score where tmp_table.calledFunc=funcLibrary.funcName failure.");
             }
         }
     }
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    strcpy(sqlCommand, "update tmp_table, funcScore set funcScore.IO=(select sum(score) from tmp_table where tmp_table.funcName=funcScore.funcName \
-    and tmp_table.sourceFile=funcScore.sourceFile) where tmp_table.funcName=funcScore.funcName and tmp_table.sourceFile=funcScore.sourceFile");
+    sprintf(sqlCommand, "update %s as tmp_table, %s as funcScore set funcScore.IO=(select sum(score) from %s as tmp_table where tmp_table.funcName=funcScore.funcName \
+    and tmp_table.sourceFile=funcScore.sourceFile) where tmp_table.funcName=funcScore.funcName and tmp_table.sourceFile=funcScore.sourceFile", tmp_table, funcScoreTableName, tmp_table);
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -496,7 +598,7 @@ bool buildFuncScore()
         RecordLog(error_info);
     }
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    strcpy(sqlCommand, "drop table tmp_table");
+    sprintf(sqlCommand, "drop table %s", tmp_table);
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -508,7 +610,7 @@ bool buildFuncScore()
     
     //delete funcCall table Library function record
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    strcpy(sqlCommand, "delete from funcCall where type='L'");
+    sprintf(sqlCommand, "delete from %s where type='L'", funcScoreTableName);
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -520,8 +622,8 @@ bool buildFuncScore()
     
     //set funcCall calledFunctype
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    strcpy(sqlCommand, "update funcScore, funcCall set funcCall.calledFuncType=funcScore.type \
-    where funcScore.sourceFile=funcCall.sourceFile and funcCall.calledFunc=funcScore.funcName");
+    sprintf(sqlCommand, "update %s as funcScore, %s as funcCall set funcCall.calledFuncType=funcScore.type \
+    where funcScore.sourceFile=funcCall.sourceFile and funcCall.calledFunc=funcScore.funcName", funcScoreTableName, funcCallTableName);
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -533,8 +635,8 @@ bool buildFuncScore()
     
     //set funcCall CalledSrcFile
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    strcpy(sqlCommand, "update funcScore, funcCall set funcCall.CalledSrcFile=funcScore.sourceFile \
-    where funcCall.calledFuncType='extern' and funcCall.calledFunc=funcScore.funcName");
+    sprintf(sqlCommand, "update %s as funcScore, %s as funcCall set funcCall.CalledSrcFile=funcScore.sourceFile \
+    where funcCall.calledFuncType='extern' and funcCall.calledFunc=funcScore.funcName", funcScoreTableName, funcCallTableName);
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -630,11 +732,11 @@ confScore getFuncScore(char *funcName, bool funcType, char *srcFile)
     //一个程序中可能会存在多个名称相同的static函数
     //一个源文件中不可能存在多个名称相同的static函数
     if(funcType)
-        sprintf(sqlCommand, "select calledFunc, calledFuncType, CalledSrcFile from funcCall where \
-        funcName='%s' and funcCallType='static' and sourceFile='%s'", funcName, srcFile);
+        sprintf(sqlCommand, "select calledFunc, calledFuncType, CalledSrcFile from %s where \
+        funcName='%s' and funcCallType='static' and sourceFile='%s'", funcCallTableName, funcName, srcFile);
     else
-        sprintf(sqlCommand, "select calledFunc, calledFuncType, CalledSrcFile from funcCall where \
-        funcName='%s' and funcCallType='extern'", funcName);
+        sprintf(sqlCommand, "select calledFunc, calledFuncType, CalledSrcFile from %s where \
+        funcName='%s' and funcCallType='extern'", funcCallTableName, funcName);
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -676,11 +778,11 @@ confScore getFuncScore(char *funcName, bool funcType, char *srcFile)
         //get function score from funcScore table
         memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
         if(funcType)
-            sprintf(sqlCommand, "select CPU, MEM, IO, NET from funcScore where \
-            funcName='%s' and type='static'  and sourceFile='%s'", funcName, srcFile);
+            sprintf(sqlCommand, "select CPU, MEM, IO, NET from %s where \
+            funcName='%s' and type='static'  and sourceFile='%s'", funcScoreTableName, funcName, srcFile);
         else
-            sprintf(sqlCommand, "select CPU, MEM, IO, NET from funcScore where \
-            funcName='%s' and type='extern'", funcName);
+            sprintf(sqlCommand, "select CPU, MEM, IO, NET from %s where \
+            funcName='%s' and type='extern'", funcScoreTableName, funcName);
         if(!executeCommand(sqlCommand))
         {
             memset(error_info, 0, LOGINFO_LENGTH);
@@ -759,15 +861,15 @@ confScore buildConfScore(char *confName, char *xmlPath)
                         funcList *current = ret_begin;
                         while(current != NULL)
                         {
-#if DEBUG == 1                            
-                            printf("sourceFile:%s funcName: %s funcType: %d\n", current->sourceFile, current->funcName, current->funcType);
-#endif                        
                             confScore temp_ret = getFuncScore(current->funcName, current->funcType, current->sourceFile);
                             ret.CPU += temp_ret.CPU;
                             ret.MEM += temp_ret.MEM;
                             ret.IO += temp_ret.IO;
                             ret.NET += temp_ret.NET;
-                            current = current->next;
+#if DEBUG == 1                            
+                            printf("sourceFile:%s funcName: %s funcType: %d\n", current->sourceFile, current->funcName, current->funcType);
+#endif
+                            current = current->next;                        
                         }
                         //delete funcList value
                         current = ret_begin;

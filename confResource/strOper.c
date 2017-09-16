@@ -158,3 +158,20 @@ char *ExtractStringFromLiteral(char *str)
     
     return ret;
 }
+
+int replaceChar(char *str, char ch1, char ch2)
+{
+    int ret = 0;
+    int strlength = strlen(str);
+    int i = 0;
+    for( ; i < strlength; i++)
+    {
+        if(str[i] == ch1)
+        {
+            str[i] = ch2;
+            ret++;
+        }
+    }
+    
+    return ret;
+}

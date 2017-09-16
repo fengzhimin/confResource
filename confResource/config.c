@@ -22,18 +22,18 @@ char *deleteFuncLibraryTable = "drop table if exists funcLibrary";
 //存放已经打分的函数
 //每个函数对应的各项资源的分数
 //type: extern 全局的函数    static 局部的函数
-char *createFuncScoreTable = "create table funcScore(funcName varchar(128), type varchar(128) default 'extern', sourceFile text, line int,\
+char *createFuncScoreTableTemplate = "create table %s(funcName varchar(128), type varchar(128) default 'extern', sourceFile text, line int,\
         CPU int default 0, MEM int  default 0, IO int default 0, NET int default 0)";
-char *deleteFuncScoreTable = "drop table if exists funcScore";
-char *createTempFuncScoreTable = "create table tempFuncScore(funcName varchar(128), type varchar(128) default 'extern', sourceFile text, line int,\
+char *deleteFuncScoreTableTemplate = "drop table if exists %s";
+char *createTempFuncScoreTableTemplate = "create table %s(funcName varchar(128), type varchar(128) default 'extern', sourceFile text, line int,\
         CPU int default 0, MEM int  default 0, IO int default 0, NET int default 0)";
-char *deleteTempFuncScoreTable = "drop table if exists tempFuncScore";
+char *deleteTempFuncScoreTableTemplate = "drop table if exists %s";
 //存放类继承的关系
 //每个函数对应的各项资源的分数
 //type: extern 全局的函数    static 局部的函数
-char *createClassInheritTable = "create table classInheritTable(className varchar(128) primary key, inheritType varchar(128) default 'public', \
+char *createClassInheritTableTemplate = "create table %s(className varchar(128) primary key, inheritType varchar(128) default 'public', \
         inheritClassName varchar(128))";
-char *deleteClassInheritTable = "drop table if exists classInheritTable";
+char *deleteClassInheritTableTemplate = "drop table if exists %s";
 //存放函数调用关系图
 //funcName: 自定义函数
 //sourceFile: 自定义函数的源文件
@@ -41,12 +41,18 @@ char *deleteClassInheritTable = "drop table if exists classInheritTable";
 //calledFuncType: 被调用函数的类型
 //line: 调用的行号
 //type: calledFunc类型  'L' = 库函数    'S' = 自定义函数
-char *createFuncCallTable = "create table funcCall(funcName varchar(128), funcCallType varchar(128) default 'extern', \
+char *createFuncCallTableTemplate = "create table %s(funcName varchar(128), funcCallType varchar(128) default 'extern', \
         sourceFile text, calledFunc varchar(128), calledFuncType varchar(128) default 'extern', CalledSrcFile text, line int, type char(1))";
-char *deleteFuncCallTable = "drop table if exists funcCall";
-char *createTempFuncCallTable = "create table tempFuncCall(funcName varchar(128), funcCallType varchar(128) default 'extern', \
+char *deleteFuncCallTableTemplate = "drop table if exists %s";
+char *createTempFuncCallTableTemplate = "create table %s(funcName varchar(128), funcCallType varchar(128) default 'extern', \
         sourceFile text, calledFunc varchar(128), calledFuncType varchar(128) default 'extern', CalledSrcFile text, line int, type char(1))";
-char *deleteTempFuncCallTable = "drop table if exists tempFuncCall";
+char *deleteTempFuncCallTableTemplate = "drop table if exists %s";
+
+char funcScoreTableName[MAX_PROGRAMNAME_NUM*2] = "";
+char tempFuncScoreTableName[MAX_PROGRAMNAME_NUM*2] = "";
+char classInheritTableName[MAX_PROGRAMNAME_NUM*2] = "";
+char funcCallTableName[MAX_PROGRAMNAME_NUM*2] = "";
+char tempFuncCallTableName[MAX_PROGRAMNAME_NUM*2] = "";
 
 char programName[MAX_PROGRAMNAME_NUM] = "";
 
