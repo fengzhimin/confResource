@@ -36,6 +36,9 @@
 
 #define MAX_VARIABLE_LENGTH      50     //a variable name max length
 
+#define FORNUM                   10     //for multiple
+#define WHILENUM                 10     //while and do-while multiple
+
 #define LOGINFO_LENGTH           1024 
 
 extern char bind_address[CONFIG_VALUE_MAX_NUM];

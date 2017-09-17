@@ -41,11 +41,15 @@ char *deleteClassInheritTableTemplate = "drop table if exists %s";
 //calledFuncType: 被调用函数的类型
 //line: 调用的行号
 //type: calledFunc类型  'L' = 库函数    'S' = 自定义函数
+//forNum: nested for number
+//whileNum: nested while or do-while number
 char *createFuncCallTableTemplate = "create table %s(funcName varchar(128), funcCallType varchar(128) default 'extern', \
-        sourceFile text, calledFunc varchar(128), calledFuncType varchar(128) default 'extern', CalledSrcFile text, line int, type char(1))";
+        sourceFile text, calledFunc varchar(128), calledFuncType varchar(128) default 'extern', CalledSrcFile text, line int, type char(1), \
+        forNum int default 0, whileNum int default 0)";
 char *deleteFuncCallTableTemplate = "drop table if exists %s";
 char *createTempFuncCallTableTemplate = "create table %s(funcName varchar(128), funcCallType varchar(128) default 'extern', \
-        sourceFile text, calledFunc varchar(128), calledFuncType varchar(128) default 'extern', CalledSrcFile text, line int, type char(1))";
+        sourceFile text, calledFunc varchar(128), calledFuncType varchar(128) default 'extern', CalledSrcFile text, line int, type char(1), \
+        forNum int default 0, whileNum int default 0)";
 char *deleteTempFuncCallTableTemplate = "drop table if exists %s";
 
 char funcScoreTableName[MAX_PROGRAMNAME_NUM*2] = "";

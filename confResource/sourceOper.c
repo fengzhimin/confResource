@@ -429,8 +429,8 @@ bool buildFuncScore()
         else
         {
             memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-            sprintf(sqlCommand, "update %s as tmp_table, funcLibrary set tmp_table.score=funcLibrary.score where \
-                tmp_table.calledFunc=funcLibrary.funcName", tmp_table);
+            sprintf(sqlCommand, "update %s as tmp_table, funcLibrary set tmp_table.score=(tmp_table.forNum*%d+tmp_table.whileNum*%d+1)*funcLibrary.score\
+            where tmp_table.calledFunc=funcLibrary.funcName", tmp_table, FORNUM, WHILENUM);
             if(!executeCommand(sqlCommand))
             {
                 RecordLog("execute commad update tmp_table, funcLibrary set tmp_table.score=funcLibrary.score where tmp_table.calledFunc=funcLibrary.funcName failure.");
@@ -480,8 +480,8 @@ bool buildFuncScore()
         else
         {
             memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-            sprintf(sqlCommand, "update %s as tmp_table, funcLibrary set tmp_table.score=funcLibrary.score where \
-                tmp_table.calledFunc=funcLibrary.funcName", tmp_table);
+            sprintf(sqlCommand, "update %s as tmp_table, funcLibrary set tmp_table.score=(tmp_table.forNum*%d+tmp_table.whileNum*%d+1)*funcLibrary.score\
+            where tmp_table.calledFunc=funcLibrary.funcName", tmp_table, FORNUM, WHILENUM);
             if(!executeCommand(sqlCommand))
             {
                 RecordLog("execute commad update tmp_table, funcLibrary set tmp_table.score=funcLibrary.score where tmp_table.calledFunc=funcLibrary.funcName failure.");
@@ -530,8 +530,8 @@ bool buildFuncScore()
         else
         {
             memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-            sprintf(sqlCommand, "update %s as tmp_table, funcLibrary set tmp_table.score=funcLibrary.score where \
-                tmp_table.calledFunc=funcLibrary.funcName", tmp_table);
+            sprintf(sqlCommand, "update %s as tmp_table, funcLibrary set tmp_table.score=(tmp_table.forNum*%d+tmp_table.whileNum*%d+1)*funcLibrary.score\
+            where tmp_table.calledFunc=funcLibrary.funcName", tmp_table, FORNUM, WHILENUM);
             if(!executeCommand(sqlCommand))
             {
                 RecordLog("execute commad update tmp_table, funcLibrary set tmp_table.score=funcLibrary.score where tmp_table.calledFunc=funcLibrary.funcName failure.");
@@ -580,8 +580,8 @@ bool buildFuncScore()
         else
         {
             memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-            sprintf(sqlCommand, "update %s as tmp_table, funcLibrary set tmp_table.score=funcLibrary.score where \
-                tmp_table.calledFunc=funcLibrary.funcName", tmp_table);
+            sprintf(sqlCommand, "update %s as tmp_table, funcLibrary set tmp_table.score=(tmp_table.forNum*%d+tmp_table.whileNum*%d+1)*funcLibrary.score\
+            where tmp_table.calledFunc=funcLibrary.funcName", tmp_table, FORNUM, WHILENUM);
             if(!executeCommand(sqlCommand))
             {
                 RecordLog("execute commad update tmp_table, funcLibrary set tmp_table.score=funcLibrary.score where tmp_table.calledFunc=funcLibrary.funcName failure.");
@@ -728,14 +728,14 @@ confScore getFuncScore(char *funcName, bool funcType, char *srcFile)
     confScore ret;
     memset(&ret, 0, sizeof(confScore));
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    //一个程序中只能有一个external函数
+    //一个程序中只能有一个extern函数
     //一个程序中可能会存在多个名称相同的static函数
     //一个源文件中不可能存在多个名称相同的static函数
     if(funcType)
-        sprintf(sqlCommand, "select calledFunc, calledFuncType, CalledSrcFile from %s where \
+        sprintf(sqlCommand, "select calledFunc, calledFuncType, CalledSrcFile, forNum, whileNum from %s where \
         funcName='%s' and funcCallType='static' and sourceFile='%s'", funcCallTableName, funcName, srcFile);
     else
-        sprintf(sqlCommand, "select calledFunc, calledFuncType, CalledSrcFile from %s where \
+        sprintf(sqlCommand, "select calledFunc, calledFuncType, CalledSrcFile, forNum, whileNum from %s where \
         funcName='%s' and funcCallType='extern'", funcCallTableName, funcName);
     if(!executeCommand(sqlCommand))
     {
@@ -749,12 +749,12 @@ confScore getFuncScore(char *funcName, bool funcType, char *srcFile)
         MYSQL_ROW sqlrow1, sqlrow2;
         res_ptr1 = mysql_store_result(mysqlConnect);
         int rownum = mysql_num_rows(res_ptr1);
-        
         //count 为递归的最大深度
         if(rownum != 0 && count < max_funcCallRecursive_NUM)
         {
             while(sqlrow1 = mysql_fetch_row(res_ptr1))
             {
+                int multiple = StrToInt(sqlrow1[3])*FORNUM + StrToInt(sqlrow1[4])*WHILENUM + 1;
                 bool temp_funcType = false;
                 if(strcasecmp(sqlrow1[1], "static") == 0)
                 {
@@ -764,10 +764,10 @@ confScore getFuncScore(char *funcName, bool funcType, char *srcFile)
                 printf("(%s->%s)", funcName, sqlrow1[0]);
 #endif                
                 confScore temp_ret = getFuncScore(sqlrow1[0], temp_funcType, sqlrow1[2]);
-                ret.CPU += temp_ret.CPU;
-                ret.MEM += temp_ret.MEM;
-                ret.IO += temp_ret.IO;
-                ret.NET += temp_ret.NET;
+                ret.CPU += (temp_ret.CPU*multiple);
+                ret.MEM += (temp_ret.MEM*multiple);
+                ret.IO += (temp_ret.IO*multiple);
+                ret.NET += (temp_ret.NET*multiple);
             }
             mysql_free_result(res_ptr1);
         }
@@ -867,7 +867,7 @@ confScore buildConfScore(char *confName, char *xmlPath)
                             ret.IO += temp_ret.IO;
                             ret.NET += temp_ret.NET;
 #if DEBUG == 1                            
-                            printf("sourceFile:%s funcName: %s funcType: %d\n", current->sourceFile, current->funcName, current->funcType);
+                            printf("sourceFile:%s funcName: %s funcType: %s\n", current->sourceFile, current->funcName, current->funcType? "static":"extern");
 #endif
                             current = current->next;                        
                         }

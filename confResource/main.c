@@ -28,12 +28,12 @@ int main(int argc, char **argv)
     printf("rebuild program? yes or no: ");
     scanf("%s", str);
     //getProgramName("/home/fzm/Downloads/Program source code/redis-4.0.1");
-    getProgramName("/home/fzm/Downloads/Programsourcecode/mysql-5.5.36");
+    getProgramName("/home/fzm/Downloads/Programsourcecode/redis-4.0.1");
     initTableName();
     time(&start); 
     if(strcasecmp(str, "yes") == 0)
     {
-        initSoftware("/home/fzm/Downloads/Programsourcecode/mysql-5.5.36");
+        initSoftware("/home/fzm/Downloads/Programsourcecode/redis-4.0.1");
         time(&end);
         finish = end - start;
         printf("build time is: %d second\n", finish);
@@ -41,6 +41,7 @@ int main(int argc, char **argv)
     char temp_dir[DIRPATH_MAX];
     memset(temp_dir, 0, DIRPATH_MAX);
     sprintf(temp_dir, "temp_%s", programName);
+    
     /*
     ExtractGlobalVarDef("/home/fzm/confResource/confResource/Debug/temp_redis-4.0.1/src/adlist.c.xml");
     ExtractFuncVarDef("/home/fzm/confResource/confResource/Debug/temp_redis-4.0.1/src/adlist.c.xml");
@@ -56,7 +57,7 @@ int main(int argc, char **argv)
     char *confArray[] = {"server.rdb_compression", "server.rdb_checksum", "server.maxclients", "server.hz", "server.maxmemory", "server.save" };
     //char *confArray[] = {"ap_daemons_to_start", "ap_daemons_limit", "server_limit", "max_workers", "threads_per_child", "ap_threads_per_child" };
     //char *confArray[] = {"thd->variables.tmp_table_size", "key_cache->param_buff_size", "thd->variables.max_heap_table_size", "thd->variables.sortbuff_size"};
-    //char *confArray[] = {"server.maxmemory"};
+    //char *confArray[] = {"server.rdb_compression"};
     int i;
     for(i = 0; i < 6; i++)
     {

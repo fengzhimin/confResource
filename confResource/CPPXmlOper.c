@@ -254,8 +254,20 @@ static void scanCallFunctionFromNode(xmlNodePtr cur, char *funcName, char *funcT
                 //删除递归调用
                 if(strcasecmp(callFuncName, funcName) != 0)
                 {
-                    sprintf(sqlCommand, "insert into %s (funcName, funcCallType, sourceFile, calledFunc, CalledSrcFile, line, type) \
-                        value('%s', '%s', '%s', '%s', '%s', %s, 'L')", tempFuncCallTableName, funcName, funcType, srcPath, callFuncName, srcPath, attr_value);
+                    xmlNodePtr parentNode = cur->parent;
+                    int forNum = 0;
+                    int whileNum = 0;
+                    while(parentNode != NULL)
+                    {
+                        if(!xmlStrcmp(parentNode->name, (const xmlChar*)"for"))
+                            forNum++;
+                        else if(!xmlStrcmp(parentNode->name, (const xmlChar*)"do") || !xmlStrcmp(parentNode->name, (const xmlChar*)"while"))
+                            whileNum++;
+                        parentNode = parentNode->parent;
+                    }
+                    sprintf(sqlCommand, "insert into %s (funcName, funcCallType, sourceFile, calledFunc, CalledSrcFile, line, type, forNum, whileNum) \
+                        value('%s', '%s', '%s', '%s', '%s', %s, 'L', %d, %d)", tempFuncCallTableName, funcName, funcType, srcPath, callFuncName, srcPath,\
+                        attr_value, forNum, whileNum);
                     if(!executeCommand(sqlCommand))
                     {
                         memset(error_info, 0, LOGINFO_LENGTH);
