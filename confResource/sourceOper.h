@@ -13,8 +13,10 @@
 #include "config.h"
 #include "strOper.h"
 #include "CXmlOper.h"
+#include "CPPXmlOper.h"
 #include "mysqlOper.h"
 #include "buildTempTable.h"
+#include "buildFuncLibrary.h"
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
@@ -102,6 +104,12 @@ int getTotalAnalyzeFileNum(char *dirPath);
 *********************************************/
 bool initSoftware(char *srcPath);
 
+/*********************************************
+ * func: optimize database operation
+ * return: void
+*********************************************/
+void optDataBaseOper();
+
 /*****************************************
  * func: delete temp xml file
  * return: true = success     false = failure
@@ -146,13 +154,5 @@ confScore getFuncScore(char *funcName, bool funcType, char *srcFile);
  * @para dirPath: program path
 ****************************************/
 void getConfKeyInfluence(char *confKeyName, char *dirPath);
-
-/****************************************
- * func: get variable influence variable and function info
- * return: void
- * @para var: variable name
- * @para dirPath: program path
-****************************************/
-void getVarInfluence(char *var, char *dirPath);
 
 #endif

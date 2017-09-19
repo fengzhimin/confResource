@@ -1,0 +1,8 @@
+目前无法处理此类函数定义
+static int get_replace_strings(argc,argv,from_array,to_array)
+register int *argc;
+register char **argv[];
+POINTER_ARRAY *from_array,*to_array;
+{
+...
+}

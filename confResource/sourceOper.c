@@ -348,6 +348,63 @@ bool initSoftware(char *srcPath)
     return ret;
 }
 
+void optDataBaseOper()
+{
+    memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+    sprintf(sqlCommand, "delete from %s where funcName not in (select calledFunc from %s) and type='static'", tempFuncScoreTableName, tempFuncCallTableName);
+    if(!executeCommand(sqlCommand))
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+        RecordLog(error_info);
+    }
+    //merge tempFuncScore into funcScore
+    memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+    sprintf(sqlCommand, "insert into %s select distinct * from %s", funcScoreTableName, tempFuncScoreTableName);
+    if(!executeCommand(sqlCommand))
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+        RecordLog(error_info);
+    }
+    //clear tempFuncScore
+    memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+    sprintf(sqlCommand, "truncate table %s", tempFuncScoreTableName);
+    if(!executeCommand(sqlCommand))
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+        RecordLog(error_info);
+    }
+    // delete library function call record from funcCall
+    memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+    sprintf(sqlCommand, "delete from %s where funcName not in (select funcName from %s) and funcCallType='static'", tempFuncCallTableName, tempFuncScoreTableName);
+    if(!executeCommand(sqlCommand))
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+        RecordLog(error_info);
+    }
+    //merge tempFuncCall into funcCall
+    memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+    sprintf(sqlCommand, "insert into %s select distinct * from %s", funcCallTableName, tempFuncCallTableName);
+    if(!executeCommand(sqlCommand))
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+        RecordLog(error_info);
+    }
+    //clear tempFuncCall
+    memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+    sprintf(sqlCommand, "truncate table %s", tempFuncCallTableName);
+    if(!executeCommand(sqlCommand))
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+        RecordLog(error_info);
+    }
+}
+
 bool deleteTempXMLFile()
 {
     bool ret = false;
@@ -389,7 +446,7 @@ bool buildFuncScore()
 
     time(&end); 
     finish = end - start;
-    printf("time is: %d second\n", finish);
+    printf("time is: %d second\n", (int)finish);
     printf("update funcCall table finish\n");
     
     //对每个函数进行打分， 每个函数中直接使用到的库函数
@@ -852,33 +909,31 @@ confScore buildConfScore(char *confName, char *xmlPath)
             }
             if(S_ISREG(statbuf.st_mode))
             {
-                //跳过头文件
-                //if(judgeCSrcXmlFile(child_dir))
+                funcList * ret_begin = NULL;
+                if(judgeCSrcXmlFile(child_dir))
+                    ret_begin = CSclice(confName, child_dir);
+                else if(judgeCPPSrcXmlFile(child_dir))
+                    ret_begin = CPPSclice(confName, child_dir);
+
+                if(ret_begin != NULL)
                 {
-                    funcList * ret_begin = Sclice(confName, child_dir);
-                    if(ret_begin != NULL)
+                    funcList *current = ret_begin;
+                    while(current != NULL)
                     {
-                        funcList *current = ret_begin;
-                        while(current != NULL)
-                        {
-                            confScore temp_ret = getFuncScore(current->funcName, current->funcType, current->sourceFile);
-                            ret.CPU += temp_ret.CPU;
-                            ret.MEM += temp_ret.MEM;
-                            ret.IO += temp_ret.IO;
-                            ret.NET += temp_ret.NET;
-#if DEBUG == 1                            
-                            printf("sourceFile:%s funcName: %s funcType: %s\n", current->sourceFile, current->funcName, current->funcType? "static":"extern");
-#endif
-                            current = current->next;                        
-                        }
-                        //delete funcList value
+                        confScore temp_ret = getFuncScore(current->funcName, current->funcType, current->sourceFile);
+                        ret.CPU += temp_ret.CPU;
+                        ret.MEM += temp_ret.MEM;
+                        ret.IO += temp_ret.IO;
+                        ret.NET += temp_ret.NET;
+                        current = current->next;                        
+                    }
+                    //delete funcList value
+                    current = ret_begin;
+                    while(current != NULL)
+                    {
+                        ret_begin = ret_begin->next;
+                        free(current);
                         current = ret_begin;
-                        while(current != NULL)
-                        {
-                            ret_begin = ret_begin->next;
-                            free(current);
-                            current = ret_begin;
-                        }
                     }
                 }
             }
@@ -942,59 +997,4 @@ void getConfKeyInfluence(char *confKeyName, char *dirPath)
         RecordLog(error_info);
     }
     closedir(pdir);
-}
-
-void getVarInfluence(char *var, char *dirPath)
-{
-    funcList *begin = NULL;
-    DIR *pdir;
-    struct dirent *pdirent;
-    struct stat statbuf;
-    
-    char child_dir[DIRPATH_MAX];
-    pdir = opendir(dirPath);
-    if(pdir)
-    {
-        while((pdirent = readdir(pdir)) != NULL)
-        {
-            //跳过"."和".."和隐藏文件夹
-            if(strcmp(pdirent->d_name, ".") == 0 || strcmp(pdirent->d_name, "..") == 0 || (pdirent->d_name[0] == '.'))
-                continue;
-            
-            memset(child_dir, 0, DIRPATH_MAX);
-            sprintf(child_dir, "%s/%s", dirPath, pdirent->d_name);
-            if(lstat(child_dir, &statbuf) < 0)
-            {
-                memset(error_info, 0, LOGINFO_LENGTH);
-                sprintf(error_info, "lstat %s to failed: %s.\n", child_dir, strerror(errno));
-                RecordLog(error_info);
-                closedir(pdir);
-                
-                return begin;
-            }
-            
-            //judge whether directory or not
-            if(S_ISDIR(statbuf.st_mode))
-            {
-                getVarInfluence(var, child_dir);
-            }
-            else if(S_ISREG(statbuf.st_mode))
-            {
-                begin = Sclice(var, child_dir);
-#if DEBUG == 1                
-                if(begin != NULL)
-                    printf("----------------file Name = %s---------------\n", child_dir);
-#endif           
-            }
-        }
-    }
-    else
-    {
-        memset(error_info, 0, LOGINFO_LENGTH);
-        sprintf(error_info, "open directory %s to failed: %s.\n", dirPath, strerror(errno));
-        RecordLog(error_info);
-    }
-    closedir(pdir);
-    
-    return begin;
 }

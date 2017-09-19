@@ -17,6 +17,10 @@
 #include "logOper.h"
 #include "config.h"
 #include "mysqlOper.h"
+#include "commonXmlOper.h"
+
+#define varCPPScliceFunc(varName, cur, varTypeBegin)   varCPPScliceFuncFromNode(varName, cur, varTypeBegin, true)
+#define scanCPPCallFunc(cur, varTypeBegin)    scanCPPCallFuncFromNode(cur, varTypeBegin, true)
 
 /*******************************
  * func: Extract function Name from C Plus Plus language XML file
@@ -26,6 +30,20 @@
 bool ExtractFuncFromCPPXML(char *docName);
 
 /*******************************
+ * func: scan call function from current node
+ * return: call function list header point
+ * @para cur: current  Node
+********************************/
+funcCallList *scanCPPCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, bool flag);
+
+/*******************************
+ * func: scan called function from current node back node
+ * return: call function list header point
+ * @para cur: current Node
+*******************************/
+funcCallList *scanBackCPPCallFunc(xmlNodePtr cur, varType *varTypeBegin);
+
+/*******************************
  * func: Extract class inherit from C Plus Plus language XML file
  * return: true = success    false = failure
  * @para docName: xml path
@@ -33,11 +51,19 @@ bool ExtractFuncFromCPPXML(char *docName);
 bool ExtractClassInheritFromCPPXML(char *docName);
 
 /*********************************
- * func: Extract variable type
- * return: varType list
+ * func: sclice variable influence function call
+ * return: influence call function header point
+ * @para varName: variable name
  * @para cur: current node
- * @para flag: whether scan next node or not
-*********************************/
-varType *ExtractVarTypeFromNode(xmlNodePtr cur, bool flag);
+**********************************/
+funcCallList *varCPPScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *varTypeBegin, bool flag);
+
+/**********************************
+ * func: C++ language variable sclice
+ * return: not null = exist influence   null = not exist influence
+ * @para varName: variable name
+ * @para xmlFilePath: xml file path
+**********************************/
+funcList *CPPSclice(char *varName, char *xmlFilePath);
 
 #endif

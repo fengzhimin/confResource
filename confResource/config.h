@@ -13,7 +13,7 @@
 
 #define OPENLOG  1      //0=不记录日志   1=记录日志
 
-#define DEBUG    0      //0=不打印调试信息    1 = 打印调试信息
+#define DEBUG    1      //0=不打印调试信息    1 = 打印调试信息
 
 #define LINE_CHAR_MAX_NUM      1024   //一行最大字符个数
 
@@ -30,11 +30,11 @@
 
 #define DIRPATH_MAX              256
 
-#define MAX_PROGRAMNAME_NUM      50     //a program max name length
+#define MAX_PROGRAMNAME_NUM      128     //a program max name length
 
-#define MAX_FUNCNAME_LENGTH      50     //a function name max length
+#define MAX_FUNCNAME_LENGTH      128     //a function name max length
 
-#define MAX_VARIABLE_LENGTH      50     //a variable name max length
+#define MAX_VARIABLE_LENGTH      128     //a variable name max length
 
 #define FORNUM                   10     //for multiple
 #define WHILENUM                 10     //while and do-while multiple
