@@ -910,6 +910,7 @@ confScore buildConfScore(char *confName, char *xmlPath)
             if(S_ISREG(statbuf.st_mode))
             {
                 funcList * ret_begin = NULL;
+                printf("%s\n", child_dir);
                 if(judgeCSrcXmlFile(child_dir))
                     ret_begin = CSclice(confName, child_dir);
                 else if(judgeCPPSrcXmlFile(child_dir))

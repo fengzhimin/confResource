@@ -411,6 +411,9 @@ varType *ExtractVarTypeFromNode(xmlNodePtr cur, bool flag)
         current = temp_begin;
     }
     
+    if(begin != NULL)
+        end->next = NULL;
+
     return begin;
 }
 

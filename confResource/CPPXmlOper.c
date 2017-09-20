@@ -61,7 +61,7 @@ bool ExtractFuncFromCPPXML(char *docName)
                     memset(src_dir, 0, DIRPATH_MAX);
                     //删除开头的temp_和结尾的.xml
                     strncpy(src_dir, (char *)&(docName[5]), strlen(docName)-9);
-                    xmlChar* attr_value;
+                    xmlChar* attr_value = NULL;
                     if(temp_cur->children->last != NULL)
                     {
                         if(xmlStrcmp(temp_cur->children->last->name, (const xmlChar*)"position"))
@@ -83,7 +83,7 @@ bool ExtractFuncFromCPPXML(char *docName)
                         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
                         RecordLog(error_info);
                     }
-                    
+
                     varType *begin = ExtractVarType(cur);
                     varType *current = begin;
                     scanCallFunction(cur, (char*)xmlNodeGetContent(temp_cur), funcType, src_dir, begin);
@@ -645,6 +645,33 @@ funcCallList *varCPPScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *v
                 {
                     attr_value = xmlGetProp(argument_list, (xmlChar*)"line");
                     calledFuncName = (char*)xmlNodeGetContent(argument_list);
+                    /*
+                    if(!xmlStrcmp(cur->children->children->name, (const xmlChar*)"text"))
+                        strcat(callFuncName, (char*)xmlNodeGetContent(cur->children));
+                    else
+                    {
+                        if(strcasecmp((char*)xmlNodeGetContent(cur->children->last->prev), "::") != 0)
+                        {
+                            varType *current = varTypeBegin;
+                            char *varName = (char*)xmlNodeGetContent(cur->children->last->prev->prev);
+                            //handle new List<Index_hint>();
+                            if(varName == NULL)
+                                varName = (char*)xmlNodeGetContent(cur->children->last->prev);
+                            while(current != NULL)
+                            {
+                                if(strcasecmp(current->varName, varName) == 0)
+                                {
+                                    sprintf(callFuncName, "%s::", current->type);
+                                    break;
+                                }
+                                current = current->next;
+                            }
+                            strcat(callFuncName, (char*)xmlNodeGetContent(cur->children->last));
+                        }
+                        else
+                            strcat(callFuncName, (char*)xmlNodeGetContent(cur->children));
+                    }
+                     * */
                 }
                 else if(!xmlStrcmp(argument_list->name, (const xmlChar*)"argument_list"))
                 {
