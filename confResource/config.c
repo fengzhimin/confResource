@@ -22,11 +22,11 @@ char *deleteFuncLibraryTable = "drop table if exists funcLibrary";
 //存放已经打分的函数
 //每个函数对应的各项资源的分数
 //type: extern 全局的函数    static 局部的函数
-char *createFuncScoreTableTemplate = "create table %s(funcName varchar(128), type varchar(128) default 'extern', sourceFile text, line int,\
-        CPU int default 0, MEM int  default 0, IO int default 0, NET int default 0)";
+char *createFuncScoreTableTemplate = "create table %s(funcName varchar(128), type varchar(128) default 'extern', argumentType text, \
+        sourceFile text, line int, CPU int default 0, MEM int  default 0, IO int default 0, NET int default 0)";
 char *deleteFuncScoreTableTemplate = "drop table if exists %s";
-char *createTempFuncScoreTableTemplate = "create table %s(funcName varchar(128), type varchar(128) default 'extern', sourceFile text, line int,\
-        CPU int default 0, MEM int  default 0, IO int default 0, NET int default 0)";
+char *createTempFuncScoreTableTemplate = "create table %s(funcName varchar(128), type varchar(128) default 'extern', argumentType text, \
+        sourceFile text, line int, CPU int default 0, MEM int  default 0, IO int default 0, NET int default 0)";
 char *deleteTempFuncScoreTableTemplate = "drop table if exists %s";
 //存放类继承的关系
 //每个函数对应的各项资源的分数
@@ -43,13 +43,13 @@ char *deleteClassInheritTableTemplate = "drop table if exists %s";
 //type: calledFunc类型  'L' = 库函数    'S' = 自定义函数
 //forNum: nested for number
 //whileNum: nested while or do-while number
-char *createFuncCallTableTemplate = "create table %s(funcName varchar(128), funcCallType varchar(128) default 'extern', \
-        sourceFile text, calledFunc varchar(128), calledFuncType varchar(128) default 'extern', CalledSrcFile text, line int, type char(1), \
-        forNum int default 0, whileNum int default 0)";
+char *createFuncCallTableTemplate = "create table %s(funcName varchar(128), funcCallType varchar(128) default 'extern', argumentType text, \
+        sourceFile text, calledFunc varchar(128), calledFuncType varchar(128) default 'extern', calledFuncArgumentType text, \
+        CalledSrcFile text, line int, type char(1), forNum int default 0, whileNum int default 0)";
 char *deleteFuncCallTableTemplate = "drop table if exists %s";
-char *createTempFuncCallTableTemplate = "create table %s(funcName varchar(128), funcCallType varchar(128) default 'extern', \
-        sourceFile text, calledFunc varchar(128), calledFuncType varchar(128) default 'extern', CalledSrcFile text, line int, type char(1), \
-        forNum int default 0, whileNum int default 0)";
+char *createTempFuncCallTableTemplate = "create table %s(funcName varchar(128), funcCallType varchar(128) default 'extern', argumentType text, \
+        sourceFile text, calledFunc varchar(128), calledFuncType varchar(128) default 'extern', calledFuncArgumentType text, \
+        CalledSrcFile text, line int, type char(1), forNum int default 0, whileNum int default 0)";
 char *deleteTempFuncCallTableTemplate = "drop table if exists %s";
 
 char funcScoreTableName[MAX_PROGRAMNAME_NUM*2] = "";

@@ -780,7 +780,7 @@ void getVarUsedFunc(char *varName, char *xmlPath)
     closedir(pdir);
 }
 
-confScore getFuncScore(char *funcName, bool funcType, char *srcFile)
+confScore getFuncScore(char *funcName, bool funcType, char *argumentType, char *srcFile)
 {
     count++;
     confScore ret;
@@ -790,11 +790,11 @@ confScore getFuncScore(char *funcName, bool funcType, char *srcFile)
     //一个程序中可能会存在多个名称相同的static函数
     //一个源文件中不可能存在多个名称相同的static函数
     if(funcType)
-        sprintf(sqlCommand, "select calledFunc, calledFuncType, CalledSrcFile, forNum, whileNum from %s where \
-        funcName='%s' and funcCallType='static' and sourceFile='%s'", funcCallTableName, funcName, srcFile);
+        sprintf(sqlCommand, "select calledFunc, calledFuncType, CalledSrcFile, forNum, whileNum, calledFuncArgumentType from %s where \
+        funcName='%s' and funcCallType='static' and sourceFile='%s' and argumentType='%s'", funcCallTableName, funcName, srcFile, argumentType);
     else
-        sprintf(sqlCommand, "select calledFunc, calledFuncType, CalledSrcFile, forNum, whileNum from %s where \
-        funcName='%s' and funcCallType='extern'", funcCallTableName, funcName);
+        sprintf(sqlCommand, "select calledFunc, calledFuncType, CalledSrcFile, forNum, whileNum, calledFuncArgumentType from %s where \
+        funcName='%s' and funcCallType='extern' and argumentType='%s'", funcCallTableName, funcName, argumentType);
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -821,7 +821,7 @@ confScore getFuncScore(char *funcName, bool funcType, char *srcFile)
 #if DEBUG == 1                
                 printf("(%s->%s)", funcName, sqlrow1[0]);
 #endif                
-                confScore temp_ret = getFuncScore(sqlrow1[0], temp_funcType, sqlrow1[2]);
+                confScore temp_ret = getFuncScore(sqlrow1[0], temp_funcType, sqlrow1[5], sqlrow1[2]);
                 ret.CPU += (temp_ret.CPU*multiple);
                 ret.MEM += (temp_ret.MEM*multiple);
                 ret.IO += (temp_ret.IO*multiple);
@@ -837,10 +837,10 @@ confScore getFuncScore(char *funcName, bool funcType, char *srcFile)
         memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
         if(funcType)
             sprintf(sqlCommand, "select CPU, MEM, IO, NET from %s where \
-            funcName='%s' and type='static'  and sourceFile='%s'", funcScoreTableName, funcName, srcFile);
+            funcName='%s' and type='static'  and sourceFile='%s' and argumentType='%s'", funcScoreTableName, funcName, srcFile, argumentType);
         else
             sprintf(sqlCommand, "select CPU, MEM, IO, NET from %s where \
-            funcName='%s' and type='extern'", funcScoreTableName, funcName);
+            funcName='%s' and type='extern' and argumentType='%s'", funcScoreTableName, funcName, argumentType);
         if(!executeCommand(sqlCommand))
         {
             memset(error_info, 0, LOGINFO_LENGTH);
@@ -922,7 +922,7 @@ confScore buildConfScore(char *confName, char *xmlPath)
                     funcList *current = ret_begin;
                     while(current != NULL)
                     {
-                        confScore temp_ret = getFuncScore(current->funcName, current->funcType, current->sourceFile);
+                        confScore temp_ret = getFuncScore(current->funcName, current->funcType, current->argumentType, current->sourceFile);
                         ret.CPU += temp_ret.CPU;
                         ret.MEM += temp_ret.MEM;
                         ret.IO += temp_ret.IO;

@@ -11,10 +11,12 @@ static char error_info[LOGINFO_LENGTH];
 static char src_dir[DIRPATH_MAX];
 static char sqlCommand[LINE_CHAR_MAX_NUM];
 
-#define scanCallFunction(cur, funcName, funcType, srcPath, varTypeBegin)   scanCallFunctionFromNode(cur, funcName, funcType, srcPath, varTypeBegin, true)
+#define scanCallFunction(cur, funcName, funcType, funcArgumentType, srcPath, varTypeBegin)   \
+    scanCallFunctionFromNode(cur, funcName, funcType, funcArgumentType, srcPath, varTypeBegin, true)
 
-static void scanCallFunctionFromNode(xmlNodePtr cur, char *funcName, char *funcType, char *srcPath, varType *varTypeBegin, bool flag);
-
+static void scanCallFunctionFromNode(xmlNodePtr cur, char *funcName, char *funcType, char *funcArgumentType,\
+    char *srcPath, varType *varTypeBegin, bool flag);
+    
 bool ExtractFuncFromCPPXML(char *docName)
 {
     xmlDocPtr doc;
@@ -74,9 +76,11 @@ bool ExtractFuncFromCPPXML(char *docName)
                         attr_value = xmlGetProp(temp_cur, (xmlChar*)"line");
 
                     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-                    sprintf(sqlCommand, "insert into %s (funcName, type, sourceFile, line) value('%s', '%s', '%s', %s)", tempFuncScoreTableName,\
-                        (char*)xmlNodeGetContent(temp_cur), funcType, src_dir, attr_value);
-                        
+                    //get function argument type string
+                    char *argumentTypeString = ExtractFuncArgumentType(cur);
+                    sprintf(sqlCommand, "insert into %s (funcName, type, argumentType, sourceFile, line) value('%s', '%s', '%s', '%s', %s)", tempFuncScoreTableName,\
+                        (char*)xmlNodeGetContent(temp_cur), funcType, argumentTypeString, src_dir, attr_value);
+                    
                     if(!executeCommand(sqlCommand))
                     {
                         memset(error_info, 0, LOGINFO_LENGTH);
@@ -86,7 +90,7 @@ bool ExtractFuncFromCPPXML(char *docName)
 
                     varType *begin = ExtractVarType(cur);
                     varType *current = begin;
-                    scanCallFunction(cur, (char*)xmlNodeGetContent(temp_cur), funcType, src_dir, begin);
+                    scanCallFunction(cur, (char*)xmlNodeGetContent(temp_cur), funcType, argumentTypeString, src_dir, begin);
                     while(current != NULL)
                     {
                         begin = begin->next;
@@ -94,7 +98,7 @@ bool ExtractFuncFromCPPXML(char *docName)
                         free(current);
                         current = begin;
                     }
-                    
+                    free(argumentTypeString);
                     break;
                 }
                 temp_cur = temp_cur->next;
@@ -154,7 +158,7 @@ bool ExtractFuncFromCPPXML(char *docName)
  * @para srcPath: function source file path
  * @para varTypeBegin: variable type header point
 ********************************/
-static void scanCallFunctionFromNode(xmlNodePtr cur, char *funcName, char *funcType, char *srcPath, varType *varTypeBegin, bool flag)
+static void scanCallFunctionFromNode(xmlNodePtr cur, char *funcName, char *funcType, char *funcArgumentType, char *srcPath, varType *varTypeBegin, bool flag)
 {
     while(cur != NULL)
     {
@@ -212,9 +216,11 @@ static void scanCallFunctionFromNode(xmlNodePtr cur, char *funcName, char *funcT
                             whileNum++;
                         parentNode = parentNode->parent;
                     }
-                    sprintf(sqlCommand, "insert into %s (funcName, funcCallType, sourceFile, calledFunc, CalledSrcFile, line, type, forNum, whileNum) \
-                        value('%s', '%s', '%s', '%s', '%s', %s, 'L', %d, %d)", tempFuncCallTableName, funcName, funcType, srcPath, callFuncName, srcPath,\
-                        attr_value, forNum, whileNum);
+                    char *calledFuncArgumentTypeString = getCalledFuncArgumentType(cur, varTypeBegin);
+                    sprintf(sqlCommand, "insert into %s (funcName, funcCallType, argumentType, sourceFile, calledFunc, calledFuncArgumentType, CalledSrcFile, line, type, forNum, whileNum) \
+                        value('%s', '%s', '%s', '%s', '%s', '%s', '%s', %s, 'L', %d, %d)", tempFuncCallTableName, funcName, funcType, funcArgumentType, srcPath, callFuncName, \
+                        calledFuncArgumentTypeString, srcPath, attr_value, forNum, whileNum);
+                    free(calledFuncArgumentTypeString);
                     if(!executeCommand(sqlCommand))
                     {
                         memset(error_info, 0, LOGINFO_LENGTH);
@@ -225,7 +231,7 @@ static void scanCallFunctionFromNode(xmlNodePtr cur, char *funcName, char *funcT
             }
         }
         
-        scanCallFunctionFromNode(cur->children, funcName, funcType, srcPath, varTypeBegin, false);
+        scanCallFunctionFromNode(cur->children, funcName, funcType, funcArgumentType, srcPath, varTypeBegin, false);
         if(flag)
             break;
         cur = cur->next;
@@ -285,6 +291,9 @@ funcCallList *scanCPPCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, boo
                     end = end->next = malloc(sizeof(funcCallList));
                 memset(end, 0, sizeof(funcCallList));
                 strcpy(end->funcName, callFuncName);
+                char *calledFuncArgumentTypeString = getCalledFuncArgumentType(cur, varTypeBegin);
+                strcpy(end->argumentType, calledFuncArgumentTypeString);
+                free(calledFuncArgumentTypeString);
                 end->line = StrToInt((char *)attr_value);
 #if DEBUG == 1                
                 printf("%s(%s)\n", callFuncName, attr_value);
@@ -696,6 +705,9 @@ funcCallList *varCPPScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *v
                             end = end->next = malloc(sizeof(funcCallList));
                         memset(end, 0, sizeof(funcCallList));
                         strcpy(end->funcName, calledFuncName);
+                        char *calledFuncArgumentTypeString = getCalledFuncArgumentType(cur, varTypeBegin);
+                        strcpy(end->argumentType, calledFuncArgumentTypeString);
+                        free(calledFuncArgumentTypeString);
                         end->line = StrToInt((char *)attr_value);
 #if DEBUG == 1
                         printf("%s(%s)\n", calledFuncName, attr_value);

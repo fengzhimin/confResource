@@ -11,9 +11,11 @@ static char error_info[LOGINFO_LENGTH];
 static char src_dir[DIRPATH_MAX];
 static char sqlCommand[LINE_CHAR_MAX_NUM];
 
-#define scanCallFunction(cur, funcName, funcType, srcPath)   scanCallFunctionFromNode(cur, funcName, funcType, srcPath, true)
+#define scanCallFunction(cur, funcName, funcType, funcArgumentType, srcPath, varTypeBegin)   \
+    scanCallFunctionFromNode(cur, funcName, funcType, funcArgumentType, srcPath, varTypeBegin, true)
 
-static void scanCallFunctionFromNode(xmlNodePtr cur, char *funcName, char *funcType, char *srcPath, bool flag);
+static void scanCallFunctionFromNode(xmlNodePtr cur, char *funcName, char *funcType, char *funcArgumentType,\
+    char *srcPath, varType *varTypeBegin, bool flag);
 
 bool ExtractFuncFromCXML(char *docName)
 {
@@ -61,18 +63,29 @@ bool ExtractFuncFromCXML(char *docName)
                     strncpy(src_dir, (char *)&(docName[5]), strlen(docName)-9);
                     xmlChar* attr_value = xmlGetProp(temp_cur, (xmlChar*)"line");
                     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-                    sprintf(sqlCommand, "insert into %s (funcName, type, sourceFile, line) value('%s', '%s', '%s', %s)",  tempFuncScoreTableName,\
-                        (char*)xmlNodeGetContent(temp_cur), funcType, src_dir, attr_value);
-                        
+                    
+                    //get function argument type string
+                    char *argumentTypeString = ExtractFuncArgumentType(cur);
+                    sprintf(sqlCommand, "insert into %s (funcName, type, argumentType, sourceFile, line) value('%s', '%s', '%s', '%s', %s)", tempFuncScoreTableName,\
+                        (char*)xmlNodeGetContent(temp_cur), funcType, argumentTypeString, src_dir, attr_value);
+                    
                     if(!executeCommand(sqlCommand))
                     {
                         memset(error_info, 0, LOGINFO_LENGTH);
                         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
                         RecordLog(error_info);
                     }
-                    //printf("start scan call function\n");
-                    scanCallFunction(cur, (char*)xmlNodeGetContent(temp_cur), funcType, src_dir);
-                    //printf("complete scan call function\n");
+                    varType *begin = ExtractVarType(cur);
+                    varType *current = begin;
+                    scanCallFunction(cur, (char*)xmlNodeGetContent(temp_cur), funcType, argumentTypeString, src_dir, begin);
+                    while(current != NULL)
+                    {
+                        begin = begin->next;
+                        //printf("%s(%d):%s\n", current->type, current->line, current->varName);
+                        free(current);
+                        current = begin;
+                    }
+                    free(argumentTypeString);
                     break;
                 }
                 temp_cur = temp_cur->next;
@@ -94,8 +107,9 @@ bool ExtractFuncFromCXML(char *docName)
  * @para funcName: current self-define function name
  * @para funcType: current self-define function type(extern or static)
  * @para srcPath: function source file path
+ * @para varTypeBegin: variable type header point
 ********************************/
-static void scanCallFunctionFromNode(xmlNodePtr cur, char *funcName, char *funcType, char *srcPath, bool flag)
+static void scanCallFunctionFromNode(xmlNodePtr cur, char *funcName, char *funcType, char *funcArgumentType, char *srcPath, varType *varTypeBegin, bool flag)
 {
     while(cur != NULL)
     {
@@ -130,9 +144,11 @@ static void scanCallFunctionFromNode(xmlNodePtr cur, char *funcName, char *funcT
                             whileNum++;
                         parentNode = parentNode->parent;
                     }
-                    sprintf(sqlCommand, "insert into %s (funcName, funcCallType, sourceFile, calledFunc, CalledSrcFile, line, type, forNum, whileNum) \
-                        value('%s', '%s', '%s', '%s', '%s', %s, 'L', %d, %d)", tempFuncCallTableName, funcName, funcType, srcPath, callFuncName, srcPath,\
-                        attr_value, forNum, whileNum);
+                    char *calledFuncArgumentTypeString = getCalledFuncArgumentType(cur, varTypeBegin);
+                    sprintf(sqlCommand, "insert into %s (funcName, funcCallType, argumentType, sourceFile, calledFunc, calledFuncArgumentType, CalledSrcFile, line, type, forNum, whileNum) \
+                        value('%s', '%s', '%s', '%s', '%s', '%s', '%s', %s, 'L', %d, %d)", tempFuncCallTableName, funcName, funcType, funcArgumentType, srcPath, callFuncName, \
+                        calledFuncArgumentTypeString, srcPath, attr_value, forNum, whileNum);
+                    free(calledFuncArgumentTypeString);
                     if(!executeCommand(sqlCommand))
                     {
                         memset(error_info, 0, LOGINFO_LENGTH);
@@ -143,14 +159,14 @@ static void scanCallFunctionFromNode(xmlNodePtr cur, char *funcName, char *funcT
             }
         }
         
-        scanCallFunctionFromNode(cur->children, funcName, funcType, srcPath, false);
+        scanCallFunctionFromNode(cur->children, funcName, funcType, funcArgumentType, srcPath, varTypeBegin, false);
         if(flag)
             break;
         cur = cur->next;
     }
 }
 
-funcCallList *scanCCallFuncFromNode(xmlNodePtr cur, bool flag)
+funcCallList *scanCCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, bool flag)
 {
     funcCallList *begin = NULL;
     funcCallList *end = NULL;
@@ -178,6 +194,9 @@ funcCallList *scanCCallFuncFromNode(xmlNodePtr cur, bool flag)
                     end = end->next = malloc(sizeof(funcCallList));
                 memset(end, 0, sizeof(funcCallList));
                 strcpy(end->funcName, callFuncName);
+                char *calledFuncArgumentTypeString = getCalledFuncArgumentType(cur, varTypeBegin);
+                strcpy(end->argumentType, calledFuncArgumentTypeString);
+                free(calledFuncArgumentTypeString);
                 end->line = StrToInt((char *)attr_value);
 #if DEBUG == 1                
                 printf("%s(%s)\n", callFuncName, attr_value);
@@ -185,7 +204,7 @@ funcCallList *scanCCallFuncFromNode(xmlNodePtr cur, bool flag)
             }
         }
         
-        funcCallList *current = scanCCallFuncFromNode(cur->children, false);
+        funcCallList *current = scanCCallFuncFromNode(cur->children, varTypeBegin, false);
         if(begin == NULL)
             begin = end = current;
         else
@@ -204,7 +223,7 @@ funcCallList *scanCCallFuncFromNode(xmlNodePtr cur, bool flag)
     return begin;
 }
 
-funcCallList *scanBackCCallFunc(xmlNodePtr cur)
+funcCallList *scanBackCCallFunc(xmlNodePtr cur, varType *varTypeBegin)
 {
     funcCallList *begin = NULL;
     funcCallList *end = NULL;
@@ -217,7 +236,7 @@ funcCallList *scanBackCCallFunc(xmlNodePtr cur)
     cur = cur->next;
     while(cur != NULL)
     {
-        current = scanCCallFunc(cur);
+        current = scanCCallFunc(cur, varTypeBegin);
         if(begin == NULL)
             begin = end = current;
         else
@@ -231,7 +250,7 @@ funcCallList *scanBackCCallFunc(xmlNodePtr cur)
         cur = cur->next;
     }
     
-    current = scanBackCCallFunc(temp_cur->parent);
+    current = scanBackCCallFunc(temp_cur->parent, varTypeBegin);
     if(begin == NULL)
         begin = end = current;
     else
@@ -265,7 +284,7 @@ funcCallList *varCScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *var
                     if(JudgeVarUsed(condition, varName))
                     {
                         //打印整个if-else结构块                   
-                        current = scanCCallFunc(cur);                       
+                        current = scanCCallFunc(cur, varTypeBegin);                       
                         if(begin == NULL)
                             begin = end = current;
                         else if(current != NULL)
@@ -281,7 +300,7 @@ funcCallList *varCScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *var
                         {
                             if(JudgeExistChildNode(then, "return"))
                             {                              
-                                current = scanBackCCallFunc(cur);
+                                current = scanBackCCallFunc(cur, varTypeBegin);
                                 if(begin == NULL)
                                     begin = end = current;
                                 else if(current != NULL)
@@ -314,7 +333,7 @@ funcCallList *varCScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *var
                     if(JudgeVarUsed(condition, varName))
                     {
                         //打印整个while结构块                       
-                        current = scanCCallFunc(cur);                       
+                        current = scanCCallFunc(cur, varTypeBegin);                       
                         if(begin == NULL)
                             begin = end = current;
                         else if(current != NULL)
@@ -330,7 +349,7 @@ funcCallList *varCScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *var
                         {
                             if(JudgeExistChildNode(block, "return"))
                             {                               
-                                current = scanBackCCallFunc(cur);
+                                current = scanBackCCallFunc(cur, varTypeBegin);
                                 if(begin == NULL)
                                     begin = end = current;
                                 else if(current != NULL)
@@ -363,7 +382,7 @@ funcCallList *varCScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *var
                     if(JudgeVarUsed(condition, varName))
                     {
                         //打印整个do-while结构块
-                        current = scanCCallFunc(cur);                       
+                        current = scanCCallFunc(cur, varTypeBegin);                       
                         if(begin == NULL)
                             begin = end = current;
                         else if(current != NULL)
@@ -379,7 +398,7 @@ funcCallList *varCScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *var
                         {
                             if(JudgeExistChildNode(block, "return"))
                             {
-                                current = scanBackCCallFunc(cur);
+                                current = scanBackCCallFunc(cur, varTypeBegin);
                                 if(begin == NULL)
                                     begin = end = current;
                                 else if(current != NULL)
@@ -417,7 +436,7 @@ funcCallList *varCScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *var
                             if(JudgeVarUsed(condition, varName))
                             {
                                 //打印整个for结构块
-                                current = scanCCallFunc(cur);                       
+                                current = scanCCallFunc(cur, varTypeBegin);                       
                                 if(begin == NULL)
                                     begin = end = current;
                                 else if(current != NULL)
@@ -433,7 +452,7 @@ funcCallList *varCScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *var
                                 {
                                     if(JudgeExistChildNode(block, "return"))
                                     {
-                                        current = scanBackCCallFunc(cur);
+                                        current = scanBackCCallFunc(cur, varTypeBegin);
                                         if(begin == NULL)
                                             begin = end = current;
                                         else if(current != NULL)
@@ -482,6 +501,9 @@ funcCallList *varCScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *var
                             end = end->next = malloc(sizeof(funcCallList));
                         memset(end, 0, sizeof(funcCallList));
                         strcpy(end->funcName, calledFuncName);
+                        char *calledFuncArgumentTypeString = getCalledFuncArgumentType(cur, varTypeBegin);
+                        strcpy(end->argumentType, calledFuncArgumentTypeString);
+                        free(calledFuncArgumentTypeString);
                         end->line = StrToInt((char *)attr_value);
 #if DEBUG == 1
                         printf("%s(%s)\n", calledFuncName, attr_value);

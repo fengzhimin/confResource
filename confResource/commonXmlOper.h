@@ -108,6 +108,25 @@ void scanAssignVarFromNode(xmlNodePtr cur, bool flag);
 *******************************/
 void scanBackAssignVar(xmlNodePtr cur);
 
+/*******************************
+ * func: extract function argument type
+ * return: argument type string
+ * @para cur: current function node
+ * @example: void fun(void) ---> void
+ * @example: void fun(int a, const char *str)   ---> int/char
+*******************************/
+char *ExtractFuncArgumentType(xmlNodePtr cur);
+
+/*******************************
+ * func: get called function argument type
+ * return: argument type string
+ * @para cur: called function node
+ * @para funcDefVarType: current function all define variable type list
+ * @example: int a
+ *           func(a)  ---> int
+*******************************/
+char *getCalledFuncArgumentType(xmlNodePtr cur, varType *funcDefVarType);
+
 /**********************************
  * func: variable sclice
  * return: not null = exist influence   null = not exist influence
@@ -115,6 +134,6 @@ void scanBackAssignVar(xmlNodePtr cur);
  * @para xmlFilePath: xml file path
  * @para varScliceFunc: C or C++ variable Sclice function point
 **********************************/
-funcList *Sclice(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc)(char *, xmlNodePtr , varType *, bool ));
+funcList *Sclice(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc)(char *, xmlNodePtr , varType *, bool));
 
 #endif

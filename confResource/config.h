@@ -88,6 +88,7 @@ typedef struct functionList
 {
     char funcName[MAX_FUNCNAME_LENGTH];
     bool funcType;     //false = extern    true = static
+    char argumentType[512];
     int line;
     char sourceFile[DIRPATH_MAX];
     struct functionList *next;
@@ -96,6 +97,7 @@ typedef struct functionList
 typedef struct functionCallList
 {
     char funcName[MAX_FUNCNAME_LENGTH];
+    char argumentType[512];
     int line;
     struct functionCallList *next;
 } funcCallList;

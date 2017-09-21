@@ -19,7 +19,7 @@
 #include "mysqlOper.h"
 #include "commonXmlOper.h"
 
-#define scanCCallFunc(cur)    scanCCallFuncFromNode(cur, true)
+#define scanCCallFunc(cur, varTypeBegin)    scanCCallFuncFromNode(cur, varTypeBegin, true)
 #define varCScliceFunc(varName, cur)   varCScliceFuncFromNode(varName, cur, true)
 #define ExtractConfKeyUsedInfo(cur, confKey)   ExtractConfKeyUsedInfoFromNode(cur, confKey, true)
 #define literalScliceVar(literalName, cur)   literalScliceVarFromNode(literalName, cur, true)
@@ -36,14 +36,14 @@ bool ExtractFuncFromCXML(char *docName);
  * return: call function list header point
  * @para cur: current  Node
 ********************************/
-funcCallList *scanCCallFuncFromNode(xmlNodePtr cur, bool flag);
+funcCallList *scanCCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, bool flag);
 
 /*******************************
  * func: scan called function from current node back node
  * return: call function list header point
  * @para cur: current Node
 *******************************/
-funcCallList *scanBackCCallFunc(xmlNodePtr cur);
+funcCallList *scanBackCCallFunc(xmlNodePtr cur, varType *varTypeBegin);
 
 /*********************************
  * func: sclice variable influence function call

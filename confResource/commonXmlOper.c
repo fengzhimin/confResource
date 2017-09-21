@@ -787,6 +787,141 @@ void scanBackAssignVar(xmlNodePtr cur)
     scanBackAssignVar(temp_cur->parent);
 }
 
+char *ExtractFuncArgumentType(xmlNodePtr cur)
+{
+    xmlNodePtr argument_list = cur->children;
+    char *retTypeString = malloc(sizeof(char)*512);
+    memset(retTypeString, 0, sizeof(char)*512);
+    while(argument_list != NULL)
+    {
+        if(!xmlStrcmp(argument_list->name, (const xmlChar*)"parameter_list"))
+        {
+            xmlNodePtr parameter = argument_list->children;
+            while(parameter != NULL)
+            {
+                if(!xmlStrcmp(parameter->name, (const xmlChar*)"parameter"))
+                {
+                    xmlNodePtr decl = parameter->children;
+                    while(decl != NULL)
+                    {
+                        if(!xmlStrcmp(decl->name, (const xmlChar*)"decl"))
+                        {
+                            xmlNodePtr type = decl->children;
+                            while(type != NULL)
+                            {
+                                if(!xmlStrcmp(type->name, (const xmlChar*)"type"))
+                                {
+                                    xmlNodePtr name = type->children;
+                                    while(name != NULL)
+                                    {
+                                        if(!xmlStrcmp(name->name, (const xmlChar*)"name"))
+                                        {
+                                            if(strlen(retTypeString) == 0)
+                                                strcpy(retTypeString, (char*)xmlNodeGetContent(name));
+                                            else
+                                                sprintf(retTypeString, "%s/%s", retTypeString, (char*)xmlNodeGetContent(name));
+                                                
+                                            goto next;
+                                        }
+                                        name = name->next;
+                                    }
+                                }
+                                type = type->next;
+                            }
+                        }
+                        decl = decl->next;
+                    }
+                }
+            next:
+                parameter = parameter->next;
+            }
+            
+            break;
+        }
+        argument_list = argument_list->next;
+    }
+    
+    if(strlen(retTypeString) == 0)
+        strcpy(retTypeString, "void");
+    
+    return retTypeString;
+}
+
+char *getCalledFuncArgumentType(xmlNodePtr cur, varType *funcDefVarType)
+{
+    char *retTypeString = malloc(sizeof(char)*512);
+    memset(retTypeString, 0, sizeof(char)*512);
+    xmlNodePtr argument_list = cur->children;
+    while(argument_list != NULL)
+    {
+        if(!xmlStrcmp(argument_list->name, (const xmlChar*)"argument_list"))
+        {
+            xmlNodePtr argument = argument_list->children;
+            while(argument != NULL)
+            {
+                if(!xmlStrcmp(argument->name, (const xmlChar*)"argument"))
+                {
+                    xmlNodePtr expr = argument->children;
+                    while(expr != NULL)
+                    {
+                        if(!xmlStrcmp(expr->name, (const xmlChar*)"expr"))
+                        {
+                            if(!xmlStrcmp(expr->last->name, (const xmlChar*)"name"))
+                            {
+                                //get parameter name
+                                char *parameterName = (char*)xmlNodeGetContent(expr->last);
+                                varType *current = funcDefVarType;
+                                bool findResult = false;
+                                while(current != NULL)
+                                {
+                                    if(strcasecmp(current->varName, parameterName) == 0)
+                                    {
+                                        findResult = true;
+                                        if(strlen(retTypeString) == 0)
+                                            strcpy(retTypeString, current->type);
+                                        else
+                                            sprintf(retTypeString, "%s/%s", retTypeString, current->type);
+                                        break;
+                                    }
+                                    current = current->next;
+                                }
+                                if(!findResult)
+                                {
+                                    //don't find variable type
+                                    if(strlen(retTypeString) == 0)
+                                        strcpy(retTypeString, "non");
+                                    else
+                                        sprintf(retTypeString, "%s/%s", retTypeString, "non");
+                                }
+                            }
+                            else
+                            {
+                                //function call as argument
+                                if(strlen(retTypeString) == 0)
+                                    strcpy(retTypeString, "non");
+                                else
+                                    sprintf(retTypeString, "%s/%s", retTypeString, "non");
+                            }
+                            
+                            break;
+                        }
+                        expr = expr->next;
+                    }
+                }
+                argument = argument->next;
+            }
+            
+            break;
+        }
+        argument_list = argument_list->next;
+    }
+    
+    if(strlen(retTypeString) == 0)
+        strcpy(retTypeString, "void");
+    
+    return retTypeString;
+}
+
 funcList *Sclice(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc)(char *, xmlNodePtr , varType *, bool ))
 {
     funcCallList *begin = NULL;
@@ -891,6 +1026,7 @@ funcList *Sclice(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc
                 memset(curFuncList, 0, sizeof(funcList));
                 strcpy(curFuncList->funcName, current->funcName);
                 strcpy(curFuncList->sourceFile, sqlrow[1]);
+                strcpy(curFuncList->argumentType, current->argumentType);
                 if(strcasecmp(sqlrow[0], "extern") == 0)
                     curFuncList->funcType = false;
                 else
