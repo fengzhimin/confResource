@@ -251,6 +251,7 @@ bool convertProgram(char *dirPath)
                     if(CodeToXML(child_dir, xml_dir))
                     {
                         ret = true;
+                        strcpy(currentAnalyseXmlPath, xml_dir);
                         ExtractFuncFromCPPXML(xml_dir);
                     }
                     else
@@ -910,7 +911,7 @@ confScore buildConfScore(char *confName, char *xmlPath)
             if(S_ISREG(statbuf.st_mode))
             {
                 funcList * ret_begin = NULL;
-                printf("%s\n", child_dir);
+                strcpy(currentAnalyseXmlPath, child_dir);
                 if(judgeCSrcXmlFile(child_dir))
                     ret_begin = CSclice(confName, child_dir);
                 else if(judgeCPPSrcXmlFile(child_dir))

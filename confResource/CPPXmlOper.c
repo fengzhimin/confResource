@@ -455,7 +455,7 @@ funcCallList *varCPPScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *v
                         {
                             if(JudgeExistChildNode(then, "return"))
                             {                              
-                                //current = scanBackCPPCallFunc(cur, varTypeBegin);
+                                current = scanBackCPPCallFunc(cur, varTypeBegin);
                                 if(begin == NULL)
                                     begin = end = current;
                                 else if(current != NULL)
@@ -504,7 +504,7 @@ funcCallList *varCPPScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *v
                         {
                             if(JudgeExistChildNode(block, "return"))
                             {                               
-                                //current = scanBackCPPCallFunc(cur, varTypeBegin);
+                                current = scanBackCPPCallFunc(cur, varTypeBegin);
                                 if(begin == NULL)
                                     begin = end = current;
                                 else if(current != NULL)
@@ -553,7 +553,7 @@ funcCallList *varCPPScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *v
                         {
                             if(JudgeExistChildNode(block, "return"))
                             {
-                                //current = scanBackCPPCallFunc(cur, varTypeBegin);
+                                current = scanBackCPPCallFunc(cur, varTypeBegin);
                                 if(begin == NULL)
                                     begin = end = current;
                                 else if(current != NULL)
@@ -607,7 +607,7 @@ funcCallList *varCPPScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *v
                                 {
                                     if(JudgeExistChildNode(block, "return"))
                                     {
-                                        //current = scanBackCPPCallFunc(cur, varTypeBegin);
+                                        current = scanBackCPPCallFunc(cur, varTypeBegin);
                                         if(begin == NULL)
                                             begin = end = current;
                                         else if(current != NULL)
@@ -638,40 +638,53 @@ funcCallList *varCPPScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *v
             recursive_flag = false;
             xmlNodePtr argument_list = cur->children;
             xmlChar* attr_value = NULL;
-            char *calledFuncName = NULL;
+            char calledFuncName[128] = {};
             while(argument_list != NULL)
             {
                 if(!xmlStrcmp(argument_list->name, (const xmlChar*)"name"))
                 {
-                    attr_value = xmlGetProp(argument_list, (xmlChar*)"line");
-                    calledFuncName = (char*)xmlNodeGetContent(argument_list);
-                    /*
-                    if(!xmlStrcmp(cur->children->children->name, (const xmlChar*)"text"))
-                        strcat(callFuncName, (char*)xmlNodeGetContent(cur->children));
-                    else
+                    if(cur->children->last != NULL)
                     {
-                        if(strcasecmp((char*)xmlNodeGetContent(cur->children->last->prev), "::") != 0)
+                        if(xmlStrcmp(cur->children->last->name, (const xmlChar*)"position"))
                         {
-                            varType *current = varTypeBegin;
-                            char *varName = (char*)xmlNodeGetContent(cur->children->last->prev->prev);
-                            //handle new List<Index_hint>();
-                            if(varName == NULL)
-                                varName = (char*)xmlNodeGetContent(cur->children->last->prev);
-                            while(current != NULL)
-                            {
-                                if(strcasecmp(current->varName, varName) == 0)
-                                {
-                                    sprintf(callFuncName, "%s::", current->type);
-                                    break;
-                                }
-                                current = current->next;
-                            }
-                            strcat(callFuncName, (char*)xmlNodeGetContent(cur->children->last));
+                            attr_value = xmlGetProp(cur->children->last, (xmlChar*)"line");
                         }
                         else
-                            strcat(callFuncName, (char*)xmlNodeGetContent(cur->children));
+                        {
+                            attr_value = xmlGetProp(cur->children, (xmlChar*)"line");
+                        }
+                        
+                        if(!xmlStrcmp(cur->children->children->name, (const xmlChar*)"text"))
+                            strcat(calledFuncName, (char*)xmlNodeGetContent(cur->children));
+                        else
+                        {
+                            if(strcasecmp((char*)xmlNodeGetContent(cur->children->last->prev), "::") != 0)
+                            {
+                                varType *currentVarType = varTypeBegin;
+                                char *varName = (char*)xmlNodeGetContent(cur->children->last->prev->prev);
+                                //handle new List<Index_hint>();
+                                if(varName == NULL)
+                                    varName = (char*)xmlNodeGetContent(cur->children->last->prev);
+                                while(currentVarType != NULL)
+                                {
+                                    if(strcasecmp(currentVarType->varName, varName) == 0)
+                                    {
+                                        sprintf(calledFuncName, "%s::", currentVarType->type);
+                                        break;
+                                    }
+                                    currentVarType = currentVarType->next;
+                                }
+                                strcat(calledFuncName, (char*)xmlNodeGetContent(cur->children->last));
+                            }
+                            else
+                                strcat(calledFuncName, (char*)xmlNodeGetContent(cur->children));
+                        }
                     }
-                     * */
+                    else
+                    {
+                        attr_value = xmlGetProp(argument_list, (xmlChar*)"line");
+                        strcpy(calledFuncName, (char*)xmlNodeGetContent(argument_list));
+                    }
                 }
                 else if(!xmlStrcmp(argument_list->name, (const xmlChar*)"argument_list"))
                 {

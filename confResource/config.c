@@ -61,3 +61,5 @@ char tempFuncCallTableName[MAX_PROGRAMNAME_NUM*2] = "";
 char programName[MAX_PROGRAMNAME_NUM] = "";
 
 int max_funcCallRecursive_NUM = 5;
+
+char currentAnalyseXmlPath[DIRPATH_MAX] = "";

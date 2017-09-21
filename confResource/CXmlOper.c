@@ -281,7 +281,7 @@ funcCallList *varCScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *var
                         {
                             if(JudgeExistChildNode(then, "return"))
                             {                              
-                                //current = scanBackCCallFunc(cur);
+                                current = scanBackCCallFunc(cur);
                                 if(begin == NULL)
                                     begin = end = current;
                                 else if(current != NULL)
@@ -330,7 +330,7 @@ funcCallList *varCScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *var
                         {
                             if(JudgeExistChildNode(block, "return"))
                             {                               
-                                //current = scanBackCCallFunc(cur);
+                                current = scanBackCCallFunc(cur);
                                 if(begin == NULL)
                                     begin = end = current;
                                 else if(current != NULL)
@@ -379,7 +379,7 @@ funcCallList *varCScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *var
                         {
                             if(JudgeExistChildNode(block, "return"))
                             {
-                                //current = scanBackCCallFunc(cur);
+                                current = scanBackCCallFunc(cur);
                                 if(begin == NULL)
                                     begin = end = current;
                                 else if(current != NULL)
@@ -433,7 +433,7 @@ funcCallList *varCScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *var
                                 {
                                     if(JudgeExistChildNode(block, "return"))
                                     {
-                                        //current = scanBackCCallFunc(cur);
+                                        current = scanBackCCallFunc(cur);
                                         if(begin == NULL)
                                             begin = end = current;
                                         else if(current != NULL)

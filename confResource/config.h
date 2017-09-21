@@ -36,8 +36,8 @@
 
 #define MAX_VARIABLE_LENGTH      128     //a variable name max length
 
-#define FORNUM                   10     //for multiple
-#define WHILENUM                 10     //while and do-while multiple
+#define FORNUM                   0     //for multiple
+#define WHILENUM                 0     //while and do-while multiple
 
 #define LOGINFO_LENGTH           1024 
 
@@ -72,6 +72,9 @@ extern int max_funcCallRecursive_NUM;
 
 //analyse program name
 extern char programName[MAX_PROGRAMNAME_NUM];
+
+//current analyse xml file path
+extern char currentAnalyseXmlPath[DIRPATH_MAX];
 
 typedef struct configurationScore
 {
