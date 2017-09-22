@@ -785,16 +785,34 @@ confScore getFuncScore(char *funcName, bool funcType, char *argumentType, char *
     count++;
     confScore ret;
     memset(&ret, 0, sizeof(confScore));
+    int argumentNum = getSpecCharNumFromStr(argumentType, '/') + 1;
+    char (*arguType)[MAX_SUBSTR] = (char (*)[MAX_SUBSTR])malloc(argumentNum*MAX_SUBSTR);
+    int arguNum = 0;
+    removeChar(argumentType, '(');
+    removeChar(argumentType, ')');
+    cutStrByLabel(argumentType, '/', arguType, argumentNum);
+    char selectArgumentType[512] = "(";
+    for(arguNum = 0; arguNum < argumentNum; arguNum++)
+    {
+        if(strlen(selectArgumentType) > 1)
+            strcat(selectArgumentType, "/");
+        if(strcasecmp(arguType[arguNum], "non") == 0)
+            strcat(selectArgumentType, "%");
+        else
+            strcat(selectArgumentType, arguType[arguNum]);
+    }
+    strcat(selectArgumentType, ")");
+    
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
     //一个程序中只能有一个extern函数
     //一个程序中可能会存在多个名称相同的static函数
     //一个源文件中不可能存在多个名称相同的static函数
     if(funcType)
         sprintf(sqlCommand, "select calledFunc, calledFuncType, CalledSrcFile, forNum, whileNum, calledFuncArgumentType from %s where \
-        funcName='%s' and funcCallType='static' and sourceFile='%s' and argumentType='%s'", funcCallTableName, funcName, srcFile, argumentType);
+        funcName='%s' and funcCallType='static' and sourceFile='%s' and argumentType='%s'", funcCallTableName, funcName, srcFile, selectArgumentType);
     else
         sprintf(sqlCommand, "select calledFunc, calledFuncType, CalledSrcFile, forNum, whileNum, calledFuncArgumentType from %s where \
-        funcName='%s' and funcCallType='extern' and argumentType='%s'", funcCallTableName, funcName, argumentType);
+        funcName='%s' and funcCallType='extern' and argumentType='%s'", funcCallTableName, funcName, selectArgumentType);
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -819,7 +837,7 @@ confScore getFuncScore(char *funcName, bool funcType, char *argumentType, char *
                     temp_funcType = true;
                 }
 #if DEBUG == 1                
-                printf("(%s->%s)", funcName, sqlrow1[0]);
+                printf("(%s(%s)->%s(%s))", funcName, argumentType, sqlrow1[0], sqlrow1[5]);
 #endif                
                 confScore temp_ret = getFuncScore(sqlrow1[0], temp_funcType, sqlrow1[5], sqlrow1[2]);
                 ret.CPU += (temp_ret.CPU*multiple);
@@ -828,19 +846,18 @@ confScore getFuncScore(char *funcName, bool funcType, char *argumentType, char *
                 ret.NET += (temp_ret.NET*multiple);
             }
             mysql_free_result(res_ptr1);
-        }
 #if DEBUG == 1
-        else
             printf("\n");
 #endif
+        }
         //get function score from funcScore table
         memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
         if(funcType)
             sprintf(sqlCommand, "select CPU, MEM, IO, NET from %s where \
-            funcName='%s' and type='static'  and sourceFile='%s' and argumentType='%s'", funcScoreTableName, funcName, srcFile, argumentType);
+            funcName='%s' and type='static'  and sourceFile='%s' and argumentType='%s'", funcScoreTableName, funcName, srcFile, selectArgumentType);
         else
             sprintf(sqlCommand, "select CPU, MEM, IO, NET from %s where \
-            funcName='%s' and type='extern' and argumentType='%s'", funcScoreTableName, funcName, argumentType);
+            funcName='%s' and type='extern' and argumentType='%s'", funcScoreTableName, funcName, selectArgumentType);
         if(!executeCommand(sqlCommand))
         {
             memset(error_info, 0, LOGINFO_LENGTH);

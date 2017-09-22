@@ -107,6 +107,7 @@ varType *ExtractVarDefFromNode(xmlNodePtr cur, bool flag)
                             else if(!xmlStrcmp(temp->name, (const xmlChar*)"type"))
                             {
                                 xmlNodePtr temp_type = temp->children;
+                                bool label = true;
                                 while(temp_type != NULL)
                                 {
                                     //handle struct stu
@@ -131,10 +132,14 @@ varType *ExtractVarDefFromNode(xmlNodePtr cur, bool flag)
                                         }
                                     }
                                     //handle *
-                                    if(!xmlStrcmp(temp_type->name, (const xmlChar*)"modifier"))
+                                    else if(!xmlStrcmp(temp_type->name, (const xmlChar*)"modifier"))
                                     {
-                                        strcat(end->type, type);
-                                        strcat(end->type, " ");
+                                        if(label)
+                                        {
+                                            strcat(end->type, type);
+                                            strcat(end->type, " ");
+                                            label = false;
+                                        }
                                         strcat(end->type, (char*)xmlNodeGetContent(temp_type));
                                     }
                                     temp_type = temp_type->next;
@@ -183,19 +188,50 @@ varType *ExtractVarDefFromNode(xmlNodePtr cur, bool flag)
                 {
                     end = end->next = malloc(sizeof(varType));
                     memset(end, 0, sizeof(varType));
+                    bool label = true;
                     //handle *stu2
-                    if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"modifier"))
+                    while(temp_cur != NULL)
                     {
-                        strcat(end->type, type);
-                        strcat(end->type, " ");
-                        strcat(end->type, (char*)xmlNodeGetContent(temp_cur));
-                        end->line = StrToInt((char *)attr_value);
+                        if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"modifier"))
+                        {
+                            if(label)
+                            {
+                                strcat(end->type, type);
+                                strcat(end->type, " ");
+                                label = false;
+                            }
+                            strcat(end->type, (char*)xmlNodeGetContent(temp_cur));
+                            end->line = StrToInt((char *)attr_value);
+                        }
+                        else if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"decl"))
+                        {
+                            xmlNodePtr temp_name = temp_cur->children;
+
+                            if(temp_name != NULL && !xmlStrcmp(temp_name->name, (const xmlChar*)"text"))
+                                strcat(end->varName, (char*)xmlNodeGetContent(temp_cur));
+                            else
+                            {
+                                while(temp_name != NULL)
+                                {
+                                    if(!xmlStrcmp(temp_name->name, (const xmlChar*)"name"))
+                                    {
+                                        xmlNodePtr child_name = temp_name->children;
+                                        if(child_name != NULL && !xmlStrcmp(child_name->name, (const xmlChar*)"text"))
+                                            strcat(end->varName, (char*)xmlNodeGetContent(temp_name));
+                                        else if(child_name != NULL && !xmlStrcmp(child_name->name, (const xmlChar*)"name"))
+                                            strcat(end->varName, (char*)xmlNodeGetContent(child_name));
+                                        
+                                        break;
+                                    }
+                                    
+                                    temp_name = temp_name->next;
+                                }
+                            }
+                            
+                            break;
+                        }
+                        
                         temp_cur = temp_cur->next;
-                        xmlNodePtr temp_name = temp_cur->children;
-                        if(!xmlStrcmp(temp_name->name, (const xmlChar*)"text"))
-                            strcat(end->varName, (char*)xmlNodeGetContent(temp_cur));
-                        else
-                            strcat(end->varName, (char*)xmlNodeGetContent(temp_name));
                     }
                 }
                 temp_cur = temp_cur->next;
@@ -498,6 +534,7 @@ void ExtractFuncVarDef(char *xmlFilePath)
                 temp_cur = temp_cur->next;
             }
             varType *begin = ExtractVarDef(cur);
+            //varType *begin = ExtractVarType(cur);
             varType *current = begin;
             while(current != NULL)
             {
@@ -817,7 +854,7 @@ char *ExtractFuncArgumentType(xmlNodePtr cur)
                                         if(!xmlStrcmp(name->name, (const xmlChar*)"name"))
                                         {
                                             if(strlen(retTypeString) == 0)
-                                                strcpy(retTypeString, (char*)xmlNodeGetContent(name));
+                                                sprintf(retTypeString, "(%s", (char*)xmlNodeGetContent(name));
                                             else
                                                 sprintf(retTypeString, "%s/%s", retTypeString, (char*)xmlNodeGetContent(name));
                                                 
@@ -842,7 +879,9 @@ char *ExtractFuncArgumentType(xmlNodePtr cur)
     }
     
     if(strlen(retTypeString) == 0)
-        strcpy(retTypeString, "void");
+        strcpy(retTypeString, "(void)");
+    else
+        strcat(retTypeString, ")");
     
     return retTypeString;
 }
@@ -878,7 +917,7 @@ char *getCalledFuncArgumentType(xmlNodePtr cur, varType *funcDefVarType)
                                     {
                                         findResult = true;
                                         if(strlen(retTypeString) == 0)
-                                            strcpy(retTypeString, current->type);
+                                            sprintf(retTypeString, "(%s", current->type);
                                         else
                                             sprintf(retTypeString, "%s/%s", retTypeString, current->type);
                                         break;
@@ -889,7 +928,7 @@ char *getCalledFuncArgumentType(xmlNodePtr cur, varType *funcDefVarType)
                                 {
                                     //don't find variable type
                                     if(strlen(retTypeString) == 0)
-                                        strcpy(retTypeString, "non");
+                                        strcpy(retTypeString, "(non");
                                     else
                                         sprintf(retTypeString, "%s/%s", retTypeString, "non");
                                 }
@@ -898,7 +937,7 @@ char *getCalledFuncArgumentType(xmlNodePtr cur, varType *funcDefVarType)
                             {
                                 //function call as argument
                                 if(strlen(retTypeString) == 0)
-                                    strcpy(retTypeString, "non");
+                                    strcpy(retTypeString, "(non");
                                 else
                                     sprintf(retTypeString, "%s/%s", retTypeString, "non");
                             }
@@ -917,7 +956,9 @@ char *getCalledFuncArgumentType(xmlNodePtr cur, varType *funcDefVarType)
     }
     
     if(strlen(retTypeString) == 0)
-        strcpy(retTypeString, "void");
+        strcpy(retTypeString, "(void)");
+    else
+        strcat(retTypeString, ")");
     
     return retTypeString;
 }

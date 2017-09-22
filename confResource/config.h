@@ -99,6 +99,7 @@ typedef struct functionCallList
     char funcName[MAX_FUNCNAME_LENGTH];
     char argumentType[512];
     int line;
+    char sourceFile[DIRPATH_MAX];
     struct functionCallList *next;
 } funcCallList;
 

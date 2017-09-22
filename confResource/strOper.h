@@ -31,6 +31,14 @@ void removeChar(char *str, char ch);
 void removeBeginSpace(char *str);
 
 /**********************************
+ * func: get the number of specific char from string
+ * return: the number of specific char
+ * @para str: string
+ * @para ch: finded char
+***********************************/
+int getSpecCharNumFromStr(char *str, char ch);
+
+/**********************************
  * func: 通过字符ch来拆分字符串
  * return: 1 = 不可拆分   拆分后子字符串的个数 > 1
  * @para str: 要被拆分的字符串

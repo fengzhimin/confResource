@@ -50,6 +50,20 @@ void removeBeginSpace(char *str)
 	free(temp);
 }
 
+int getSpecCharNumFromStr(char *str, char ch)
+{
+    int str_length = strlen(str);
+    int char_num = 0;
+    int i;
+    for( i = 0; i < str_length; i++)
+    {
+        if(str[i] == ch)
+            char_num++;
+    }
+    
+    return char_num;
+}
+
 int cutStrByLabel(char *str, char ch, char subStr[][MAX_SUBSTR], int subStrLength)
 {
 	//将subStr清空

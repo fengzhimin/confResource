@@ -194,12 +194,37 @@ funcCallList *scanCCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, bool 
                     end = end->next = malloc(sizeof(funcCallList));
                 memset(end, 0, sizeof(funcCallList));
                 strcpy(end->funcName, callFuncName);
-                char *calledFuncArgumentTypeString = getCalledFuncArgumentType(cur, varTypeBegin);
-                strcpy(end->argumentType, calledFuncArgumentTypeString);
-                free(calledFuncArgumentTypeString);
                 end->line = StrToInt((char *)attr_value);
+                //get called function argument type and filePath
+                memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+                sprintf(sqlCommand, "select calledFuncArgumentType, CalledSrcFile from %s where calledFunc='%s' and line=%s",\
+                    funcCallTableName, callFuncName, (char *)attr_value);
+                if(!executeCommand(sqlCommand))
+                {
+                    memset(error_info, 0, LOGINFO_LENGTH);
+                    sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+                    RecordLog(error_info);
+                }
+                else
+                {
+                    MYSQL_RES *res_ptr;
+                    MYSQL_ROW sqlrow;
+                    res_ptr = mysql_store_result(mysqlConnect);
+                    int rownum = mysql_num_rows(res_ptr);
+                    //count 为递归的最大深度
+                    if(rownum != 0)
+                    {
+                        while(sqlrow = mysql_fetch_row(res_ptr))
+                        {
+                            strcpy(end->argumentType, sqlrow[0]);
+                            strcpy(end->sourceFile, sqlrow[1]);
+                            mysql_free_result(res_ptr);
+                            break;
+                        }
+                    }
+                }
 #if DEBUG == 1                
-                printf("%s(%s)\n", callFuncName, attr_value);
+                printf("%s(%s):%s\n", callFuncName, attr_value, end->argumentType);
 #endif
             }
         }
@@ -501,12 +526,37 @@ funcCallList *varCScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *var
                             end = end->next = malloc(sizeof(funcCallList));
                         memset(end, 0, sizeof(funcCallList));
                         strcpy(end->funcName, calledFuncName);
-                        char *calledFuncArgumentTypeString = getCalledFuncArgumentType(cur, varTypeBegin);
-                        strcpy(end->argumentType, calledFuncArgumentTypeString);
-                        free(calledFuncArgumentTypeString);
                         end->line = StrToInt((char *)attr_value);
+                        //get called function argument type and filePath
+                        memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+                        sprintf(sqlCommand, "select calledFuncArgumentType, CalledSrcFile from %s where calledFunc='%s' and line=%s",\
+                            funcCallTableName, calledFuncName, (char *)attr_value);
+                        if(!executeCommand(sqlCommand))
+                        {
+                            memset(error_info, 0, LOGINFO_LENGTH);
+                            sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+                            RecordLog(error_info);
+                        }
+                        else
+                        {
+                            MYSQL_RES *res_ptr;
+                            MYSQL_ROW sqlrow;
+                            res_ptr = mysql_store_result(mysqlConnect);
+                            int rownum = mysql_num_rows(res_ptr);
+                            //count 为递归的最大深度
+                            if(rownum != 0)
+                            {
+                                while(sqlrow = mysql_fetch_row(res_ptr))
+                                {
+                                    strcpy(end->argumentType, sqlrow[0]);
+                                    strcpy(end->sourceFile, sqlrow[1]);
+                                    mysql_free_result(res_ptr);
+                                    break;
+                                }
+                            }
+                        }
 #if DEBUG == 1
-                        printf("%s(%s)\n", calledFuncName, attr_value);
+                        printf("%s(%s):%s\n", calledFuncName, attr_value, end->argumentType);
 #endif
                     }
                     
