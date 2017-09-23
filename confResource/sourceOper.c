@@ -786,33 +786,49 @@ confScore getFuncScore(char *funcName, bool funcType, char *argumentType, char *
     confScore ret;
     memset(&ret, 0, sizeof(confScore));
     int argumentNum = getSpecCharNumFromStr(argumentType, '/') + 1;
-    char (*arguType)[MAX_SUBSTR] = (char (*)[MAX_SUBSTR])malloc(argumentNum*MAX_SUBSTR);
-    int arguNum = 0;
-    removeChar(argumentType, '(');
-    removeChar(argumentType, ')');
-    cutStrByLabel(argumentType, '/', arguType, argumentNum);
     char selectArgumentType[512] = "(";
-    for(arguNum = 0; arguNum < argumentNum; arguNum++)
+    if(argumentNum == 0)
     {
-        if(strlen(selectArgumentType) > 1)
-            strcat(selectArgumentType, "/");
-        if(strcasecmp(arguType[arguNum], "non") == 0)
-            strcat(selectArgumentType, "%");
+        //only one argument
+        if(strstr(argumentType, "non") == NULL)
+            strcpy(selectArgumentType, argumentType);
         else
-            strcat(selectArgumentType, arguType[arguNum]);
+            strcpy(selectArgumentType, "(%#1)");
     }
-    strcat(selectArgumentType, ")");
-    
+    else
+    {
+        //more than one argument
+        char (*arguType)[MAX_SUBSTR] = (char (*)[MAX_SUBSTR])malloc(argumentNum*MAX_SUBSTR);
+        int arguNum = 0;
+        removeChar(argumentType, '(');
+        removeChar(argumentType, ')');
+        removeChar(argumentType, '#');
+        removeNum(argumentType);
+        cutStrByLabel(argumentType, '/', arguType, argumentNum);
+        
+        for(arguNum = 0; arguNum < argumentNum; arguNum++)
+        {
+            if(arguNum != 0)
+                strcat(selectArgumentType, "/");
+            if(strcasecmp(arguType[arguNum], "non") == 0)
+                strcat(selectArgumentType, "%");
+            else
+                strcat(selectArgumentType, arguType[arguNum]);
+        }
+        free(arguType);
+        sprintf(selectArgumentType, "%s#%d)", selectArgumentType, argumentNum);
+    }
+
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
     //一个程序中只能有一个extern函数
     //一个程序中可能会存在多个名称相同的static函数
     //一个源文件中不可能存在多个名称相同的static函数
     if(funcType)
         sprintf(sqlCommand, "select calledFunc, calledFuncType, CalledSrcFile, forNum, whileNum, calledFuncArgumentType from %s where \
-        funcName='%s' and funcCallType='static' and sourceFile='%s' and argumentType='%s'", funcCallTableName, funcName, srcFile, selectArgumentType);
+        funcName='%s' and funcCallType='static' and sourceFile='%s' and argumentType like '%s'", funcCallTableName, funcName, srcFile, selectArgumentType);
     else
         sprintf(sqlCommand, "select calledFunc, calledFuncType, CalledSrcFile, forNum, whileNum, calledFuncArgumentType from %s where \
-        funcName='%s' and funcCallType='extern' and argumentType='%s'", funcCallTableName, funcName, selectArgumentType);
+        funcName='%s' and funcCallType='extern' and argumentType like '%s'", funcCallTableName, funcName, selectArgumentType);
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -844,20 +860,20 @@ confScore getFuncScore(char *funcName, bool funcType, char *argumentType, char *
                 ret.MEM += (temp_ret.MEM*multiple);
                 ret.IO += (temp_ret.IO*multiple);
                 ret.NET += (temp_ret.NET*multiple);
+#if DEBUG == 1
+                printf("\n");
+#endif
             }
             mysql_free_result(res_ptr1);
-#if DEBUG == 1
-            printf("\n");
-#endif
         }
         //get function score from funcScore table
         memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
         if(funcType)
             sprintf(sqlCommand, "select CPU, MEM, IO, NET from %s where \
-            funcName='%s' and type='static'  and sourceFile='%s' and argumentType='%s'", funcScoreTableName, funcName, srcFile, selectArgumentType);
+            funcName='%s' and type='static'  and sourceFile='%s' and argumentType like '%s'", funcScoreTableName, funcName, srcFile, selectArgumentType);
         else
             sprintf(sqlCommand, "select CPU, MEM, IO, NET from %s where \
-            funcName='%s' and type='extern' and argumentType='%s'", funcScoreTableName, funcName, selectArgumentType);
+            funcName='%s' and type='extern' and argumentType like '%s'", funcScoreTableName, funcName, selectArgumentType);
         if(!executeCommand(sqlCommand))
         {
             memset(error_info, 0, LOGINFO_LENGTH);

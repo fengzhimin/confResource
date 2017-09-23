@@ -854,9 +854,17 @@ char *ExtractFuncArgumentType(xmlNodePtr cur)
                                         if(!xmlStrcmp(name->name, (const xmlChar*)"name"))
                                         {
                                             if(strlen(retTypeString) == 0)
-                                                sprintf(retTypeString, "(%s", (char*)xmlNodeGetContent(name));
+                                            {
+                                                if(strcasecmp((char*)xmlNodeGetContent(name), "void") == 0)
+                                                    sprintf(retTypeString, "(%s", (char*)xmlNodeGetContent(name));
+                                                else
+                                                    sprintf(retTypeString, "(%s", (char*)xmlNodeGetContent(name));
+                                                
+                                            }
                                             else
+                                            {
                                                 sprintf(retTypeString, "%s/%s", retTypeString, (char*)xmlNodeGetContent(name));
+                                            }
                                                 
                                             goto next;
                                         }
@@ -879,9 +887,13 @@ char *ExtractFuncArgumentType(xmlNodePtr cur)
     }
     
     if(strlen(retTypeString) == 0)
-        strcpy(retTypeString, "(void)");
+        strcpy(retTypeString, "(void#0)");
     else
+    {
+        int charNum = getSpecCharNumFromStr(retTypeString, '/') + 1;
+        sprintf(retTypeString, "%s#%d", retTypeString, charNum);
         strcat(retTypeString, ")");
+    }
     
     return retTypeString;
 }
@@ -919,7 +931,9 @@ char *getCalledFuncArgumentType(xmlNodePtr cur, varType *funcDefVarType)
                                         if(strlen(retTypeString) == 0)
                                             sprintf(retTypeString, "(%s", current->type);
                                         else
+                                        {
                                             sprintf(retTypeString, "%s/%s", retTypeString, current->type);
+                                        }
                                         break;
                                     }
                                     current = current->next;
@@ -930,7 +944,9 @@ char *getCalledFuncArgumentType(xmlNodePtr cur, varType *funcDefVarType)
                                     if(strlen(retTypeString) == 0)
                                         strcpy(retTypeString, "(non");
                                     else
+                                    {
                                         sprintf(retTypeString, "%s/%s", retTypeString, "non");
+                                    }
                                 }
                             }
                             else
@@ -939,7 +955,9 @@ char *getCalledFuncArgumentType(xmlNodePtr cur, varType *funcDefVarType)
                                 if(strlen(retTypeString) == 0)
                                     strcpy(retTypeString, "(non");
                                 else
+                                {
                                     sprintf(retTypeString, "%s/%s", retTypeString, "non");
+                                }
                             }
                             
                             break;
@@ -956,9 +974,13 @@ char *getCalledFuncArgumentType(xmlNodePtr cur, varType *funcDefVarType)
     }
     
     if(strlen(retTypeString) == 0)
-        strcpy(retTypeString, "(void)");
+        strcpy(retTypeString, "(void#0)");
     else
+    {
+        int charNum = getSpecCharNumFromStr(retTypeString, '/') + 1;
+        sprintf(retTypeString, "%s#%d", retTypeString, charNum);
         strcat(retTypeString, ")");
+    }
     
     return retTypeString;
 }

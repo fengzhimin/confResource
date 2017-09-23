@@ -27,6 +27,28 @@ void removeChar(char *str, char ch)
 	free(temp);
 }
 
+void removeNum(char *str)
+{
+    int _length = strlen(str);
+	char *temp = malloc(sizeof(char)*(_length+1));
+	memset(temp, 0, _length);
+	strcpy(temp, str);
+	memset(str, 0, _length);
+	int j = 0;
+	int i;
+    int numChar = 0;
+	for(i = 0; i < _length; i++)
+	{
+        numChar = temp[i]-'0';
+		if(numChar <= 9 && numChar >= 0)
+			continue;
+		else
+			str[j++] = temp[i];
+	}
+
+	free(temp);
+}
+
 void removeBeginSpace(char *str)
 {
 	int _length = strlen(str);

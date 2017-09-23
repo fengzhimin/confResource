@@ -23,6 +23,14 @@
 void removeChar(char *str, char ch);
 
 /**********************************
+ * func: 移除字符串中所有的数字字符
+ * return: void
+ * @para str: 处理的字符串数组
+ * example: str = "1a 2b 3c"  ------>  str = "a b c"
+***********************************/
+void removeNum(char *str);
+
+/**********************************
  * func: 去掉字符串中开头的所有的空格和制表符
  * return: void
  * @para str: 要被处理的字符串数组
