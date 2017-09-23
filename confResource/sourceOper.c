@@ -828,7 +828,7 @@ confScore getFuncScore(char *funcName, bool funcType, char *argumentType, char *
         funcName='%s' and funcCallType='static' and sourceFile='%s' and argumentType like '%s'", funcCallTableName, funcName, srcFile, selectArgumentType);
     else
         sprintf(sqlCommand, "select calledFunc, calledFuncType, CalledSrcFile, forNum, whileNum, calledFuncArgumentType from %s where \
-        funcName='%s' and funcCallType='extern' and argumentType like '%s'", funcCallTableName, funcName, selectArgumentType);
+        funcName='%s' and funcCallType='extern' and sourceFile='%s' and argumentType like '%s'", funcCallTableName, funcName, srcFile, selectArgumentType);
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -870,10 +870,10 @@ confScore getFuncScore(char *funcName, bool funcType, char *argumentType, char *
         memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
         if(funcType)
             sprintf(sqlCommand, "select CPU, MEM, IO, NET from %s where \
-            funcName='%s' and type='static'  and sourceFile='%s' and argumentType like '%s'", funcScoreTableName, funcName, srcFile, selectArgumentType);
+            funcName='%s' and type='static' and sourceFile='%s' and argumentType like '%s'", funcScoreTableName, funcName, srcFile, selectArgumentType);
         else
             sprintf(sqlCommand, "select CPU, MEM, IO, NET from %s where \
-            funcName='%s' and type='extern' and argumentType like '%s'", funcScoreTableName, funcName, selectArgumentType);
+            funcName='%s' and type='extern' and sourceFile='%s' and argumentType like '%s'", funcScoreTableName, funcName, srcFile, selectArgumentType);
         if(!executeCommand(sqlCommand))
         {
             memset(error_info, 0, LOGINFO_LENGTH);

@@ -1024,7 +1024,16 @@ funcList *Sclice(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc
             {
                 if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
                 {
-                    attr_value = xmlGetProp(temp_cur, (xmlChar*)"line");
+                    if(temp_cur->children->last != NULL)
+                    {
+                        if(xmlStrcmp(temp_cur->children->last->name, (const xmlChar*)"position"))
+                            attr_value = xmlGetProp(temp_cur->children->last, (xmlChar*)"line");
+                        else
+                            attr_value = xmlGetProp(temp_cur->children, (xmlChar*)"line");
+                          
+                    }
+                    else
+                        attr_value = xmlGetProp(temp_cur, (xmlChar*)"line");
                     break;
                 }
                 temp_cur = temp_cur->next;
