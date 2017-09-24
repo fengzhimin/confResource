@@ -13,7 +13,7 @@
 
 #define OPENLOG  1      //0=不记录日志   1=记录日志
 
-#define DEBUG    1      //0=不打印调试信息    1 = 打印调试信息
+#define DEBUG    0      //0=不打印调试信息    1 = 打印调试信息
 
 #define LINE_CHAR_MAX_NUM      1024   //一行最大字符个数
 
@@ -93,6 +93,14 @@ typedef struct functionList
     char sourceFile[DIRPATH_MAX];
     struct functionList *next;
 } funcList;
+
+typedef struct variableDef
+{
+    char varName[MAX_VARIABLE_LENGTH];
+    bool type;  //false = local variable   true = global variable
+    int line;
+    struct variableDef *next;
+} varDef;
 
 typedef struct functionCallList
 {

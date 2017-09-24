@@ -42,7 +42,7 @@ int main(int argc, char **argv)
     memset(temp_dir, 0, DIRPATH_MAX);
     sprintf(temp_dir, "temp_%s", programName);
                     
-    //ExtractFuncVarDef("/home/fzm/confResource/confResource/Debug/test.cc.xml");
+    //ExtractFuncVarDef("/home/fzm/confResource/confResource/Debug/test.c.xml");
     /*
     ExtractGlobalVarDef("/home/fzm/confResource/confResource/Debug/temp_redis-4.0.1/src/adlist.c.xml");
     ExtractFuncVarDef("/home/fzm/confResource/confResource/Debug/temp_redis-4.0.1/src/adlist.c.xml");
@@ -60,7 +60,7 @@ int main(int argc, char **argv)
     char *confArray[] = {"share->max_rows", "key_cache->param_buff_size", "thd->variables.max_heap_table_size", "thd->variables.sortbuff_size"};
     //char *confArray[] = {"server.rdb_compression"};
     int i;
-    for(i = 2; i < 4; i++)
+    for(i = 0; i < 4; i++)
     {
         time(&start); 
         memset(log_info, 0, LOGINFO_LENGTH);

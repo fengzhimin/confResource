@@ -319,12 +319,11 @@ funcCallList *scanCPPCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, boo
                             mysql_free_result(res_ptr);
                             break;
                         }
+#if DEBUG == 1         
+                        printf("%s(%s):%s\n", callFuncName, attr_value, end->argumentType);
+#endif
                     }
                 }
-#if DEBUG == 1         
-                if(rownum)
-                    printf("%s(%s):%s\n", callFuncName, attr_value, end->argumentType);
-#endif
             }
         }
         
@@ -759,11 +758,11 @@ funcCallList *varCPPScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *v
                                     mysql_free_result(res_ptr);
                                     break;
                                 }
+#if DEBUG == 1
+                                printf("%s(%s):%s\n", calledFuncName, attr_value, end->argumentType);
+#endif
                             }
                         }
-#if DEBUG == 1
-                        printf("%s(%s):%s\n", calledFuncName, attr_value, end->argumentType);
-#endif
                     }
                     
                     //handle function call as argument

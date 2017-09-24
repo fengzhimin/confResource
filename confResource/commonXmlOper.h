@@ -24,6 +24,7 @@
 #define ExtractVarType(cur)   ExtractVarTypeFromNode(cur, true)
 #define scanVarIsUsed(cur, varName)    scanVarIsUsedFromNode(cur, varName, true)
 #define scanAssignVar(cur)   scanAssignVarFromNode(cur, true)
+#define ExtractDirectInfluVar(cur, varName, varTypeBegin) ExtractDirectInfluVarFromNode(cur, varName, varTypeBegin, true)
 
 /*********************************
  * func: judge a variable whether be used in current node or not
@@ -100,6 +101,16 @@ funcList *ExtractVarUsedFunc(char *varName, char *xmlFilePath);
  * @para cur: current  Node
 ********************************/
 void scanAssignVarFromNode(xmlNodePtr cur, bool flag);
+
+/*******************************
+ * func: extract direct influence variable by varName from current node
+ * return: variable define info list first point
+ * @para cur: current  Node
+ * @para varName: influence source
+ * @para varTypeBegin: current node self-define vaiable info
+ * @example: int a = b varName = 'b' --->  b influence a
+********************************/
+varDef *ExtractDirectInfluVarFromNode(xmlNodePtr cur, char *varName, varType *varTypeBegin, bool flag);
 
 /*******************************
  * func: scan assignment from current node back node

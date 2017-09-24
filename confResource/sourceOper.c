@@ -853,16 +853,13 @@ confScore getFuncScore(char *funcName, bool funcType, char *argumentType, char *
                     temp_funcType = true;
                 }
 #if DEBUG == 1                
-                printf("(%s(%s)->%s(%s))", funcName, argumentType, sqlrow1[0], sqlrow1[5]);
+                printf("(%s(%s)->%s(%s))\n", funcName, argumentType, sqlrow1[0], sqlrow1[5]);
 #endif                
                 confScore temp_ret = getFuncScore(sqlrow1[0], temp_funcType, sqlrow1[5], sqlrow1[2]);
                 ret.CPU += (temp_ret.CPU*multiple);
                 ret.MEM += (temp_ret.MEM*multiple);
                 ret.IO += (temp_ret.IO*multiple);
                 ret.NET += (temp_ret.NET*multiple);
-#if DEBUG == 1
-                printf("\n");
-#endif
             }
             mysql_free_result(res_ptr1);
         }
