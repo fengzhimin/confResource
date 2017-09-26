@@ -316,32 +316,52 @@ funcCallList *varCScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *var
                             begin = end = current;
                         else if(current != NULL)
                             end = end->next = current;
+                        bool isExit = false;
                         while(current != NULL)
                         {
+                            if(strcasecmp(current->funcName, "exit") == 0)
+                                isExit = true;
                             end = current;
                             current = current->next;
                         }
                         //scanAssignVar(cur);
-                        xmlNodePtr then = condition->next;
-                        while(then != NULL)
+                        if(isExit)
                         {
-                            if(JudgeExistChildNode(then, "return"))
-                            {                              
-                                current = scanBackCCallFunc(cur, varTypeBegin);
-                                if(begin == NULL)
-                                    begin = end = current;
-                                else if(current != NULL)
-                                    end = end->next = current;
-                                while(current != NULL)
-                                {
-                                    end = current;
-                                    current = current->next;
-                                }                       
-                                //scanBackAssignVar(cur);
-                                break;
-                            }
-                            then = then->next;
+                            current = scanBackCCallFunc(cur, varTypeBegin);
+                            if(begin == NULL)
+                                begin = end = current;
+                            else if(current != NULL)
+                                end = end->next = current;
+                            while(current != NULL)
+                            {
+                                end = current;
+                                current = current->next;
+                            }                       
                         }
+                        else
+                        {
+                            xmlNodePtr then = condition->next;
+                            while(then != NULL)
+                            {
+                                if(JudgeExistChildNode(then, "return"))
+                                {                              
+                                    current = scanBackCCallFunc(cur, varTypeBegin);
+                                    if(begin == NULL)
+                                        begin = end = current;
+                                    else if(current != NULL)
+                                        end = end->next = current;
+                                    while(current != NULL)
+                                    {
+                                        end = current;
+                                        current = current->next;
+                                    }                       
+                                    //scanBackAssignVar(cur);
+                                    break;
+                                }
+                                then = then->next;
+                            }
+                        }
+                        
                         recursive_flag = false;
                         break;
                     }
@@ -365,32 +385,52 @@ funcCallList *varCScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *var
                             begin = end = current;
                         else if(current != NULL)
                             end = end->next = current;
+                        bool isExit = false;
                         while(current != NULL)
                         {
+                            if(strcasecmp(current->funcName, "exit") == 0)
+                                isExit = true;
                             end = current;
                             current = current->next;
-                        }                      
-                        //scanAssignVar(cur);
-                        xmlNodePtr block = condition->next;
-                        while(block != NULL)
-                        {
-                            if(JudgeExistChildNode(block, "return"))
-                            {                               
-                                current = scanBackCCallFunc(cur, varTypeBegin);
-                                if(begin == NULL)
-                                    begin = end = current;
-                                else if(current != NULL)
-                                    end = end->next = current;
-                                while(current != NULL)
-                                {
-                                    end = current;
-                                    current = current->next;
-                                }                                
-                                //scanBackAssignVar(cur);
-                                break;
-                            }
-                            block = block->next;
                         }
+                        //scanAssignVar(cur);
+                        if(isExit)
+                        {
+                            current = scanBackCCallFunc(cur, varTypeBegin);
+                            if(begin == NULL)
+                                begin = end = current;
+                            else if(current != NULL)
+                                end = end->next = current;
+                            while(current != NULL)
+                            {
+                                end = current;
+                                current = current->next;
+                            }                       
+                        }                      
+                        else
+                        {
+                            xmlNodePtr block = condition->next;
+                            while(block != NULL)
+                            {
+                                if(JudgeExistChildNode(block, "return"))
+                                {                               
+                                    current = scanBackCCallFunc(cur, varTypeBegin);
+                                    if(begin == NULL)
+                                        begin = end = current;
+                                    else if(current != NULL)
+                                        end = end->next = current;
+                                    while(current != NULL)
+                                    {
+                                        end = current;
+                                        current = current->next;
+                                    }                                
+                                    //scanBackAssignVar(cur);
+                                    break;
+                                }
+                                block = block->next;
+                            }
+                        }
+                        
                         recursive_flag = false;
                         break;
                     }
@@ -414,32 +454,52 @@ funcCallList *varCScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *var
                             begin = end = current;
                         else if(current != NULL)
                             end = end->next = current;
+                        bool isExit = false;
                         while(current != NULL)
                         {
+                            if(strcasecmp(current->funcName, "exit") == 0)
+                                isExit = true;
                             end = current;
                             current = current->next;
                         }
                         //scanAssignVar(cur);
-                        xmlNodePtr block = condition->prev;
-                        while(block != NULL)
+                        if(isExit)
                         {
-                            if(JudgeExistChildNode(block, "return"))
+                            current = scanBackCCallFunc(cur, varTypeBegin);
+                            if(begin == NULL)
+                                begin = end = current;
+                            else if(current != NULL)
+                                end = end->next = current;
+                            while(current != NULL)
                             {
-                                current = scanBackCCallFunc(cur, varTypeBegin);
-                                if(begin == NULL)
-                                    begin = end = current;
-                                else if(current != NULL)
-                                    end = end->next = current;
-                                while(current != NULL)
-                                {
-                                    end = current;
-                                    current = current->next;
-                                }
-                                //scanBackAssignVar(cur);
-                                break;
-                            }
-                            block = block->prev;
+                                end = current;
+                                current = current->next;
+                            }                       
                         }
+                        else
+                        {
+                            xmlNodePtr block = condition->prev;
+                            while(block != NULL)
+                            {
+                                if(JudgeExistChildNode(block, "return"))
+                                {
+                                    current = scanBackCCallFunc(cur, varTypeBegin);
+                                    if(begin == NULL)
+                                        begin = end = current;
+                                    else if(current != NULL)
+                                        end = end->next = current;
+                                    while(current != NULL)
+                                    {
+                                        end = current;
+                                        current = current->next;
+                                    }
+                                    //scanBackAssignVar(cur);
+                                    break;
+                                }
+                                block = block->prev;
+                            }
+                        }
+                        
                         recursive_flag = false;
                         break;
                     }
@@ -468,32 +528,52 @@ funcCallList *varCScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *var
                                     begin = end = current;
                                 else if(current != NULL)
                                     end = end->next = current;
+                                bool isExit = false;
                                 while(current != NULL)
                                 {
+                                    if(strcasecmp(current->funcName, "exit") == 0)
+                                        isExit = true;
                                     end = current;
                                     current = current->next;
                                 }
                                 //scanAssignVar(cur);
-                                xmlNodePtr block = control->next;
-                                while(block != NULL)
+                                if(isExit)
                                 {
-                                    if(JudgeExistChildNode(block, "return"))
+                                    current = scanBackCCallFunc(cur, varTypeBegin);
+                                    if(begin == NULL)
+                                        begin = end = current;
+                                    else if(current != NULL)
+                                        end = end->next = current;
+                                    while(current != NULL)
                                     {
-                                        current = scanBackCCallFunc(cur, varTypeBegin);
-                                        if(begin == NULL)
-                                            begin = end = current;
-                                        else if(current != NULL)
-                                            end = end->next = current;
-                                        while(current != NULL)
-                                        {
-                                            end = current;
-                                            current = current->next;
-                                        }
-                                        //scanBackAssignVar(cur);
-                                        break;
-                                    }
-                                    block = block->next;
+                                        end = current;
+                                        current = current->next;
+                                    }                       
                                 }
+                                else
+                                {
+                                    xmlNodePtr block = control->next;
+                                    while(block != NULL)
+                                    {
+                                        if(JudgeExistChildNode(block, "return"))
+                                        {
+                                            current = scanBackCCallFunc(cur, varTypeBegin);
+                                            if(begin == NULL)
+                                                begin = end = current;
+                                            else if(current != NULL)
+                                                end = end->next = current;
+                                            while(current != NULL)
+                                            {
+                                                end = current;
+                                                current = current->next;
+                                            }
+                                            //scanBackAssignVar(cur);
+                                            break;
+                                        }
+                                        block = block->next;
+                                    }
+                                }
+                                
                                 recursive_flag = false;
                                 break;
                             }

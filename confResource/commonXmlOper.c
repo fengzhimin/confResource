@@ -28,16 +28,21 @@ bool JudgeVarUsedFromNode(xmlNodePtr cur, char *var, bool flag)
         {
             xmlNodePtr temp_cur = cur->children;
             xmlChar* attr_value = NULL;
+            char *varName = NULL;
             while(temp_cur != NULL)
             {
                 if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
                 {
-                    if(!xmlStrcmp(temp_cur->children->name, (const xmlChar*)"name"))
+                    if(temp_cur->children != NULL && !xmlStrcmp(temp_cur->children->name, (const xmlChar*)"name"))
                         attr_value = xmlGetProp(temp_cur->children, (xmlChar*)"line");
                     else
                         attr_value = xmlGetProp(temp_cur, (xmlChar*)"line");
-                        
-                    if(strcasecmp((char*)xmlNodeGetContent(temp_cur), var) == 0)
+                    
+                    varName = (char*)xmlNodeGetContent(temp_cur);
+                    //server.port <---> server.port[0]
+                    if(strcasecmp(varName, var) == 0)
+                        return true;
+                    else if(strstr(varName, var) != NULL && varName[strlen(var)] == '[')
                         return true;
                 }
                 
@@ -839,66 +844,76 @@ varDef *ExtractDirectInfluVarFromNode(xmlNodePtr cur, char *varName, varType *va
                 if(!xmlStrcmp(opt->name, (const xmlChar*)"operator"))
                 { 
                     char *optName = (char*)xmlNodeGetContent(opt);
-                    //handle = *= -= += operator
-                    if(strstr(optName, "=") != 0 && strcasecmp(optName, "==") != 0)
+                    //handle frequently used = *= -= += /= |= operator
+                    if(strcasecmp(optName, "=") == 0 || strcasecmp(optName, "+=") == 0 || strcasecmp(optName, "-=") == 0 ||\
+                    strcasecmp(optName, "*=") == 0 || strcasecmp(optName, "/=") == 0 || strcasecmp(optName, "|=") == 0)
                     {
                         xmlNodePtr influName = opt->next;
                         while(influName != NULL)
                         {
+                            bool isInfluence = false;
                             if(!xmlStrcmp(influName->name, (const xmlChar*)"name"))
                             {
                                 if(strcasecmp(varName, (char*)xmlNodeGetContent(influName)) == 0)
                                 {
-                                    xmlNodePtr name = opt->prev;
-                                    while(name != NULL)
+                                    isInfluence = true;
+                                }
+                            }
+                            else if(!xmlStrcmp(influName->name, (const xmlChar*)"call") && JudgeVarUsed(influName, varName))
+                            {
+                                isInfluence = true;
+                            }
+                            if(isInfluence)
+                            {
+                                xmlNodePtr name = opt->prev;
+                                while(name != NULL)
+                                {
+                                    if(!xmlStrcmp(name->name, (const xmlChar*)"name"))
                                     {
-                                        if(!xmlStrcmp(name->name, (const xmlChar*)"name"))
+                                        char *influVarName = (char*)xmlNodeGetContent(name);
+                                        //remove varName = varName + 1
+                                        if(strcasecmp(influVarName, varName) != 0)
                                         {
-                                            char *influVarName = (char*)xmlNodeGetContent(name);
-                                            //remove varName = varName + 1
-                                            if(strcasecmp(influVarName, varName) != 0)
+                                            xmlChar* attr_value = NULL;
+                                            if(!xmlStrcmp(name->children->name, (const xmlChar*)"name"))
+                                                attr_value = xmlGetProp(name->children, (xmlChar*)"line");
+                                            else
+                                                attr_value = xmlGetProp(name, (xmlChar*)"line");
+                                            current = begin;
+                                            //whether has existence or not
+                                            while(current != NULL)
                                             {
-                                                xmlChar* attr_value = NULL;
-                                                if(!xmlStrcmp(name->children->name, (const xmlChar*)"name"))
-                                                    attr_value = xmlGetProp(name->children, (xmlChar*)"line");
-                                                else
-                                                    attr_value = xmlGetProp(name, (xmlChar*)"line");
-                                                current = begin;
-                                                //whether has existence or not
-                                                while(current != NULL)
-                                                {
-                                                    if(strcasecmp(current->varName, influVarName) == 0)
-                                                        break;
-                                                    current = current->next;
-                                                }
-                                                if(current == NULL)
-                                                {
-                                                    if(begin == NULL)
-                                                        begin = end = malloc(sizeof(varDef));
-                                                    else
-                                                        end = end->next = malloc(sizeof(varDef));
-                                                    strcpy(end->varName, influVarName);
-                                                }
-                                                varType *varTypeCurrent = varTypeBegin;
-                                                //set influVarName type(local or global)
-                                                while(varTypeCurrent != NULL)
-                                                {
-                                                    //对结构体或累的成员变量进行分析，判断其是否为全局变量还是局部变量
-                                                    if(strstr(influVarName, varTypeCurrent->varName) != NULL)
-                                                        break;
-                                                    varTypeCurrent = varTypeCurrent->next;
-                                                }
-                                                if(varTypeCurrent == NULL)
-                                                    end->type = true;
-                                                else
-                                                    end->type = false;
-                                                end->line = StrToInt(attr_value);
-                                                //printf("%s(%s)\n", influVarName, attr_value);
+                                                if(strcasecmp(current->varName, influVarName) == 0)
+                                                    break;
+                                                current = current->next;
                                             }
-                                            goto next;
+                                            if(current == NULL)
+                                            {
+                                                if(begin == NULL)
+                                                    begin = end = malloc(sizeof(varDef));
+                                                else
+                                                    end = end->next = malloc(sizeof(varDef));
+                                                strcpy(end->varName, influVarName);
+                                            }
+                                            varType *varTypeCurrent = varTypeBegin;
+                                            //set influVarName type(local or global)
+                                            while(varTypeCurrent != NULL)
+                                            {
+                                                //对结构体或累的成员变量进行分析，判断其是否为全局变量还是局部变量
+                                                if(strstr(influVarName, varTypeCurrent->varName) != NULL)
+                                                    break;
+                                                varTypeCurrent = varTypeCurrent->next;
+                                            }
+                                            if(varTypeCurrent == NULL)
+                                                end->type = true;
+                                            else
+                                                end->type = false;
+                                            end->line = StrToInt(attr_value);
+                                            //printf("%s(%s)\n", influVarName, attr_value);
                                         }
-                                        name = name->prev;
+                                        goto next;
                                     }
+                                    name = name->prev;
                                 }
                             }
                             influName = influName->next;
@@ -929,25 +944,34 @@ next:
                                     xmlNodePtr name = expr->children;
                                     while(name != NULL)
                                     {
+                                        bool isInfluence = false;
                                         if(!xmlStrcmp(name->name, (const xmlChar*)"name"))
                                         {
-                                            //remove varName = varName + 1
                                             if(strcasecmp(varName, (char*)xmlNodeGetContent(name)) == 0)
                                             {
-                                                char *influVarName = (char*)xmlNodeGetContent(init->prev);
-                                                xmlChar* attr_value = NULL;
-                                                if(!xmlStrcmp(init->prev->children->name, (const xmlChar*)"name"))
-                                                    attr_value = xmlGetProp(init->prev->children, (xmlChar*)"line");
-                                                else
-                                                    attr_value = xmlGetProp(init->prev, (xmlChar*)"line");
-                                                if(begin == NULL)
-                                                    begin = end = malloc(sizeof(varDef));
-                                                else
-                                                    end = end->next = malloc(sizeof(varDef));
-                                                strcpy(end->varName, influVarName);
-                                                end->type = false;
-                                                end->line = StrToInt(attr_value);
+                                                isInfluence = true;
                                             }
+                                        }
+                                        else if(!xmlStrcmp(name->name, (const xmlChar*)"call") && JudgeVarUsed(name, varName))
+                                        {
+                                            isInfluence = true;
+                                        }
+                                        if(isInfluence)
+                                        {
+                                            char *influVarName = (char*)xmlNodeGetContent(init->prev);
+                                            xmlChar* attr_value = NULL;
+                                            if(!xmlStrcmp(init->prev->children->name, (const xmlChar*)"name"))
+                                                attr_value = xmlGetProp(init->prev->children, (xmlChar*)"line");
+                                            else
+                                                attr_value = xmlGetProp(init->prev, (xmlChar*)"line");
+                                            if(begin == NULL)
+                                                begin = end = malloc(sizeof(varDef));
+                                            else
+                                                end = end->next = malloc(sizeof(varDef));
+                                            strcpy(end->varName, influVarName);
+                                            end->type = false;
+                                            end->line = StrToInt(attr_value);
+                                            break;
                                         }
                                         name = name->next;
                                     }
@@ -1217,6 +1241,7 @@ funcList *Sclice(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc
             
             varType *beginVarType = ExtractVarType(cur);
             varType *currentVarType = beginVarType;
+            /*
             varDef *varInfluence = ExtractDirectInfluVar(cur, varName, currentVarType);
             if(varInfluence != NULL)
             {
@@ -1232,8 +1257,44 @@ funcList *Sclice(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc
                     varInfluCur = varInfluence;
                 }
             }
-            
+            */
+            bool isInfluence = false;
             current = varScliceFunc(varName, cur, currentVarType, true);
+            if(begin == NULL)
+                begin = end = current;
+            else if(current != NULL)
+                end = end->next = current;
+            while(current != NULL)
+            {
+                isInfluence = true;
+                end = current;
+                current = current->next;
+            }
+            varDef *varInfluence = ExtractDirectInfluVar(cur, varName, currentVarType);
+            if(varInfluence != NULL)
+            {
+                varDef *varInfluCur = varInfluence;
+                while(varInfluCur != NULL)
+                {
+#if DEBUG == 1
+                    printf("%s influence %s(%d)\n", varName, varInfluCur->varName, varInfluCur->line);
+#endif
+                    current = varScliceFunc(varInfluCur->varName, cur, currentVarType, true);
+                    if(begin == NULL)
+                        begin = end = current;
+                    else if(current != NULL)
+                        end = end->next = current;
+                    while(current != NULL)
+                    {
+                        isInfluence = true;
+                        end = current;
+                        current = current->next;
+                    }
+                    varInfluence = varInfluence->next;
+                    free(varInfluCur);
+                    varInfluCur = varInfluence;
+                }
+            }
             while(currentVarType != NULL)
             {
                 beginVarType = beginVarType->next;
@@ -1242,7 +1303,7 @@ funcList *Sclice(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc
                 currentVarType = beginVarType;
             }
 #if DEBUG == 1
-            if(current != NULL)
+            if(isInfluence)
             {
                 memset(src_dir, 0, DIRPATH_MAX);
                 //删除开头的temp_和结尾的.xml
@@ -1250,15 +1311,6 @@ funcList *Sclice(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc
                 printf("source Path: %s\tfunction: %s(%s)\n", src_dir, (char*)xmlNodeGetContent(temp_cur), attr_value);
             }
 #endif
-            if(begin == NULL)
-                begin = end = current;
-            else if(current != NULL)
-                end = end->next = current;
-            while(current != NULL)
-            {
-                end = current;
-                current = current->next;
-            }
         }
         cur = cur->next;
     }
