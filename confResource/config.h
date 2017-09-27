@@ -23,6 +23,8 @@
 //存放库函数与资源的关系文件
 #define FUNCLIBRARY_PATH  "../funcLibrary.conf"
 
+#define INPUT_PATH        "../input.conf"
+
 #define CONFIG_KEY_MAX_NUM       50     //配置项key的最大值
 #define CONFIG_VALUE_MAX_NUM     30    //配置项value的最大值
 
@@ -36,45 +38,12 @@
 
 #define MAX_VARIABLE_LENGTH      128     //a variable name max length
 
+#define MAX_PATH_LENGTH          1024    //path max length
+
 #define FORNUM                   0     //for multiple
 #define WHILENUM                 0     //while and do-while multiple
 
 #define LOGINFO_LENGTH           1024 
-
-extern char bind_address[CONFIG_VALUE_MAX_NUM];
-extern int port;
-extern char user[CONFIG_VALUE_MAX_NUM];
-extern char pass[CONFIG_VALUE_MAX_NUM];
-extern char database[CONFIG_VALUE_MAX_NUM];
-extern MYSQL db;
-extern MYSQL *mysqlConnect;
-extern char *createFuncLibraryTable;
-extern char *deleteFuncLibraryTable;
-extern char *createFuncScoreTableTemplate;
-extern char *deleteFuncScoreTableTemplate;
-extern char *createTempFuncScoreTableTemplate;
-extern char *deleteTempFuncScoreTableTemplate;
-extern char *createClassInheritTableTemplate;
-extern char *deleteClassInheritTableTemplate;
-extern char *createFuncCallTableTemplate;
-extern char *deleteFuncCallTableTemplate;
-extern char *createTempFuncCallTableTemplate;
-extern char *deleteTempFuncCallTableTemplate;
-
-extern char funcScoreTableName[MAX_PROGRAMNAME_NUM*2];
-extern char tempFuncScoreTableName[MAX_PROGRAMNAME_NUM*2];
-extern char classInheritTableName[MAX_PROGRAMNAME_NUM*2];
-extern char funcCallTableName[MAX_PROGRAMNAME_NUM*2];
-extern char tempFuncCallTableName[MAX_PROGRAMNAME_NUM*2];
-
-//函数递归的最大深度
-extern int max_funcCallRecursive_NUM;
-
-//analyse program name
-extern char programName[MAX_PROGRAMNAME_NUM];
-
-//current analyse xml file path
-extern char currentAnalyseXmlPath[DIRPATH_MAX];
 
 typedef struct configurationScore
 {
@@ -118,5 +87,60 @@ typedef struct variableType
     int line;
     struct variableType *next;
 } varType;
+
+/*********************************
+ * func: config option map relationship
+ * @para confName: config option name
+ * @para confVarName: config option map variable name
+ * @para mapVariableNum: the number of maped config variable
+*********************************/
+typedef struct configOptionMap
+{
+    char confName[MAX_VARIABLE_LENGTH];
+    char (*confVarName)[MAX_SUBSTR];
+    int mapVariableNum;
+    struct configOptionMap *next;
+} confOptMap;
+
+extern char bind_address[CONFIG_VALUE_MAX_NUM];
+extern int port;
+extern char user[CONFIG_VALUE_MAX_NUM];
+extern char pass[CONFIG_VALUE_MAX_NUM];
+extern char database[CONFIG_VALUE_MAX_NUM];
+extern MYSQL db;
+extern MYSQL *mysqlConnect;
+extern char *createFuncLibraryTable;
+extern char *deleteFuncLibraryTable;
+extern char *createFuncScoreTableTemplate;
+extern char *deleteFuncScoreTableTemplate;
+extern char *createTempFuncScoreTableTemplate;
+extern char *deleteTempFuncScoreTableTemplate;
+extern char *createClassInheritTableTemplate;
+extern char *deleteClassInheritTableTemplate;
+extern char *createFuncCallTableTemplate;
+extern char *deleteFuncCallTableTemplate;
+extern char *createTempFuncCallTableTemplate;
+extern char *deleteTempFuncCallTableTemplate;
+
+extern char funcScoreTableName[MAX_PROGRAMNAME_NUM*2];
+extern char tempFuncScoreTableName[MAX_PROGRAMNAME_NUM*2];
+extern char classInheritTableName[MAX_PROGRAMNAME_NUM*2];
+extern char funcCallTableName[MAX_PROGRAMNAME_NUM*2];
+extern char tempFuncCallTableName[MAX_PROGRAMNAME_NUM*2];
+
+extern char srcPath[MAX_PATH_LENGTH];
+extern bool rebuild;
+extern confOptMap *beginConfOpt;
+extern confOptMap *endConfOpt;
+extern confOptMap *currentConfOpt;
+
+//函数递归的最大深度
+extern int max_funcCallRecursive_NUM;
+
+//analyse program name
+extern char programName[MAX_PROGRAMNAME_NUM];
+
+//current analyse xml file path
+extern char currentAnalyseXmlPath[DIRPATH_MAX];
 
 #endif

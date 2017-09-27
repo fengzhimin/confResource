@@ -63,3 +63,9 @@ char programName[MAX_PROGRAMNAME_NUM] = "";
 int max_funcCallRecursive_NUM = 5;
 
 char currentAnalyseXmlPath[DIRPATH_MAX] = "";
+
+char srcPath[MAX_PATH_LENGTH] = "";
+bool rebuild = true;
+confOptMap *beginConfOpt = NULL;
+confOptMap *endConfOpt = NULL;
+confOptMap *currentConfOpt = NULL;

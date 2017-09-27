@@ -43,6 +43,7 @@
   <VirtualDirectory Name="configuration">
     <File Name="confResource.conf"/>
     <File Name="funcLibrary.conf"/>
+    <File Name="input.conf"/>
   </VirtualDirectory>
   <VirtualDirectory Name="sourceCode">
     <File Name="sourceOper.h"/>

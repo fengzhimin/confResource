@@ -27,6 +27,12 @@
 #include <time.h>
 
 /***************************************
+ * func: get software config info(srcPath, rebuild, config variable)
+ * return: true = success   false = failure
+****************************************/
+bool getSoftWareConfInfo();
+
+/***************************************
  * func: get analyse program name
  * return: true = success   false = failure
  * @para sourcePath: source code directory

@@ -14,6 +14,67 @@ static char src_dir[DIRPATH_MAX];
 static int count = 0;
 static int totalAnalyzeFileNum = 0;
 static int curAnalyzeFileNum = 0;
+static char subStr2[2][MAX_SUBSTR];
+static char lineData[LINE_CHAR_MAX_NUM];
+
+bool getSoftWareConfInfo()
+{
+    int fd = OpenFile(INPUT_PATH, O_RDONLY);
+	if(fd == -1)
+	{
+		return false;
+	}
+	memset(lineData, 0, LINE_CHAR_MAX_NUM);
+	while(ReadLine(fd, lineData) == -1)
+	{
+		removeBeginSpace(lineData);
+        //remove note line
+        if(lineData[0] == '#')
+            goto next;
+		int specificCharNum = getSpecCharNumFromStr(lineData, '=');
+        if(specificCharNum == 1)
+        {
+            //handle srcPath and rebuild option
+            cutStrByLabel(lineData, '=', subStr2, 2);
+            if(strcasecmp(subStr2[0], "srcPath") == 0)
+            {
+                //get srcPath value
+                strcpy(srcPath, subStr2[1]);
+            }
+            else if(strcasecmp(subStr2[0], "rebuild") == 0)
+            {
+                //get rebuild value
+                if(strcasecmp(subStr2[1], "yes") == 0)
+                    rebuild = true;
+                else
+                    rebuild = false;
+            }
+        }
+        else
+        {
+            //handle config option map
+            specificCharNum = getSpecCharNumFromStr(lineData, ':');
+            if(specificCharNum > 0)
+            {
+                if(beginConfOpt == NULL)
+                    beginConfOpt = endConfOpt = malloc(sizeof(confOptMap));
+                else
+                    endConfOpt = endConfOpt->next = malloc(sizeof(confOptMap));
+                memset(endConfOpt, 0, sizeof(confOptMap));
+                endConfOpt->confVarName = (char (*)[MAX_SUBSTR])malloc(specificCharNum*MAX_SUBSTR);
+                cutStrByLabel(lineData, ':', subStr2, 2);
+                strcpy(endConfOpt->confName, subStr2[0]);
+                cutStrByLabel(subStr2[1], ':', endConfOpt->confVarName, specificCharNum);
+                endConfOpt->mapVariableNum = specificCharNum;
+            }
+        }
+next:
+		memset(lineData, 0, LINE_CHAR_MAX_NUM);
+	}
+
+	CloseFile(fd);
+	return true;
+}
 
 bool getProgramName(char *sourcePath)
 {
