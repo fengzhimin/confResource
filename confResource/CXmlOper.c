@@ -6,18 +6,19 @@
 ******************************************************/
 
 #include "CXmlOper.h"
+#include "sourceOper.h"
 
 static char error_info[LOGINFO_LENGTH];
 static char src_dir[DIRPATH_MAX];
 static char sqlCommand[LINE_CHAR_MAX_NUM];
 
-#define scanCallFunction(cur, funcName, funcType, funcArgumentType, srcPath, varTypeBegin)   \
-    scanCallFunctionFromNode(cur, funcName, funcType, funcArgumentType, srcPath, varTypeBegin, true)
+#define scanCallFunction(tempFuncCallTableName, cur, funcName, funcType, funcArgumentType, srcPath, varTypeBegin)   \
+    scanCallFunctionFromNode(tempFuncCallTableName, cur, funcName, funcType, funcArgumentType, srcPath, varTypeBegin, true)
 
-static void scanCallFunctionFromNode(xmlNodePtr cur, char *funcName, char *funcType, char *funcArgumentType,\
+static void scanCallFunctionFromNode(char *tempFuncCallTableName, xmlNodePtr cur, char *funcName, char *funcType, char *funcArgumentType, \
     char *srcPath, varType *varTypeBegin, bool flag);
 
-bool ExtractFuncFromCXML(char *docName)
+bool ExtractFuncFromCXML(char *docName, char *tempFuncScoreTableName, char *tempFuncCallTableName)
 {
     xmlDocPtr doc;
     xmlNodePtr cur;
@@ -58,26 +59,25 @@ bool ExtractFuncFromCXML(char *docName)
                 }
                 else if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
                 {
-                    memset(src_dir, 0, DIRPATH_MAX);
+                    char src_dir[DIRPATH_MAX] = "";
                     //删除开头的temp_和结尾的.xml
                     strncpy(src_dir, (char *)&(docName[5]), strlen(docName)-9);
                     xmlChar* attr_value = xmlGetProp(temp_cur, (xmlChar*)"line");
-                    memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-                    
+                    char tempSqlCommand[LINE_CHAR_MAX_NUM] = "";
                     //get function argument type string
                     char *argumentTypeString = ExtractFuncArgumentType(cur);
-                    sprintf(sqlCommand, "insert into %s (funcName, type, argumentType, sourceFile, line) value('%s', '%s', '%s', '%s', %s)", tempFuncScoreTableName,\
+                    sprintf(tempSqlCommand, "insert into %s (funcName, type, argumentType, sourceFile, line) value('%s', '%s', '%s', '%s', %s)", tempFuncScoreTableName,\
                         (char*)xmlNodeGetContent(temp_cur), funcType, argumentTypeString, src_dir, attr_value);
                     
-                    if(!executeCommand(sqlCommand))
+                    if(!executeSQLCommand(NULL, tempSqlCommand))
                     {
                         memset(error_info, 0, LOGINFO_LENGTH);
-                        sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+                        sprintf(error_info, "execute commad %s failure.\n", tempSqlCommand);
                         RecordLog(error_info);
                     }
                     varType *begin = ExtractVarType(cur);
                     varType *current = begin;
-                    scanCallFunction(cur, (char*)xmlNodeGetContent(temp_cur), funcType, argumentTypeString, src_dir, begin);
+                    scanCallFunction(tempFuncCallTableName, cur, (char*)xmlNodeGetContent(temp_cur), funcType, argumentTypeString, src_dir, begin);
                     while(current != NULL)
                     {
                         begin = begin->next;
@@ -96,7 +96,7 @@ bool ExtractFuncFromCXML(char *docName)
     }
       
     xmlFreeDoc(doc);
-    optDataBaseOper();
+    optDataBaseOper(tempFuncScoreTableName, tempFuncCallTableName);
     return true;  
 }
 
@@ -109,7 +109,7 @@ bool ExtractFuncFromCXML(char *docName)
  * @para srcPath: function source file path
  * @para varTypeBegin: variable type header point
 ********************************/
-static void scanCallFunctionFromNode(xmlNodePtr cur, char *funcName, char *funcType, char *funcArgumentType, char *srcPath, varType *varTypeBegin, bool flag)
+static void scanCallFunctionFromNode(char *tempFuncCallTableName, xmlNodePtr cur, char *funcName, char *funcType, char *funcArgumentType, char *srcPath, varType *varTypeBegin, bool flag)
 {
     while(cur != NULL)
     {
@@ -117,7 +117,6 @@ static void scanCallFunctionFromNode(xmlNodePtr cur, char *funcName, char *funcT
         {
             if(cur->children->last != NULL)
             {
-                memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
                 xmlChar* attr_value = NULL;
                 char *callFuncName = NULL;
                 if(xmlStrcmp(cur->children->last->name, (const xmlChar*)"position"))
@@ -145,21 +144,22 @@ static void scanCallFunctionFromNode(xmlNodePtr cur, char *funcName, char *funcT
                         parentNode = parentNode->parent;
                     }
                     char *calledFuncArgumentTypeString = getCalledFuncArgumentType(cur, varTypeBegin);
-                    sprintf(sqlCommand, "insert into %s (funcName, funcCallType, argumentType, sourceFile, calledFunc, calledFuncArgumentType, CalledSrcFile, line, type, forNum, whileNum) \
+                    char tempSqlCommand[LINE_CHAR_MAX_NUM] = "";
+                    sprintf(tempSqlCommand, "insert into %s (funcName, funcCallType, argumentType, sourceFile, calledFunc, calledFuncArgumentType, CalledSrcFile, line, type, forNum, whileNum) \
                         value('%s', '%s', '%s', '%s', '%s', '%s', '%s', %s, 'L', %d, %d)", tempFuncCallTableName, funcName, funcType, funcArgumentType, srcPath, callFuncName, \
                         calledFuncArgumentTypeString, srcPath, attr_value, forNum, whileNum);
                     free(calledFuncArgumentTypeString);
-                    if(!executeCommand(sqlCommand))
+                    if(!executeSQLCommand(NULL, tempSqlCommand))
                     {
                         memset(error_info, 0, LOGINFO_LENGTH);
-                        sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+                        sprintf(error_info, "execute commad %s failure.\n", tempSqlCommand);
                         RecordLog(error_info);
                     }
                 }
             }
         }
         
-        scanCallFunctionFromNode(cur->children, funcName, funcType, funcArgumentType, srcPath, varTypeBegin, false);
+        scanCallFunctionFromNode(tempFuncCallTableName, cur->children, funcName, funcType, funcArgumentType, srcPath, varTypeBegin, false);
         if(flag)
             break;
         cur = cur->next;

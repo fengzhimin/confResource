@@ -53,10 +53,10 @@ char *createTempFuncCallTableTemplate = "create table %s(funcName varchar(128), 
 char *deleteTempFuncCallTableTemplate = "drop table if exists %s";
 
 char funcScoreTableName[MAX_PROGRAMNAME_NUM*2] = "";
-char tempFuncScoreTableName[MAX_PROGRAMNAME_NUM*2] = "";
+char tempFuncScoreTableName[MAX_PTHREAD_NUM][MAX_PROGRAMNAME_NUM*2] = {"", "", "", ""};
 char classInheritTableName[MAX_PROGRAMNAME_NUM*2] = "";
 char funcCallTableName[MAX_PROGRAMNAME_NUM*2] = "";
-char tempFuncCallTableName[MAX_PROGRAMNAME_NUM*2] = "";
+char tempFuncCallTableName[MAX_PTHREAD_NUM][MAX_PROGRAMNAME_NUM*2] = {"", "", "", ""};
 
 char programName[MAX_PROGRAMNAME_NUM] = "";
 
@@ -69,3 +69,7 @@ bool rebuild = true;
 confOptMap *beginConfOpt = NULL;
 confOptMap *endConfOpt = NULL;
 confOptMap *currentConfOpt = NULL;
+
+pthread_t pthreadID[MAX_PTHREAD_NUM];
+int pthreadRet[MAX_PTHREAD_NUM] = { -1 };
+pthread_arg pthreadArg[MAX_PTHREAD_NUM];

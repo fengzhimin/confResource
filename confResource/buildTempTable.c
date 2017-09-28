@@ -24,31 +24,32 @@ void initTableName()
     sprintf(funcScoreTableName, "%s_funcScore", programName);
     replaceChar(funcScoreTableName, '-', '_');
     replaceChar(funcScoreTableName, '.', '_');
-    sprintf(tempFuncScoreTableName, "temp_%s_funcScore", programName);
-    replaceChar(tempFuncScoreTableName, '-', '_');
-    replaceChar(tempFuncScoreTableName, '.', '_');
     sprintf(classInheritTableName, "%s_classInheritTable", programName);
     replaceChar(classInheritTableName, '-', '_');
     replaceChar(classInheritTableName, '.', '_');
     sprintf(funcCallTableName, "%s_funcCall", programName);
     replaceChar(funcCallTableName, '-', '_');
     replaceChar(funcCallTableName, '.', '_');
-    sprintf(tempFuncCallTableName, "temp_%s_funcCall", programName);
-    replaceChar(tempFuncCallTableName, '-', '_');
-    replaceChar(tempFuncCallTableName, '.', '_');
+    int i;
+    for(i = 0; i < MAX_PTHREAD_NUM; i++)
+    {
+        sprintf(tempFuncScoreTableName[i], "temp%d_%s_funcScore", i+1, programName);
+        replaceChar(tempFuncScoreTableName[i], '-', '_');
+        replaceChar(tempFuncScoreTableName[i], '.', '_');
+        sprintf(tempFuncCallTableName[i], "temp%d_%s_funcCall", i+1, programName);
+        replaceChar(tempFuncCallTableName[i], '-', '_');
+        replaceChar(tempFuncCallTableName[i], '.', '_');
+    }
+    
     
     //create temp table command
     sprintf(createFuncScoreTable, createFuncScoreTableTemplate, funcScoreTableName);
-    sprintf(createTempFuncScoreTable, createTempFuncScoreTableTemplate, tempFuncScoreTableName);
     sprintf(createClassInheritTable, createClassInheritTableTemplate, classInheritTableName);
     sprintf(createFuncCallTable, createFuncCallTableTemplate, funcCallTableName);
-    sprintf(createTempFuncCallTable, createTempFuncCallTableTemplate, tempFuncCallTableName);
     
     sprintf(deleteFuncScoreTable, deleteFuncScoreTableTemplate, funcScoreTableName);
-    sprintf(deleteTempFuncScoreTable, deleteTempFuncScoreTableTemplate, tempFuncScoreTableName);
     sprintf(deleteClassInheritTable, deleteClassInheritTableTemplate, classInheritTableName);
     sprintf(deleteFuncCallTable, deleteFuncCallTableTemplate, funcCallTableName);
-    sprintf(deleteTempFuncCallTable, deleteTempFuncCallTableTemplate, tempFuncCallTableName);
 }
 
 bool buildTempTable()
@@ -62,13 +63,6 @@ bool buildTempTable()
     else
     {
         RecordLog("create funcScore table failure!\n");
-        ret = false;
-    }
-    if(executeCommand(createTempFuncScoreTable))
-        ret = true;
-    else
-    {
-        RecordLog("create tempFuncScore table failure!\n");
         ret = false;
     }
     
@@ -89,14 +83,26 @@ bool buildTempTable()
         RecordLog("create funcCall table failure!\n");
         ret = false;
     }
-    if(executeCommand(createTempFuncCallTable))
-        ret = true;
-    else
+    int i;
+    for(i = 0; i < MAX_PTHREAD_NUM; i++)
     {
-        RecordLog("create tempFuncCall table failure!\n");
-        ret = false;
+        sprintf(createTempFuncScoreTable, createTempFuncScoreTableTemplate, tempFuncScoreTableName[i]);
+        if(executeCommand(createTempFuncScoreTable))
+            ret = true;
+        else
+        {
+            RecordLog("create tempFuncScore table failure!\n");
+            ret = false;
+        }
+        sprintf(createTempFuncCallTable, createTempFuncCallTableTemplate, tempFuncCallTableName[i]);
+        if(executeCommand(createTempFuncCallTable))
+        ret = true;
+        else
+        {
+            RecordLog("create tempFuncCall table failure!\n");
+            ret = false;
+        }
     }
-    
     return ret;
 }
 
@@ -110,13 +116,6 @@ bool deleteTempTable()
     else
     {
         RecordLog("delete funcScore table failure!\n");
-        ret = false;
-    }
-    if(executeCommand(deleteTempFuncScoreTable))
-        ret = true;
-    else
-    {
-        RecordLog("delete tempFuncScore table failure!\n");
         ret = false;
     }
     
@@ -137,12 +136,25 @@ bool deleteTempTable()
         RecordLog("delete funcCall table failure!\n");
         ret = false;
     }
-    if(executeCommand(deleteTempFuncCallTable))
-        ret = true;
-    else
+    int i;
+    for(i = 0; i < MAX_PTHREAD_NUM; i++)
     {
-        RecordLog("delete tempFuncCall table failure!\n");
-        ret = false;
+        sprintf(deleteTempFuncScoreTable, deleteTempFuncScoreTableTemplate, tempFuncScoreTableName[i]);
+        if(executeCommand(deleteTempFuncScoreTable))
+            ret = true;
+        else
+        {
+            RecordLog("create tempFuncScore table failure!\n");
+            ret = false;
+        }
+        sprintf(deleteTempFuncCallTable, deleteTempFuncCallTableTemplate, tempFuncCallTableName[i]);
+        if(executeCommand(deleteTempFuncCallTable))
+        ret = true;
+        else
+        {
+            RecordLog("create tempFuncCall table failure!\n");
+            ret = false;
+        }
     }
     
     return ret;

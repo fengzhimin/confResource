@@ -29,7 +29,7 @@
  * return: true = success    false = failure
  * @para docName: xml path
 ********************************/
-bool ExtractFuncFromCXML(char *docName);
+bool ExtractFuncFromCXML(char *docName, char *tempFuncScoreTableName, char *tempFuncCallTableName);
 
 /*******************************
  * func: scan call function from current node

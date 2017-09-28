@@ -1,72 +1,40 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Session Name="/home/fzm/confResource/confResource.workspace">
-  <int Value="1" Name="m_selectedTab"/>
+  <int Value="2" Name="m_selectedTab"/>
   <wxString Value="/home/fzm/confResource/confResource.workspace" Name="m_workspaceName"/>
   <TabInfoArray Name="TabInfoArray">
     <TabInfo>
       <wxString Value="/home/fzm/confResource/confResource/main.c" Name="FileName"/>
-      <int Value="39" Name="FirstVisibleLine"/>
-      <int Value="54" Name="CurrentLine"/>
-      <wxArrayString Name="Bookmarks">
-        <wxString Value="55:3"/>
-      </wxArrayString>
+      <int Value="17" Name="FirstVisibleLine"/>
+      <int Value="33" Name="CurrentLine"/>
+      <wxArrayString Name="Bookmarks"/>
       <IntVector Name="CollapsedFolds"/>
     </TabInfo>
     <TabInfo>
       <wxString Value="/home/fzm/confResource/confResource/input.conf" Name="FileName"/>
       <int Value="0" Name="FirstVisibleLine"/>
-      <int Value="10" Name="CurrentLine"/>
+      <int Value="1" Name="CurrentLine"/>
       <wxArrayString Name="Bookmarks"/>
       <IntVector Name="CollapsedFolds"/>
     </TabInfo>
     <TabInfo>
-      <wxString Value="/home/fzm/confResource/confResource/sourceOper.h" Name="FileName"/>
-      <int Value="19" Name="FirstVisibleLine"/>
-      <int Value="32" Name="CurrentLine"/>
+      <wxString Value="/home/fzm/confResource/confResource/CPPXmlOper.c" Name="FileName"/>
+      <int Value="121" Name="FirstVisibleLine"/>
+      <int Value="127" Name="CurrentLine"/>
       <wxArrayString Name="Bookmarks"/>
       <IntVector Name="CollapsedFolds"/>
     </TabInfo>
     <TabInfo>
-      <wxString Value="/home/fzm/confResource/confResource/sourceOper.c" Name="FileName"/>
-      <int Value="3" Name="FirstVisibleLine"/>
-      <int Value="19" Name="CurrentLine"/>
+      <wxString Value="/home/fzm/confResource/confResource/mysqlOper.c" Name="FileName"/>
+      <int Value="61" Name="FirstVisibleLine"/>
+      <int Value="67" Name="CurrentLine"/>
       <wxArrayString Name="Bookmarks">
-        <wxString Value="17:3"/>
+        <wxString Value="88:3"/>
       </wxArrayString>
-      <IntVector Name="CollapsedFolds"/>
-    </TabInfo>
-    <TabInfo>
-      <wxString Value="/home/fzm/confResource/confResource/strOper.h" Name="FileName"/>
-      <int Value="13" Name="FirstVisibleLine"/>
-      <int Value="46" Name="CurrentLine"/>
-      <wxArrayString Name="Bookmarks"/>
-      <IntVector Name="CollapsedFolds"/>
-    </TabInfo>
-    <TabInfo>
-      <wxString Value="/home/fzm/confResource/confResource/config.h" Name="FileName"/>
-      <int Value="74" Name="FirstVisibleLine"/>
-      <int Value="102" Name="CurrentLine"/>
-      <wxArrayString Name="Bookmarks"/>
       <IntVector Name="CollapsedFolds"/>
     </TabInfo>
   </TabInfoArray>
   <SerializedObject Name="m_breakpoints">
-    <long Value="1" Name="Count"/>
-    <SerializedObject Name="Breakpoint0">
-      <wxString Value="/home/fzm/confResource/confResource/main.c" Name="file"/>
-      <int Value="29" Name="lineno"/>
-      <wxString Value="" Name="function_name"/>
-      <wxString Value="" Name="memory_address"/>
-      <int Value="1" Name="bp_type"/>
-      <int Value="0" Name="watchpoint_type"/>
-      <wxString Value="" Name="watchpt_data"/>
-      <CData Name="commandlist"/>
-      <bool Value="0" Name="regex"/>
-      <bool Value="0" Name="is_temp"/>
-      <bool Value="1" Name="is_enabled"/>
-      <int Value="0" Name="ignore_number"/>
-      <wxString Value="" Name="conditions"/>
-      <int Value="0" Name="origin"/>
-    </SerializedObject>
+    <long Value="0" Name="Count"/>
   </SerializedObject>
 </Session>

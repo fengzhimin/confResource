@@ -14,6 +14,8 @@
 #include "logOper.h"
 #include "confOper.h"
 
+#define executeCommand(command)  executeSQLCommand(mysqlConnect, command)
+
 /******************************
  * func: initial mysql operation
  * return: true = success   false = failure
@@ -29,8 +31,9 @@ void stopMysql();
 /******************************
  * func: execute a command
  * bool: true = success false = failure
- * @para command string
+ * @para mysqlConn: NULL = create temp connect   no NULL = use global mysqlConnect
+ * @para command: command string
 *******************************/
-bool executeCommand(char *command);
+bool executeSQLCommand(MYSQL *mysqlConn, char *command);
 
 #endif

@@ -14,6 +14,7 @@ static char src_dir[DIRPATH_MAX];
 static int count = 0;
 static int totalAnalyzeFileNum = 0;
 static int curAnalyzeFileNum = 0;
+static int currentPthreadID = 0;
 static char subStr2[2][MAX_SUBSTR];
 static char lineData[LINE_CHAR_MAX_NUM];
 
@@ -225,6 +226,35 @@ bool CodeToXML(char *srcPath, char *desPath)
     }
 }
 
+static void *pthread_handle_Convert(void *arg)
+{
+    pthread_arg *argument = (pthread_arg *)arg;
+    int ret = 0;
+    if(CodeToXML(argument->src_dir, argument->des_dir))
+    {
+        ret = 1;
+        //ExtractFuncFromCXML(argument->des_dir, tempFuncScoreTableName[argument->pthreadID], tempFuncCallTableName[argument->pthreadID]);
+    }
+    
+    pthread_exit((void *)&ret);
+}
+
+static void *pthread_handle_Analyze_C(void *arg)
+{
+    pthread_arg *argument = (pthread_arg *)arg;
+    int ret = ExtractFuncFromCXML(argument->des_dir, tempFuncScoreTableName[argument->pthreadID], tempFuncCallTableName[argument->pthreadID]);
+    
+    pthread_exit((void *)&ret);
+}
+
+static void *pthread_handle_Analyze_CPP(void *arg)
+{
+    pthread_arg *argument = (pthread_arg *)arg;
+    int ret = ExtractFuncFromCPPXML(argument->des_dir, tempFuncScoreTableName[argument->pthreadID], tempFuncCallTableName[argument->pthreadID]);
+    
+    pthread_exit((void *)&ret);
+}
+
 bool convertProgram(char *dirPath)
 {
     char temp_dir[DIRPATH_MAX];
@@ -283,43 +313,34 @@ bool convertProgram(char *dirPath)
             }
             if(S_ISREG(statbuf.st_mode))
             {
-                if(judgeCPreprocessFile(child_dir))
+                if(judgeCPreprocessFile(child_dir) || judgeCPPPreprocessFile(child_dir))
                 {
                     //handle C language preprocess file
                     curAnalyzeFileNum++;
-                    printf("analysing file %s(%d/%d)\n", child_dir, curAnalyzeFileNum, totalAnalyzeFileNum);
+                    printf("convert file %s(%d/%d)\n", child_dir, curAnalyzeFileNum, totalAnalyzeFileNum);
                     memset(xml_dir, 0, DIRPATH_MAX);
                     sprintf(xml_dir, "%s/%s.xml", temp_dir, pdirent->d_name);
-                    if(CodeToXML(child_dir, xml_dir))
+                    
+                    void *pthread_ret = NULL;
+                    if(pthreadRet[currentPthreadID] == 0)
+                        pthread_join(pthreadID[currentPthreadID], &pthread_ret);
+                    memset(&pthreadArg[currentPthreadID], 0, sizeof(pthread_arg));
+                    strcpy(pthreadArg[currentPthreadID].des_dir, xml_dir);
+                    strcpy(pthreadArg[currentPthreadID].src_dir, child_dir);
+                    pthreadArg[currentPthreadID].pthreadID = 0;
+                    pthreadRet[currentPthreadID] = pthread_create(&pthreadID[currentPthreadID], NULL, pthread_handle_Convert, (void *)&pthreadArg[currentPthreadID]);
+                    
+                    currentPthreadID++;
+                    currentPthreadID = currentPthreadID%MAX_PTHREAD_NUM;
+                    
+                    if(pthread_ret != NULL)
                     {
-                        ret = true;
-                        ExtractFuncFromCXML(xml_dir);
-                    }
-                    else
-                    {
-                        ret = false;
-                        closedir(pdir);
-                        return ret;
-                    }
-                }
-                else if(judgeCPPPreprocessFile(child_dir))
-                {
-                    //handle C++ language preprocess file
-                    curAnalyzeFileNum++;
-                    printf("analysing file %s(%d/%d)\n", child_dir, curAnalyzeFileNum, totalAnalyzeFileNum);
-                    memset(xml_dir, 0, DIRPATH_MAX);
-                    sprintf(xml_dir, "%s/%s.xml", temp_dir, pdirent->d_name);
-                    if(CodeToXML(child_dir, xml_dir))
-                    {
-                        ret = true;
-                        strcpy(currentAnalyseXmlPath, xml_dir);
-                        ExtractFuncFromCPPXML(xml_dir);
-                    }
-                    else
-                    {
-                        ret = false;
-                        closedir(pdir);
-                        return ret;
+                        ret = (bool)pthread_ret;
+                        if(!ret)
+                        {
+                            closedir(pdir);
+                            return ret;
+                        }
                     }
                 }
             }
@@ -332,6 +353,114 @@ bool convertProgram(char *dirPath)
         RecordLog(error_info);
         
         ret = false;
+    }
+    closedir(pdir);
+    
+    return ret;
+}
+
+bool analyzeProgram(char *dirPath)
+{
+    DIR *pdir;
+    struct dirent *pdirent;
+    struct stat statbuf;
+    
+    char child_dir[DIRPATH_MAX];
+    pdir = opendir(dirPath);
+    bool ret = true;
+    if(pdir)
+    {
+        while((pdirent = readdir(pdir)) != NULL)
+        {
+            //跳过"."和".."和隐藏文件夹
+            if(strcmp(pdirent->d_name, ".") == 0 || strcmp(pdirent->d_name, "..") == 0 || (pdirent->d_name[0] == '.'))
+                continue;
+            
+            memset(child_dir, 0, DIRPATH_MAX);
+            sprintf(child_dir, "%s/%s", dirPath, pdirent->d_name);
+            if(lstat(child_dir, &statbuf) < 0)
+            {
+                memset(error_info, 0, LOGINFO_LENGTH);
+                sprintf(error_info, "lstat %s to failed: %s.\n", child_dir, strerror(errno));
+                RecordLog(error_info);
+                closedir(pdir);
+                
+                return ret;
+            }
+            
+            //judge whether directory or not
+            if(S_ISDIR(statbuf.st_mode))
+            {
+                if(analyzeProgram(child_dir))
+                    ret = true;
+                else
+                {
+                    ret = false;
+                    closedir(pdir);
+                    return ret;
+                }
+            }
+            else if(S_ISREG(statbuf.st_mode))
+            {
+                if(judgeCSrcXmlFile(child_dir))
+                {
+                    curAnalyzeFileNum++;
+                    printf("analysing file %s(%d/%d)\n", child_dir, curAnalyzeFileNum, totalAnalyzeFileNum);
+                    
+                    void *pthread_ret = NULL;
+                    if(pthreadRet[currentPthreadID] == 0)
+                        pthread_join(pthreadID[currentPthreadID], &pthread_ret);
+                    memset(&pthreadArg[currentPthreadID], 0, sizeof(pthread_arg));
+                    strcpy(pthreadArg[currentPthreadID].des_dir, child_dir);
+                    pthreadArg[currentPthreadID].pthreadID = currentPthreadID;
+                    pthreadRet[currentPthreadID] = pthread_create(&pthreadID[currentPthreadID], NULL, pthread_handle_Analyze_C, (void *)&pthreadArg[currentPthreadID]);
+                   
+                    currentPthreadID++;
+                    currentPthreadID = currentPthreadID%MAX_PTHREAD_NUM;
+                    
+                    if(pthread_ret != NULL)
+                    {
+                        ret = (bool)pthread_ret;
+                        if(!ret)
+                        {
+                            closedir(pdir);
+                            return ret;
+                        }
+                    }
+                }
+                else if(judgeCPPSrcXmlFile(child_dir))
+                {
+                    //handle C++ language preprocess file
+                    curAnalyzeFileNum++;
+                    printf("analysing file %s(%d/%d)\n", child_dir, curAnalyzeFileNum, totalAnalyzeFileNum);
+                    void *pthread_ret = NULL;
+                    if(pthreadRet[currentPthreadID] == 0)
+                        pthread_join(pthreadID[currentPthreadID], &pthread_ret);
+                    memset(&pthreadArg[currentPthreadID], 0, sizeof(pthread_arg));
+                    strcpy(pthreadArg[currentPthreadID].des_dir, child_dir);
+                    pthreadArg[currentPthreadID].pthreadID = currentPthreadID;
+                    pthreadRet[currentPthreadID] = pthread_create(&pthreadID[currentPthreadID], NULL, pthread_handle_Analyze_CPP, (void *)&pthreadArg[currentPthreadID]);
+                   
+                    currentPthreadID++;
+                    currentPthreadID = currentPthreadID%MAX_PTHREAD_NUM;
+                    if(pthread_ret != NULL)
+                    {
+                        ret = (bool)pthread_ret;
+                        if(!ret)
+                        {
+                            closedir(pdir);
+                            return ret;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    else
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "open directory %s to failed: %s.\n", dirPath, strerror(errno));
+        RecordLog(error_info);
     }
     closedir(pdir);
     
@@ -405,66 +534,103 @@ bool initSoftware(char *srcPath)
     curAnalyzeFileNum = 0;
     totalAnalyzeFileNum = getTotalAnalyzeFileNum(srcPath);
     ret = convertProgram(srcPath);
+    int i;
+    for(i = 0; i < MAX_PTHREAD_NUM; i++)
+    {
+        if(pthreadRet[i] == 0)
+            pthread_join(pthreadID[i], NULL);
+    }
+    
+    char temp_dir[DIRPATH_MAX] = "";
+    sprintf(temp_dir, "temp_%s", programName);
+    curAnalyzeFileNum = 0;
+    currentPthreadID = 0;
+    for(i = 0; i < MAX_PTHREAD_NUM; i++)
+        pthreadRet[i] = -1;
+
+    ret = analyzeProgram(temp_dir);
+    for(i = 0; i < MAX_PTHREAD_NUM; i++)
+    {
+        if(pthreadRet[i] == 0)
+            pthread_join(pthreadID[i], NULL);
+    }
     ret = buildFuncScore();
     
     return ret;
 }
 
-void optDataBaseOper()
+void optDataBaseOper(char *tempFuncScoreTableName, char *tempFuncCallTableName)
 {
-    memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    sprintf(sqlCommand, "delete from %s where funcName not in (select calledFunc from %s) and type='static'", tempFuncScoreTableName, tempFuncCallTableName);
-    if(!executeCommand(sqlCommand))
+    //create temp connect
+    MYSQL temp_db;
+    MYSQL *tempMysqlConnect = NULL;
+    tempMysqlConnect = mysql_init(&temp_db);
+    if(tempMysqlConnect == NULL)
+    {
+        RecordLog("init mysql failure\n");
+        return ;
+    }
+    if(NULL == mysql_real_connect((MYSQL *)tempMysqlConnect, bind_address, user, pass, database, port, NULL, 0))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
-        sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+        sprintf(error_info, "connect failed: %s\n", mysql_error(tempMysqlConnect));
+        RecordLog(error_info);
+        return ;
+    }
+    char tempSqlCommand[LINE_CHAR_MAX_NUM] = "";
+    sprintf(tempSqlCommand, "delete from %s where funcName not in (select calledFunc from %s) and type='static'", tempFuncScoreTableName, tempFuncCallTableName);
+    if(!executeSQLCommand(tempMysqlConnect, tempSqlCommand))
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "execute commad %s failure.\n", tempSqlCommand);
         RecordLog(error_info);
     }
     //merge tempFuncScore into funcScore
-    memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    sprintf(sqlCommand, "insert into %s select distinct * from %s", funcScoreTableName, tempFuncScoreTableName);
-    if(!executeCommand(sqlCommand))
+    memset(tempSqlCommand, 0, LINE_CHAR_MAX_NUM);
+    sprintf(tempSqlCommand, "insert into %s select distinct * from %s", funcScoreTableName, tempFuncScoreTableName);
+    if(!executeSQLCommand(tempMysqlConnect, tempSqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
-        sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+        sprintf(error_info, "execute commad %s failure.\n", tempSqlCommand);
         RecordLog(error_info);
     }
     //clear tempFuncScore
-    memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    sprintf(sqlCommand, "truncate table %s", tempFuncScoreTableName);
-    if(!executeCommand(sqlCommand))
+    memset(tempSqlCommand, 0, LINE_CHAR_MAX_NUM);
+    sprintf(tempSqlCommand, "truncate table %s", tempFuncScoreTableName);
+    if(!executeSQLCommand(tempMysqlConnect, tempSqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
-        sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+        sprintf(error_info, "execute commad %s failure.\n", tempSqlCommand);
         RecordLog(error_info);
     }
     // delete library function call record from funcCall
-    memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    sprintf(sqlCommand, "delete from %s where funcName not in (select funcName from %s) and funcCallType='static'", tempFuncCallTableName, tempFuncScoreTableName);
-    if(!executeCommand(sqlCommand))
+    memset(tempSqlCommand, 0, LINE_CHAR_MAX_NUM);
+    sprintf(tempSqlCommand, "delete from %s where funcName not in (select funcName from %s) and funcCallType='static'", tempFuncCallTableName, tempFuncScoreTableName);
+    if(!executeSQLCommand(tempMysqlConnect, tempSqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
-        sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+        sprintf(error_info, "execute commad %s failure.\n", tempSqlCommand);
         RecordLog(error_info);
     }
     //merge tempFuncCall into funcCall
-    memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    sprintf(sqlCommand, "insert into %s select distinct * from %s", funcCallTableName, tempFuncCallTableName);
-    if(!executeCommand(sqlCommand))
+    memset(tempSqlCommand, 0, LINE_CHAR_MAX_NUM);
+    sprintf(tempSqlCommand, "insert into %s select distinct * from %s", funcCallTableName, tempFuncCallTableName);
+    if(!executeSQLCommand(tempMysqlConnect, tempSqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
-        sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+        sprintf(error_info, "execute commad %s failure.\n", tempSqlCommand);
         RecordLog(error_info);
     }
     //clear tempFuncCall
-    memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    sprintf(sqlCommand, "truncate table %s", tempFuncCallTableName);
-    if(!executeCommand(sqlCommand))
+    memset(tempSqlCommand, 0, LINE_CHAR_MAX_NUM);
+    sprintf(tempSqlCommand, "truncate table %s", tempFuncCallTableName);
+    if(!executeSQLCommand(tempMysqlConnect, tempSqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
-        sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+        sprintf(error_info, "execute commad %s failure.\n", tempSqlCommand);
         RecordLog(error_info);
     }
+    mysql_close(tempMysqlConnect);
 }
 
 bool deleteTempXMLFile()

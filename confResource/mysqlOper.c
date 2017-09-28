@@ -51,15 +51,47 @@ void stopMysql()
     mysql_library_end();
 }
 
-bool executeCommand(char *command)
+bool executeSQLCommand(MYSQL *mysqlConn, char *command)
 {
-    if(mysql_real_query(mysqlConnect, command, strlen(command)) != 0)
-	{
-		memset(error_info, 0, LOGINFO_LENGTH);
-        sprintf(error_info, "execute command failed: %s\n", mysql_error(mysqlConnect));
-		RecordLog(error_info);
-		return false;
-	}
+    if(mysqlConn != NULL)
+    {
+        if(mysql_real_query(mysqlConn, command, strlen(command)) != 0)
+        {
+            memset(error_info, 0, LOGINFO_LENGTH);
+            sprintf(error_info, "execute command failed: %s\n", mysql_error(mysqlConn));
+            RecordLog(error_info);
+            return false;
+        }
+    }
+    else
+    {
+        MYSQL temp_db;
+        MYSQL *tempMysqlConnect = NULL;
+        tempMysqlConnect = mysql_init(&temp_db);
+        if(tempMysqlConnect == NULL)
+        {
+            RecordLog("init mysql failure\n");
+            return false;
+        }
+        if(NULL == mysql_real_connect((MYSQL *)tempMysqlConnect, bind_address, user, pass, database, port, NULL, 0))
+        {
+            memset(error_info, 0, LOGINFO_LENGTH);
+            sprintf(error_info, "connect failed: %s\n", mysql_error(tempMysqlConnect));
+            RecordLog(error_info);
+            mysql_close(tempMysqlConnect);
+            return false;
+        }
+        if(mysql_real_query(tempMysqlConnect, command, strlen(command)) != 0)
+        {
+            memset(error_info, 0, LOGINFO_LENGTH);
+            sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
+            RecordLog(error_info);
+            mysql_close(tempMysqlConnect);
+            return false;
+        }
+        mysql_close(tempMysqlConnect);
+    }
+    
     
     return true;
 }

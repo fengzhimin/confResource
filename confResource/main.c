@@ -50,7 +50,7 @@ int main(int argc, char **argv)
     {
         time(&start); 
         memset(log_info, 0, LOGINFO_LENGTH);
-        sprintf(log_info, "----------analysing variable(%s) use resource info-----------\n", currentConfOpt->confName);
+        sprintf(log_info, "----------analysing configuration(%s) use resource info-----------\n", currentConfOpt->confName);
         RecordLog(log_info);
         int i;
         confScore resultScore;

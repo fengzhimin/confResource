@@ -97,6 +97,13 @@ bool CodeToXML(char *srcPath, char *desPath);
 bool convertProgram(char *dirPath);
 
 /*****************************************
+ * func: extract self-define function
+ * return: true = success   false = failure
+ * @para dirPath: program directory
+*****************************************/
+bool analyzeProgram(char *dirPath);
+
+/*****************************************
  * func: get the total number of analyze file
  * return: total number
  * @para dirPath: program directory
@@ -114,7 +121,7 @@ bool initSoftware(char *srcPath);
  * func: optimize database operation
  * return: void
 *********************************************/
-void optDataBaseOper();
+void optDataBaseOper(char *tempFuncScoreTableName, char *tempFuncCallTableName);
 
 /*****************************************
  * func: delete temp xml file

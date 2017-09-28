@@ -10,6 +10,7 @@
 
 #include <stdbool.h>
 #include <mysql.h>
+#include <pthread.h>
 
 #define OPENLOG  1      //0=不记录日志   1=记录日志
 
@@ -44,6 +45,8 @@
 #define WHILENUM                 0     //while and do-while multiple
 
 #define LOGINFO_LENGTH           1024 
+
+#define MAX_PTHREAD_NUM          10
 
 typedef struct configurationScore
 {
@@ -102,6 +105,13 @@ typedef struct configOptionMap
     struct configOptionMap *next;
 } confOptMap;
 
+typedef struct pthread_argument
+{
+    char src_dir[DIRPATH_MAX];
+    char des_dir[DIRPATH_MAX];
+    int pthreadID;
+} pthread_arg;
+
 extern char bind_address[CONFIG_VALUE_MAX_NUM];
 extern int port;
 extern char user[CONFIG_VALUE_MAX_NUM];
@@ -123,10 +133,10 @@ extern char *createTempFuncCallTableTemplate;
 extern char *deleteTempFuncCallTableTemplate;
 
 extern char funcScoreTableName[MAX_PROGRAMNAME_NUM*2];
-extern char tempFuncScoreTableName[MAX_PROGRAMNAME_NUM*2];
+extern char tempFuncScoreTableName[MAX_PTHREAD_NUM][MAX_PROGRAMNAME_NUM*2];
 extern char classInheritTableName[MAX_PROGRAMNAME_NUM*2];
 extern char funcCallTableName[MAX_PROGRAMNAME_NUM*2];
-extern char tempFuncCallTableName[MAX_PROGRAMNAME_NUM*2];
+extern char tempFuncCallTableName[MAX_PTHREAD_NUM][MAX_PROGRAMNAME_NUM*2];
 
 extern char srcPath[MAX_PATH_LENGTH];
 extern bool rebuild;
@@ -142,5 +152,9 @@ extern char programName[MAX_PROGRAMNAME_NUM];
 
 //current analyse xml file path
 extern char currentAnalyseXmlPath[DIRPATH_MAX];
+
+extern pthread_t pthreadID[MAX_PTHREAD_NUM];
+extern int pthreadRet[MAX_PTHREAD_NUM];
+extern pthread_arg pthreadArg[MAX_PTHREAD_NUM];
 
 #endif
