@@ -895,7 +895,7 @@ bool buildFuncScore()
     
     //delete funcCall table Library function record
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-    sprintf(sqlCommand, "delete from %s where type='L'", funcScoreTableName);
+    sprintf(sqlCommand, "delete from %s where type='L'", funcCallTableName);
     if(!executeCommand(sqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
