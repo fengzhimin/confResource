@@ -11,7 +11,6 @@ static char error_info[LOGINFO_LENGTH];
 static char xml_dir[DIRPATH_MAX];
 static char sqlCommand[LINE_CHAR_MAX_NUM];
 static char src_dir[DIRPATH_MAX];
-static int count = 0;
 static char subStr2[2][MAX_SUBSTR];
 static char lineData[LINE_CHAR_MAX_NUM];
 
@@ -1005,9 +1004,9 @@ void getVarUsedFunc(char *varName, char *xmlPath)
     closedir(pdir);
 }
 
-confScore getFuncScore(char *funcName, bool funcType, char *argumentType, char *srcFile)
+confScore getFuncScore(char *funcName, bool funcType, char *argumentType, char *srcFile, int curPthreadID)
 {
-    count++;
+    funcCallCount[curPthreadID]++;
     confScore ret;
     memset(&ret, 0, sizeof(confScore));
     int argumentNum = getSpecCharNumFromStr(argumentType, '/') + 1;
@@ -1085,8 +1084,8 @@ confScore getFuncScore(char *funcName, bool funcType, char *argumentType, char *
         MYSQL_ROW sqlrow1, sqlrow2;
         res_ptr1 = mysql_store_result(tempMysqlConnect);
         int rownum = mysql_num_rows(res_ptr1);
-        //count 为递归的最大深度
-        if(rownum != 0 && count < max_funcCallRecursive_NUM)
+        //funcCallCount[curPthreadID] 为函数调用的最大深度
+        if(rownum != 0 && funcCallCount[curPthreadID] < max_funcCallRecursive_NUM)
         {
             while(sqlrow1 = mysql_fetch_row(res_ptr1))
             {
@@ -1099,7 +1098,7 @@ confScore getFuncScore(char *funcName, bool funcType, char *argumentType, char *
 #if DEBUG == 1                
                 printf("(%s(%s)->%s(%s))\n", funcName, argumentType, sqlrow1[0], sqlrow1[5]);
 #endif                
-                confScore temp_ret = getFuncScore(sqlrow1[0], temp_funcType, sqlrow1[5], sqlrow1[2]);
+                confScore temp_ret = getFuncScore(sqlrow1[0], temp_funcType, sqlrow1[5], sqlrow1[2], curPthreadID);
                 ret.CPU += (temp_ret.CPU*multiple);
                 ret.MEM += (temp_ret.MEM*multiple);
                 ret.IO += (temp_ret.IO*multiple);
@@ -1141,7 +1140,7 @@ confScore getFuncScore(char *funcName, bool funcType, char *argumentType, char *
         }
     }
     mysql_close(tempMysqlConnect);
-    count--;
+    funcCallCount[curPthreadID]--;
     
     return ret;
 }
@@ -1162,7 +1161,8 @@ static void *getScore(void *arg)
         funcList *current = ret_begin;
         while(current != NULL)
         {
-            confScore temp_ret = getFuncScore(current->funcName, current->funcType, current->argumentType, current->sourceFile);
+            funcCallCount[argument->pthreadID] = 0;
+            confScore temp_ret = getFuncScore(current->funcName, current->funcType, current->argumentType, current->sourceFile, argument->pthreadID);
             ret->CPU += temp_ret.CPU;
             ret->MEM += temp_ret.MEM;
             ret->IO += temp_ret.IO;
@@ -1229,6 +1229,7 @@ confScore buildConfScore(char *confName, char *xmlPath)
                 memset(&pthreadConfScore[currentPthreadID], 0, sizeof(confScore));
                 strcpy(pthreadConfScore[currentPthreadID].xmlFilePath, child_dir);
                 strcpy(pthreadConfScore[currentPthreadID].confOptName, confName);
+                pthreadConfScore[currentPthreadID].pthreadID = currentPthreadID;
                 pthreadRet[currentPthreadID] = pthread_create(&pthreadID[currentPthreadID], NULL, getScore, (void *)&pthreadConfScore[currentPthreadID]);
                
                 currentPthreadID++;

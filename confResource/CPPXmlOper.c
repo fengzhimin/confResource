@@ -948,8 +948,8 @@ funcCallList *varCPPScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *v
 funcList *CPPSclice(char *varName, char *xmlFilePath)
 {
 #if DEBUG == 1
-    return ScliceDebug(varName, xmlFilePath, varCScliceFuncFromNode);
+    return ScliceDebug(varName, xmlFilePath, varCPPScliceFuncFromNode);
 #else
-    return Sclice(varName, xmlFilePath, varCScliceFuncFromNode);
+    return Sclice(varName, xmlFilePath, varCPPScliceFuncFromNode);
 #endif
 }

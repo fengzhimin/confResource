@@ -116,6 +116,7 @@ typedef struct AnalyzeConfOpt
 {
     char confOptName[MAX_VARIABLE_LENGTH];
     char xmlFilePath[DIRPATH_MAX];
+    int pthreadID;
 } AnalyConfOpt;
 
 extern char bind_address[CONFIG_VALUE_MAX_NUM];
@@ -164,6 +165,7 @@ extern pthread_t pthreadID[MAX_PTHREAD_NUM];
 extern int pthreadRet[MAX_PTHREAD_NUM];
 extern pthread_arg pthreadArg[MAX_PTHREAD_NUM];
 extern AnalyConfOpt pthreadConfScore[MAX_PTHREAD_NUM];
+extern int funcCallCount[MAX_PTHREAD_NUM];
 extern pthread_mutex_t pthread_mutex;
 extern int totalAnalyzeFileNum;
 extern int curAnalyzeFileNum;

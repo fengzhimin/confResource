@@ -77,6 +77,7 @@ pthread_t pthreadID[MAX_PTHREAD_NUM];
 int pthreadRet[MAX_PTHREAD_NUM] = { -1 };
 pthread_arg pthreadArg[MAX_PTHREAD_NUM];
 AnalyConfOpt pthreadConfScore[MAX_PTHREAD_NUM];
+int funcCallCount[MAX_PTHREAD_NUM];
 pthread_mutex_t pthread_mutex;
 int totalAnalyzeFileNum = 0;
 int curAnalyzeFileNum = 0;

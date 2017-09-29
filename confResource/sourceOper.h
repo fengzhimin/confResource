@@ -157,8 +157,9 @@ confScore buildConfScore(char *confName, char *xmlPath);
  * @para funcName: function name
  * @para funcType: function type   true = static    false = extern
  * @para srcFile: function defined source file path
+ * @para curPthreadID: current run pthread ID
 *****************************************/
-confScore getFuncScore(char *funcName, bool funcType, char *argumentType, char *srcFile);
+confScore getFuncScore(char *funcName, bool funcType, char *argumentType, char *srcFile, int curPthreadID);
 
 /****************************************
  * func: get configuration key influence variable and function info
