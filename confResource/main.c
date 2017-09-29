@@ -28,7 +28,8 @@ int main(int argc, char **argv)
     //getProgramName("/home/fzm/Downloads/Program source code/redis-4.0.1");
     getProgramName(srcPath);
     initTableName();
-    time(&start); 
+    time(&start);
+
     if(rebuild)
     {
         //initSoftware("/home/fzm/Downloads/Programsourcecode/mysql-5.5.36");
@@ -41,7 +42,6 @@ int main(int argc, char **argv)
     memset(temp_dir, 0, DIRPATH_MAX);
     sprintf(temp_dir, "temp_%s", programName);
                     
-    //ExtractFuncVarDef("/home/fzm/confResource/confResource/Debug/test.c.xml");
     //char *confArray[] = {"server.rdb_compression", "server.rdb_checksum", "server.maxclients", "server.hz", "server.maxmemory", "server.save" };
     //char *confArray[] = {"ap_daemons_to_start", "ap_daemons_limit", "server_limit", "max_workers", "threads_per_child", "ap_threads_per_child" };
     //char *confArray[] = {"share->max_rows", "key_cache->param_buff_size", "thd->variables.max_heap_table_size", "thd->variables.sortbuff_size"};

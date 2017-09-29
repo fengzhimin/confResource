@@ -594,15 +594,6 @@ void optDataBaseOper(char *tempFuncScoreTableName, char *tempFuncCallTableName)
         sprintf(error_info, "execute commad %s failure.\n", tempSqlCommand);
         RecordLog(error_info);
     }
-    //clear tempFuncScore
-    memset(tempSqlCommand, 0, LINE_CHAR_MAX_NUM);
-    sprintf(tempSqlCommand, "truncate table %s", tempFuncScoreTableName);
-    if(!executeSQLCommand(tempMysqlConnect, tempSqlCommand))
-    {
-        memset(error_info, 0, LOGINFO_LENGTH);
-        sprintf(error_info, "execute commad %s failure.\n", tempSqlCommand);
-        RecordLog(error_info);
-    }
     // delete library function call record from funcCall
     memset(tempSqlCommand, 0, LINE_CHAR_MAX_NUM);
     sprintf(tempSqlCommand, "delete from %s where funcName not in (select funcName from %s) and funcCallType='static'", tempFuncCallTableName, tempFuncScoreTableName);
@@ -615,6 +606,15 @@ void optDataBaseOper(char *tempFuncScoreTableName, char *tempFuncCallTableName)
     //merge tempFuncCall into funcCall
     memset(tempSqlCommand, 0, LINE_CHAR_MAX_NUM);
     sprintf(tempSqlCommand, "insert into %s select distinct * from %s", funcCallTableName, tempFuncCallTableName);
+    if(!executeSQLCommand(tempMysqlConnect, tempSqlCommand))
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "execute commad %s failure.\n", tempSqlCommand);
+        RecordLog(error_info);
+    }
+    //clear tempFuncScore
+    memset(tempSqlCommand, 0, LINE_CHAR_MAX_NUM);
+    sprintf(tempSqlCommand, "truncate table %s", tempFuncScoreTableName);
     if(!executeSQLCommand(tempMysqlConnect, tempSqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
