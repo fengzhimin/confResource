@@ -71,7 +71,13 @@ bool rebuild = true;
 confOptMap *beginConfOpt = NULL;
 confOptMap *endConfOpt = NULL;
 confOptMap *currentConfOpt = NULL;
+int confOptNum = 0;
 
 pthread_t pthreadID[MAX_PTHREAD_NUM];
 int pthreadRet[MAX_PTHREAD_NUM] = { -1 };
 pthread_arg pthreadArg[MAX_PTHREAD_NUM];
+AnalyConfOpt pthreadConfScore[MAX_PTHREAD_NUM];
+pthread_mutex_t pthread_mutex;
+int totalAnalyzeFileNum = 0;
+int curAnalyzeFileNum = 0;
+int currentPthreadID = 0;

@@ -12,9 +12,6 @@ static char xml_dir[DIRPATH_MAX];
 static char sqlCommand[LINE_CHAR_MAX_NUM];
 static char src_dir[DIRPATH_MAX];
 static int count = 0;
-static int totalAnalyzeFileNum = 0;
-static int curAnalyzeFileNum = 0;
-static int currentPthreadID = 0;
 static char subStr2[2][MAX_SUBSTR];
 static char lineData[LINE_CHAR_MAX_NUM];
 
@@ -67,6 +64,7 @@ bool getSoftWareConfInfo()
                 strcpy(endConfOpt->confName, subStr2[0]);
                 cutStrByLabel(subStr2[1], ':', endConfOpt->confVarName, specificCharNum);
                 endConfOpt->mapVariableNum = specificCharNum;
+                confOptNum++;
             }
         }
 next:
@@ -1050,23 +1048,42 @@ confScore getFuncScore(char *funcName, bool funcType, char *argumentType, char *
     //一个程序中只能有一个extern函数
     //一个程序中可能会存在多个名称相同的static函数
     //一个源文件中不可能存在多个名称相同的static函数
+    char tempSqlCommand[LINE_CHAR_MAX_NUM] = "";
     if(funcType)
-        sprintf(sqlCommand, "select calledFunc, calledFuncType, CalledSrcFile, forNum, whileNum, calledFuncArgumentType from %s where \
+        sprintf(tempSqlCommand, "select calledFunc, calledFuncType, CalledSrcFile, forNum, whileNum, calledFuncArgumentType from %s where \
         funcName='%s' and funcCallType='static' and sourceFile='%s' and argumentType like '%s'", funcCallTableName, funcName, srcFile, selectArgumentType);
     else
-        sprintf(sqlCommand, "select calledFunc, calledFuncType, CalledSrcFile, forNum, whileNum, calledFuncArgumentType from %s where \
+        sprintf(tempSqlCommand, "select calledFunc, calledFuncType, CalledSrcFile, forNum, whileNum, calledFuncArgumentType from %s where \
         funcName='%s' and funcCallType='extern' and sourceFile='%s' and argumentType like '%s'", funcCallTableName, funcName, srcFile, selectArgumentType);
-    if(!executeCommand(sqlCommand))
+    MYSQL temp_db;
+    MYSQL *tempMysqlConnect = NULL;
+    tempMysqlConnect = mysql_init(&temp_db);
+    if(tempMysqlConnect == NULL)
+    {
+        RecordLog("init mysql failure\n");
+        return ret;
+    }
+    if(NULL == mysql_real_connect((MYSQL *)tempMysqlConnect, bind_address, user, pass, database, port, NULL, 0))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
-        sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+        sprintf(error_info, "connect failed: %s\n", mysql_error(tempMysqlConnect));
         RecordLog(error_info);
+        mysql_close(tempMysqlConnect);
+        return ret;
+    }
+    if(mysql_real_query(tempMysqlConnect, tempSqlCommand, strlen(tempSqlCommand)) != 0)
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
+        RecordLog(error_info);
+        mysql_close(tempMysqlConnect);
+        return ret;
     }
     else
     {
         MYSQL_RES *res_ptr1, *res_ptr2;
         MYSQL_ROW sqlrow1, sqlrow2;
-        res_ptr1 = mysql_store_result(mysqlConnect);
+        res_ptr1 = mysql_store_result(tempMysqlConnect);
         int rownum = mysql_num_rows(res_ptr1);
         //count 为递归的最大深度
         if(rownum != 0 && count < max_funcCallRecursive_NUM)
@@ -1091,22 +1108,24 @@ confScore getFuncScore(char *funcName, bool funcType, char *argumentType, char *
             mysql_free_result(res_ptr1);
         }
         //get function score from funcScore table
-        memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+        memset(tempSqlCommand, 0, LINE_CHAR_MAX_NUM);
         if(funcType)
-            sprintf(sqlCommand, "select CPU, MEM, IO, NET from %s where \
+            sprintf(tempSqlCommand, "select CPU, MEM, IO, NET from %s where \
             funcName='%s' and type='static' and sourceFile='%s' and argumentType like '%s'", funcScoreTableName, funcName, srcFile, selectArgumentType);
         else
-            sprintf(sqlCommand, "select CPU, MEM, IO, NET from %s where \
+            sprintf(tempSqlCommand, "select CPU, MEM, IO, NET from %s where \
             funcName='%s' and type='extern' and sourceFile='%s' and argumentType like '%s'", funcScoreTableName, funcName, srcFile, selectArgumentType);
-        if(!executeCommand(sqlCommand))
+        if(mysql_real_query(tempMysqlConnect, tempSqlCommand, strlen(tempSqlCommand)) != 0)
         {
             memset(error_info, 0, LOGINFO_LENGTH);
-            sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+            sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
             RecordLog(error_info);
+            mysql_close(tempMysqlConnect);
+            return ret;
         }
         else
         {
-            res_ptr2 = mysql_store_result(mysqlConnect);
+            res_ptr2 = mysql_store_result(tempMysqlConnect);
             rownum = mysql_num_rows(res_ptr2);
             if(rownum != 0)
             {
@@ -1121,9 +1140,46 @@ confScore getFuncScore(char *funcName, bool funcType, char *argumentType, char *
             }
         }
     }
+    mysql_close(tempMysqlConnect);
     count--;
     
     return ret;
+}
+
+static void *getScore(void *arg)
+{
+    confScore *ret = malloc(sizeof(confScore));
+    memset(ret, 0, sizeof(confScore));
+    AnalyConfOpt *argument = (AnalyConfOpt *)arg;
+    funcList * ret_begin = NULL;
+    if(judgeCSrcXmlFile(argument->xmlFilePath))
+        ret_begin = CSclice(argument->confOptName, argument->xmlFilePath);
+    else if(judgeCPPSrcXmlFile(argument->xmlFilePath))
+        ret_begin = CPPSclice(argument->confOptName, argument->xmlFilePath);
+
+    if(ret_begin != NULL)
+    {
+        funcList *current = ret_begin;
+        while(current != NULL)
+        {
+            confScore temp_ret = getFuncScore(current->funcName, current->funcType, current->argumentType, current->sourceFile);
+            ret->CPU += temp_ret.CPU;
+            ret->MEM += temp_ret.MEM;
+            ret->IO += temp_ret.IO;
+            ret->NET += temp_ret.NET;
+            current = current->next;                        
+        }
+        //delete funcList value
+        current = ret_begin;
+        while(current != NULL)
+        {
+            ret_begin = ret_begin->next;
+            free(current);
+            current = ret_begin;
+        }
+    }
+    
+    pthread_exit((void*)ret);
 }
 
 confScore buildConfScore(char *confName, char *xmlPath)
@@ -1167,33 +1223,24 @@ confScore buildConfScore(char *confName, char *xmlPath)
             }
             if(S_ISREG(statbuf.st_mode))
             {
-                funcList * ret_begin = NULL;
-                strcpy(currentAnalyseXmlPath, child_dir);
-                if(judgeCSrcXmlFile(child_dir))
-                    ret_begin = CSclice(confName, child_dir);
-                else if(judgeCPPSrcXmlFile(child_dir))
-                    ret_begin = CPPSclice(confName, child_dir);
-
-                if(ret_begin != NULL)
+                void *pthread_ret = NULL;
+                if(pthreadRet[currentPthreadID] == 0)
+                    pthread_join(pthreadID[currentPthreadID], &pthread_ret);
+                memset(&pthreadConfScore[currentPthreadID], 0, sizeof(confScore));
+                strcpy(pthreadConfScore[currentPthreadID].xmlFilePath, child_dir);
+                strcpy(pthreadConfScore[currentPthreadID].confOptName, confName);
+                pthreadRet[currentPthreadID] = pthread_create(&pthreadID[currentPthreadID], NULL, getScore, (void *)&pthreadConfScore[currentPthreadID]);
+               
+                currentPthreadID++;
+                currentPthreadID = currentPthreadID%MAX_PTHREAD_NUM;
+                
+                if(pthread_ret != NULL)
                 {
-                    funcList *current = ret_begin;
-                    while(current != NULL)
-                    {
-                        confScore temp_ret = getFuncScore(current->funcName, current->funcType, current->argumentType, current->sourceFile);
-                        ret.CPU += temp_ret.CPU;
-                        ret.MEM += temp_ret.MEM;
-                        ret.IO += temp_ret.IO;
-                        ret.NET += temp_ret.NET;
-                        current = current->next;                        
-                    }
-                    //delete funcList value
-                    current = ret_begin;
-                    while(current != NULL)
-                    {
-                        ret_begin = ret_begin->next;
-                        free(current);
-                        current = ret_begin;
-                    }
+                    confScore *temp_ret = (confScore *)pthread_ret;
+                    ret.CPU += temp_ret->CPU;
+                    ret.MEM += temp_ret->MEM;
+                    ret.IO += temp_ret->IO;
+                    ret.NET += temp_ret->NET;
                 }
             }
         }

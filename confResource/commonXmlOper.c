@@ -1237,27 +1237,176 @@ funcList *Sclice(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc
                 }
                 temp_cur = temp_cur->next;
             }
-            memset(src_dir, 0, DIRPATH_MAX);
             
             varType *beginVarType = ExtractVarType(cur);
             varType *currentVarType = beginVarType;
-            /*
+
+            bool isInfluence = false;
+            current = varScliceFunc(varName, cur, currentVarType, true);
+            if(begin == NULL)
+                begin = end = current;
+            else if(current != NULL)
+                end = end->next = current;
+            while(current != NULL)
+            {
+                isInfluence = true;
+                end = current;
+                current = current->next;
+            }
             varDef *varInfluence = ExtractDirectInfluVar(cur, varName, currentVarType);
             if(varInfluence != NULL)
             {
-                //删除开头的temp_和结尾的.xml
-                strncpy(src_dir, (char *)&(xmlFilePath[5]), strlen(xmlFilePath)-9);
-                printf("source Path: %s\tfunction: %s(%s)\n", src_dir, (char*)xmlNodeGetContent(temp_cur), attr_value);
                 varDef *varInfluCur = varInfluence;
                 while(varInfluCur != NULL)
                 {
+                    current = varScliceFunc(varInfluCur->varName, cur, currentVarType, true);
+                    if(begin == NULL)
+                        begin = end = current;
+                    else if(current != NULL)
+                        end = end->next = current;
+                    while(current != NULL)
+                    {
+                        isInfluence = true;
+                        end = current;
+                        current = current->next;
+                    }
                     varInfluence = varInfluence->next;
-                    printf("%s(%d):%s\n", varInfluCur->varName, varInfluCur->line, varInfluCur->type?"golbal":"local");
                     free(varInfluCur);
                     varInfluCur = varInfluence;
                 }
             }
-            */
+            while(currentVarType != NULL)
+            {
+                beginVarType = beginVarType->next;
+                //printf("%s(%d):%s\n", current->type, current->line, current->varName);
+                free(currentVarType);
+                currentVarType = beginVarType;
+            }
+        }
+        cur = cur->next;
+    }
+      
+    xmlFreeDoc(doc);
+    
+    current = begin;
+    char tempSqlCommand[LINE_CHAR_MAX_NUM];
+    while(current != NULL)
+    {
+        memset(tempSqlCommand, 0 , LINE_CHAR_MAX_NUM);
+        sprintf(tempSqlCommand, "select calledFuncType, CalledSrcFile from %s where calledFunc='%s' and line=%d", funcCallTableName, current->funcName, current->line);
+        MYSQL temp_db;
+        MYSQL *tempMysqlConnect = NULL;
+        tempMysqlConnect = mysql_init(&temp_db);
+        if(tempMysqlConnect == NULL)
+        {
+            RecordLog("init mysql failure\n");
+            return false;
+        }
+        if(NULL == mysql_real_connect((MYSQL *)tempMysqlConnect, bind_address, user, pass, database, port, NULL, 0))
+        {
+            memset(error_info, 0, LOGINFO_LENGTH);
+            sprintf(error_info, "connect failed: %s\n", mysql_error(tempMysqlConnect));
+            RecordLog(error_info);
+            mysql_close(tempMysqlConnect);
+            return false;
+        }
+        if(mysql_real_query(tempMysqlConnect, tempSqlCommand, strlen(tempSqlCommand)) != 0)
+        {
+            memset(error_info, 0, LOGINFO_LENGTH);
+            sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
+            RecordLog(error_info);
+            mysql_close(tempMysqlConnect);
+            return false;
+        }
+        else
+        {
+            MYSQL_RES *res_ptr = mysql_store_result(tempMysqlConnect);
+            MYSQL_ROW sqlrow;
+            int rownum = mysql_num_rows(res_ptr);
+            if(rownum == 1)
+            {
+                sqlrow = mysql_fetch_row(res_ptr);
+                if(ret == NULL)
+                    ret = curFuncList = malloc(sizeof(funcList));
+                else
+                    curFuncList = curFuncList->next = malloc(sizeof(funcList));
+                memset(curFuncList, 0, sizeof(funcList));
+                strcpy(curFuncList->funcName, current->funcName);
+                strcpy(curFuncList->sourceFile, sqlrow[1]);
+                strcpy(curFuncList->argumentType, current->argumentType);
+                if(strcasecmp(sqlrow[0], "extern") == 0)
+                    curFuncList->funcType = false;
+                else
+                    curFuncList->funcType = true;
+
+                mysql_free_result(res_ptr);
+            }
+        }
+        mysql_close(tempMysqlConnect);
+        begin = begin->next;
+        free(current);
+        current = begin;
+    }
+    return ret;
+}
+
+funcList *ScliceDebug(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc)(char *, xmlNodePtr , varType *, bool ))
+{
+    funcCallList *begin = NULL;
+    funcCallList *end = NULL;
+    funcCallList *current = NULL;
+    funcList *ret = NULL;
+    funcList *curFuncList = NULL;
+    xmlDocPtr doc;
+    xmlNodePtr cur;
+    xmlKeepBlanksDefault(0);
+    doc = xmlParseFile(xmlFilePath);
+    if(doc == NULL )
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "Document(%s) not parsed successfully. \n", xmlFilePath);
+		RecordLog(error_info);
+        return NULL;
+    }
+    cur = xmlDocGetRootElement(doc);
+    if (cur == NULL)
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "empty document(%s). \n", xmlFilePath);
+		RecordLog(error_info);  
+        xmlFreeDoc(doc);
+        return NULL;
+    }
+    
+    cur = cur->children;
+    while (cur != NULL)
+    {
+        if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
+        {
+            xmlNodePtr temp_cur = cur->children;
+            xmlChar* attr_value = NULL;
+            while(temp_cur != NULL)
+            {
+                if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
+                {
+                    if(temp_cur->children->last != NULL)
+                    {
+                        if(xmlStrcmp(temp_cur->children->last->name, (const xmlChar*)"position"))
+                            attr_value = xmlGetProp(temp_cur->children->last, (xmlChar*)"line");
+                        else
+                            attr_value = xmlGetProp(temp_cur->children, (xmlChar*)"line");
+                          
+                    }
+                    else
+                        attr_value = xmlGetProp(temp_cur, (xmlChar*)"line");
+                    break;
+                }
+                temp_cur = temp_cur->next;
+            }
+            
+            varType *beginVarType = ExtractVarType(cur);
+            varType *currentVarType = beginVarType;
+
             bool isInfluence = false;
             current = varScliceFunc(varName, cur, currentVarType, true);
             if(begin == NULL)
@@ -1358,3 +1507,4 @@ funcList *Sclice(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc
     }
     return ret;
 }
+

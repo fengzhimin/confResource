@@ -302,21 +302,39 @@ funcCallList *scanCPPCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, boo
                 }
 
                 //get called function argument type and filePath
-                memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-                sprintf(sqlCommand, "select calledFuncArgumentType, CalledSrcFile from %s where calledFunc='%s' and line=%s",\
-                    funcCallTableName, callFuncName, (char *)attr_value);
+                char tempSqlCommand[LINE_CHAR_MAX_NUM] = "";
                 int rownum = 0;
-                if(!executeCommand(sqlCommand))
+                sprintf(tempSqlCommand, "select calledFuncArgumentType, CalledSrcFile from %s where calledFunc='%s' and line=%s",\
+                    funcCallTableName, callFuncName, (char *)attr_value);
+                MYSQL temp_db;
+                MYSQL *tempMysqlConnect = NULL;
+                tempMysqlConnect = mysql_init(&temp_db);
+                if(tempMysqlConnect == NULL)
+                {
+                    RecordLog("init mysql failure\n");
+                    return false;
+                }
+                if(NULL == mysql_real_connect((MYSQL *)tempMysqlConnect, bind_address, user, pass, database, port, NULL, 0))
                 {
                     memset(error_info, 0, LOGINFO_LENGTH);
-                    sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+                    sprintf(error_info, "connect failed: %s\n", mysql_error(tempMysqlConnect));
                     RecordLog(error_info);
+                    mysql_close(tempMysqlConnect);
+                    return false;
+                }
+                if(mysql_real_query(tempMysqlConnect, tempSqlCommand, strlen(tempSqlCommand)) != 0)
+                {
+                    memset(error_info, 0, LOGINFO_LENGTH);
+                    sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
+                    RecordLog(error_info);
+                    mysql_close(tempMysqlConnect);
+                    return false;
                 }
                 else
                 {
                     MYSQL_RES *res_ptr;
                     MYSQL_ROW sqlrow;
-                    res_ptr = mysql_store_result(mysqlConnect);
+                    res_ptr = mysql_store_result(tempMysqlConnect);
                     rownum = mysql_num_rows(res_ptr);
                     //count 为递归的最大深度
                     if(rownum != 0)
@@ -340,6 +358,7 @@ funcCallList *scanCPPCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, boo
 #endif
                     }
                 }
+                mysql_close(tempMysqlConnect);
             }
         }
         
@@ -575,7 +594,7 @@ funcCallList *varCPPScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *v
                         //scanAssignVar(cur);
                         if(isExit)
                         {
-                            current = scanBackCCallFunc(cur, varTypeBegin);
+                            current = scanBackCPPCallFunc(cur, varTypeBegin);
                             if(begin == NULL)
                                 begin = end = current;
                             else if(current != NULL)
@@ -644,7 +663,7 @@ funcCallList *varCPPScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *v
                         //scanAssignVar(cur);
                         if(isExit)
                         {
-                            current = scanBackCCallFunc(cur, varTypeBegin);
+                            current = scanBackCPPCallFunc(cur, varTypeBegin);
                             if(begin == NULL)
                                 begin = end = current;
                             else if(current != NULL)
@@ -718,7 +737,7 @@ funcCallList *varCPPScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *v
                                 //scanAssignVar(cur);
                                 if(isExit)
                                 {
-                                    current = scanBackCCallFunc(cur, varTypeBegin);
+                                    current = scanBackCPPCallFunc(cur, varTypeBegin);
                                     if(begin == NULL)
                                         begin = end = current;
                                     else if(current != NULL)
@@ -829,20 +848,38 @@ funcCallList *varCPPScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *v
                         strcpy(end->funcName, calledFuncName);
                         end->line = StrToInt((char *)attr_value);
                         //get called function argument type and filePath
-                        memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-                        sprintf(sqlCommand, "select calledFuncArgumentType, CalledSrcFile from %s where calledFunc='%s' and line=%s",\
+                        char tempSqlCommand[LINE_CHAR_MAX_NUM] = "";
+                        sprintf(tempSqlCommand, "select calledFuncArgumentType, CalledSrcFile from %s where calledFunc='%s' and line=%s",\
                             funcCallTableName, calledFuncName, (char *)attr_value);
-                        if(!executeCommand(sqlCommand))
+                        MYSQL temp_db;
+                        MYSQL *tempMysqlConnect = NULL;
+                        tempMysqlConnect = mysql_init(&temp_db);
+                        if(tempMysqlConnect == NULL)
+                        {
+                            RecordLog("init mysql failure\n");
+                            return false;
+                        }
+                        if(NULL == mysql_real_connect((MYSQL *)tempMysqlConnect, bind_address, user, pass, database, port, NULL, 0))
                         {
                             memset(error_info, 0, LOGINFO_LENGTH);
-                            sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+                            sprintf(error_info, "connect failed: %s\n", mysql_error(tempMysqlConnect));
                             RecordLog(error_info);
+                            mysql_close(tempMysqlConnect);
+                            return false;
+                        }
+                        if(mysql_real_query(tempMysqlConnect, tempSqlCommand, strlen(tempSqlCommand)) != 0)
+                        {
+                            memset(error_info, 0, LOGINFO_LENGTH);
+                            sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
+                            RecordLog(error_info);
+                            mysql_close(tempMysqlConnect);
+                            return false;
                         }
                         else
                         {
                             MYSQL_RES *res_ptr;
                             MYSQL_ROW sqlrow;
-                            res_ptr = mysql_store_result(mysqlConnect);
+                            res_ptr = mysql_store_result(tempMysqlConnect);
                             int rownum = mysql_num_rows(res_ptr);
                             //count 为递归的最大深度
                             if(rownum != 0)
@@ -859,6 +896,7 @@ funcCallList *varCPPScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *v
 #endif
                             }
                         }
+                        mysql_close(tempMysqlConnect);
                     }
                     
                     //handle function call as argument
@@ -909,5 +947,9 @@ funcCallList *varCPPScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *v
 
 funcList *CPPSclice(char *varName, char *xmlFilePath)
 {
-    return Sclice(varName, xmlFilePath, varCPPScliceFuncFromNode);
+#if DEBUG == 1
+    return ScliceDebug(varName, xmlFilePath, varCScliceFuncFromNode);
+#else
+    return Sclice(varName, xmlFilePath, varCScliceFuncFromNode);
+#endif
 }

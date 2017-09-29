@@ -46,7 +46,7 @@
 
 #define LOGINFO_LENGTH           1024 
 
-#define MAX_PTHREAD_NUM          10
+#define MAX_PTHREAD_NUM          4
 
 typedef struct configurationScore
 {
@@ -112,6 +112,12 @@ typedef struct pthread_argument
     int pthreadID;
 } pthread_arg;
 
+typedef struct AnalyzeConfOpt
+{
+    char confOptName[MAX_VARIABLE_LENGTH];
+    char xmlFilePath[DIRPATH_MAX];
+} AnalyConfOpt;
+
 extern char bind_address[CONFIG_VALUE_MAX_NUM];
 extern int port;
 extern char user[CONFIG_VALUE_MAX_NUM];
@@ -143,6 +149,7 @@ extern bool rebuild;
 extern confOptMap *beginConfOpt;
 extern confOptMap *endConfOpt;
 extern confOptMap *currentConfOpt;
+extern int confOptNum;
 
 //函数递归的最大深度
 extern int max_funcCallRecursive_NUM;
@@ -156,5 +163,10 @@ extern char currentAnalyseXmlPath[DIRPATH_MAX];
 extern pthread_t pthreadID[MAX_PTHREAD_NUM];
 extern int pthreadRet[MAX_PTHREAD_NUM];
 extern pthread_arg pthreadArg[MAX_PTHREAD_NUM];
+extern AnalyConfOpt pthreadConfScore[MAX_PTHREAD_NUM];
+extern pthread_mutex_t pthread_mutex;
+extern int totalAnalyzeFileNum;
+extern int curAnalyzeFileNum;
+extern int currentPthreadID;
 
 #endif

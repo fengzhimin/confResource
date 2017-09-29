@@ -147,4 +147,13 @@ char *getCalledFuncArgumentType(xmlNodePtr cur, varType *funcDefVarType);
 **********************************/
 funcList *Sclice(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc)(char *, xmlNodePtr , varType *, bool));
 
+/**********************************
+ * func: variable sclice
+ * return: not null = exist influence   null = not exist influence
+ * @para varName: variable name
+ * @para xmlFilePath: xml file path
+ * @para varScliceFunc: C or C++ variable Sclice function point
+**********************************/
+funcList *ScliceDebug(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc)(char *, xmlNodePtr , varType *, bool));
+
 #endif
