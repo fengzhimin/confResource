@@ -225,31 +225,29 @@ bool CodeToXML(char *srcPath, char *desPath)
 
 static void *pthread_handle_Convert(void *arg)
 {
-    pthread_arg *argument = (pthread_arg *)arg;
-    int ret = 0;
+    int *ret = malloc(sizeof(int));
+    convertSrcPthread_arg *argument = (convertSrcPthread_arg *)arg;
     if(CodeToXML(argument->src_dir, argument->des_dir))
-    {
-        ret = 1;
-        //ExtractFuncFromCXML(argument->des_dir, tempFuncScoreTableName[argument->pthreadID], tempFuncCallTableName[argument->pthreadID]);
-    }
-    
-    pthread_exit((void *)&ret);
+        *ret = 1;
+    else
+        *ret = 0;
+    pthread_exit((void *)ret);
 }
 
 static void *pthread_handle_Analyze_C(void *arg)
 {
-    pthread_arg *argument = (pthread_arg *)arg;
-    int ret = ExtractFuncFromCXML(argument->des_dir, tempFuncScoreTableName[argument->pthreadID], tempFuncCallTableName[argument->pthreadID]);
-    
-    pthread_exit((void *)&ret);
+    int *ret = malloc(sizeof(int));
+    analyXmlPthread_arg *argument = (analyXmlPthread_arg *)arg;
+    *ret = ExtractFuncFromCXML(argument->src_dir, tempFuncScoreTableName[argument->pthreadID], tempFuncCallTableName[argument->pthreadID]);
+    pthread_exit((void *)ret);
 }
 
 static void *pthread_handle_Analyze_CPP(void *arg)
 {
-    pthread_arg *argument = (pthread_arg *)arg;
-    int ret = ExtractFuncFromCPPXML(argument->des_dir, tempFuncScoreTableName[argument->pthreadID], tempFuncCallTableName[argument->pthreadID]);
-    
-    pthread_exit((void *)&ret);
+    int *ret = malloc(sizeof(int));
+    analyXmlPthread_arg *argument = (analyXmlPthread_arg *)arg;
+    *ret = ExtractFuncFromCPPXML(argument->src_dir, tempFuncScoreTableName[argument->pthreadID], tempFuncCallTableName[argument->pthreadID]);
+    pthread_exit((void *)ret);
 }
 
 bool convertProgram(char *dirPath)
@@ -313,26 +311,28 @@ bool convertProgram(char *dirPath)
                 if(judgeCPreprocessFile(child_dir) || judgeCPPPreprocessFile(child_dir))
                 {
                     //handle C language preprocess file
-                    curAnalyzeFileNum++;
-                    printf("convert file %s(%d/%d)\n", child_dir, curAnalyzeFileNum, totalAnalyzeFileNum);
+                    curConvertSrcFileNum++;
+                    printf("convert file %s(%d/%d)\n", child_dir, curConvertSrcFileNum, totalConvertSrcFileNum);
                     memset(xml_dir, 0, DIRPATH_MAX);
                     sprintf(xml_dir, "%s/%s.xml", temp_dir, pdirent->d_name);
                     
                     void *pthread_ret = NULL;
-                    if(pthreadRet[currentPthreadID] == 0)
-                        pthread_join(pthreadID[currentPthreadID], &pthread_ret);
-                    memset(&pthreadArg[currentPthreadID], 0, sizeof(pthread_arg));
-                    strcpy(pthreadArg[currentPthreadID].des_dir, xml_dir);
-                    strcpy(pthreadArg[currentPthreadID].src_dir, child_dir);
-                    pthreadArg[currentPthreadID].pthreadID = 0;
-                    pthreadRet[currentPthreadID] = pthread_create(&pthreadID[currentPthreadID], NULL, pthread_handle_Convert, (void *)&pthreadArg[currentPthreadID]);
+                    if(ConvertSRCPthreadRet[currentConvertSrcPthreadID] == 0)
+                        pthread_join(convertSRCPthreadID[currentConvertSrcPthreadID], &pthread_ret);
+                    memset(&convSrcPthreadArg[currentConvertSrcPthreadID], 0, sizeof(convertSrcPthread_arg));
+                    strcpy(convSrcPthreadArg[currentConvertSrcPthreadID].des_dir, xml_dir);
+                    strcpy(convSrcPthreadArg[currentConvertSrcPthreadID].src_dir, child_dir);
+                    convSrcPthreadArg[currentConvertSrcPthreadID].pthreadID = 0;
+                    ConvertSRCPthreadRet[currentConvertSrcPthreadID] = pthread_create(&convertSRCPthreadID[currentConvertSrcPthreadID], \
+                    NULL, pthread_handle_Convert, (void *)&convSrcPthreadArg[currentConvertSrcPthreadID]);
                     
-                    currentPthreadID++;
-                    currentPthreadID = currentPthreadID%MAX_PTHREAD_NUM;
+                    currentConvertSrcPthreadID++;
+                    currentConvertSrcPthreadID = currentConvertSrcPthreadID%MAX_CONVERT_SRC_PTHREAD_NUM;
                     
                     if(pthread_ret != NULL)
                     {
-                        ret = (bool)pthread_ret;
+                        ret = *(int *)pthread_ret;
+                        free(pthread_ret);
                         if(!ret)
                         {
                             closedir(pdir);
@@ -401,23 +401,25 @@ bool analyzeProgram(char *dirPath)
             {
                 if(judgeCSrcXmlFile(child_dir))
                 {
-                    curAnalyzeFileNum++;
-                    printf("analysing file %s(%d/%d)\n", child_dir, curAnalyzeFileNum, totalAnalyzeFileNum);
+                    curAnalyzeXmlFileNum++;
+                    printf("analysing file %s(%d/%d)\n", child_dir, curAnalyzeXmlFileNum, totalAnalyzeXmlFileNum);
                     
                     void *pthread_ret = NULL;
-                    if(pthreadRet[currentPthreadID] == 0)
-                        pthread_join(pthreadID[currentPthreadID], &pthread_ret);
-                    memset(&pthreadArg[currentPthreadID], 0, sizeof(pthread_arg));
-                    strcpy(pthreadArg[currentPthreadID].des_dir, child_dir);
-                    pthreadArg[currentPthreadID].pthreadID = currentPthreadID;
-                    pthreadRet[currentPthreadID] = pthread_create(&pthreadID[currentPthreadID], NULL, pthread_handle_Analyze_C, (void *)&pthreadArg[currentPthreadID]);
+                    if(analyzeXMLPthreadRet[currentAnalyzeXmlPthreadID] == 0)
+                        pthread_join(analyzeXMLPthreadID[currentAnalyzeXmlPthreadID], &pthread_ret);
+                    memset(&analyXmlPthreadArg[currentAnalyzeXmlPthreadID], 0, sizeof(analyXmlPthread_arg));
+                    strcpy(analyXmlPthreadArg[currentAnalyzeXmlPthreadID].src_dir, child_dir);
+                    analyXmlPthreadArg[currentAnalyzeXmlPthreadID].pthreadID = currentAnalyzeXmlPthreadID;
+                    analyzeXMLPthreadRet[currentAnalyzeXmlPthreadID] = pthread_create(&analyzeXMLPthreadID[currentAnalyzeXmlPthreadID],\
+                    NULL, pthread_handle_Analyze_C, (void *)&analyXmlPthreadArg[currentAnalyzeXmlPthreadID]);
                    
-                    currentPthreadID++;
-                    currentPthreadID = currentPthreadID%MAX_PTHREAD_NUM;
+                    currentAnalyzeXmlPthreadID++;
+                    currentAnalyzeXmlPthreadID = currentAnalyzeXmlPthreadID%MAX_ANALYZE_XML_PTHREAD_NUM;
                     
                     if(pthread_ret != NULL)
                     {
-                        ret = (bool)pthread_ret;
+                        ret = *(int *)pthread_ret;
+                        free(pthread_ret);
                         if(!ret)
                         {
                             closedir(pdir);
@@ -428,21 +430,25 @@ bool analyzeProgram(char *dirPath)
                 else if(judgeCPPSrcXmlFile(child_dir))
                 {
                     //handle C++ language preprocess file
-                    curAnalyzeFileNum++;
-                    printf("analysing file %s(%d/%d)\n", child_dir, curAnalyzeFileNum, totalAnalyzeFileNum);
+                    curAnalyzeXmlFileNum++;
+                    printf("analysing file %s(%d/%d)\n", child_dir, curAnalyzeXmlFileNum, totalAnalyzeXmlFileNum);
+                    
                     void *pthread_ret = NULL;
-                    if(pthreadRet[currentPthreadID] == 0)
-                        pthread_join(pthreadID[currentPthreadID], &pthread_ret);
-                    memset(&pthreadArg[currentPthreadID], 0, sizeof(pthread_arg));
-                    strcpy(pthreadArg[currentPthreadID].des_dir, child_dir);
-                    pthreadArg[currentPthreadID].pthreadID = currentPthreadID;
-                    pthreadRet[currentPthreadID] = pthread_create(&pthreadID[currentPthreadID], NULL, pthread_handle_Analyze_CPP, (void *)&pthreadArg[currentPthreadID]);
+                    if(analyzeXMLPthreadRet[currentAnalyzeXmlPthreadID] == 0)
+                        pthread_join(analyzeXMLPthreadID[currentAnalyzeXmlPthreadID], &pthread_ret);
+                    memset(&analyXmlPthreadArg[currentAnalyzeXmlPthreadID], 0, sizeof(analyXmlPthread_arg));
+                    strcpy(analyXmlPthreadArg[currentAnalyzeXmlPthreadID].src_dir, child_dir);
+                    analyXmlPthreadArg[currentAnalyzeXmlPthreadID].pthreadID = currentAnalyzeXmlPthreadID;
+                    analyzeXMLPthreadRet[currentAnalyzeXmlPthreadID] = pthread_create(&analyzeXMLPthreadID[currentAnalyzeXmlPthreadID],\
+                    NULL, pthread_handle_Analyze_CPP, (void *)&analyXmlPthreadArg[currentAnalyzeXmlPthreadID]);
                    
-                    currentPthreadID++;
-                    currentPthreadID = currentPthreadID%MAX_PTHREAD_NUM;
+                    currentAnalyzeXmlPthreadID++;
+                    currentAnalyzeXmlPthreadID = currentAnalyzeXmlPthreadID%MAX_ANALYZE_XML_PTHREAD_NUM;
+                    
                     if(pthread_ret != NULL)
                     {
-                        ret = (bool)pthread_ret;
+                        ret = *(int *)pthread_ret;
+                        free(pthread_ret);
                         if(!ret)
                         {
                             closedir(pdir);
@@ -528,28 +534,31 @@ bool initSoftware(char *srcPath)
     ret = deleteTempXMLFile();
     ret = buildLibrary();
     ret = buildTempTable();
-    curAnalyzeFileNum = 0;
-    totalAnalyzeFileNum = getTotalAnalyzeFileNum(srcPath);
-    ret = convertProgram(srcPath);
+    totalAnalyzeXmlFileNum = totalConvertSrcFileNum = getTotalAnalyzeFileNum(srcPath);
+    
     int i;
-    for(i = 0; i < MAX_PTHREAD_NUM; i++)
+    for(i = 0; i < MAX_CONVERT_SRC_PTHREAD_NUM; i++)
+        ConvertSRCPthreadRet[i] = -1;
+    curConvertSrcFileNum = 0;
+    currentConvertSrcPthreadID = 0;
+    ret = convertProgram(srcPath);
+    for(i = 0; i < MAX_CONVERT_SRC_PTHREAD_NUM; i++)
     {
-        if(pthreadRet[i] == 0)
-            pthread_join(pthreadID[i], NULL);
+        if(ConvertSRCPthreadRet[i] == 0)
+            pthread_join(convertSRCPthreadID[i], NULL);
     }
     
     char temp_dir[DIRPATH_MAX] = "";
     sprintf(temp_dir, "temp_%s", programName);
-    curAnalyzeFileNum = 0;
-    currentPthreadID = 0;
-    for(i = 0; i < MAX_PTHREAD_NUM; i++)
-        pthreadRet[i] = -1;
-
+    for(i = 0; i < MAX_ANALYZE_XML_PTHREAD_NUM; i++)
+        analyzeXMLPthreadRet[i] = -1;
+    curAnalyzeXmlFileNum = 0;
+    currentAnalyzeXmlPthreadID = 0;
     ret = analyzeProgram(temp_dir);
-    for(i = 0; i < MAX_PTHREAD_NUM; i++)
+    for(i = 0; i < MAX_ANALYZE_XML_PTHREAD_NUM; i++)
     {
-        if(pthreadRet[i] == 0)
-            pthread_join(pthreadID[i], NULL);
+        if(analyzeXMLPthreadRet[i] == 0)
+            pthread_join(analyzeXMLPthreadID[i], NULL);
     }
     ret = buildFuncScore();
     
@@ -1149,7 +1158,7 @@ static void *getScore(void *arg)
 {
     confScore *ret = malloc(sizeof(confScore));
     memset(ret, 0, sizeof(confScore));
-    AnalyConfOpt *argument = (AnalyConfOpt *)arg;
+    analyConfOptPthread_arg *argument = (analyConfOptPthread_arg *)arg;
     funcList * ret_begin = NULL;
     if(judgeCSrcXmlFile(argument->xmlFilePath))
         ret_begin = CSclice(argument->confOptName, argument->xmlFilePath);
@@ -1224,16 +1233,17 @@ confScore buildConfScore(char *confName, char *xmlPath)
             if(S_ISREG(statbuf.st_mode))
             {
                 void *pthread_ret = NULL;
-                if(pthreadRet[currentPthreadID] == 0)
-                    pthread_join(pthreadID[currentPthreadID], &pthread_ret);
-                memset(&pthreadConfScore[currentPthreadID], 0, sizeof(confScore));
-                strcpy(pthreadConfScore[currentPthreadID].xmlFilePath, child_dir);
-                strcpy(pthreadConfScore[currentPthreadID].confOptName, confName);
-                pthreadConfScore[currentPthreadID].pthreadID = currentPthreadID;
-                pthreadRet[currentPthreadID] = pthread_create(&pthreadID[currentPthreadID], NULL, getScore, (void *)&pthreadConfScore[currentPthreadID]);
+                if(analyzeConfOptPthreadRet[currentAnalyzeConfOptPthreadID] == 0)
+                    pthread_join(analyzeConfOptPthreadID[currentAnalyzeConfOptPthreadID], &pthread_ret);
+                memset(&analyConfOptPthreadArg[currentAnalyzeConfOptPthreadID], 0, sizeof(analyConfOptPthread_arg));
+                strcpy(analyConfOptPthreadArg[currentAnalyzeConfOptPthreadID].xmlFilePath, child_dir);
+                strcpy(analyConfOptPthreadArg[currentAnalyzeConfOptPthreadID].confOptName, confName);
+                analyConfOptPthreadArg[currentAnalyzeConfOptPthreadID].pthreadID = currentAnalyzeConfOptPthreadID;
+                analyzeConfOptPthreadRet[currentAnalyzeConfOptPthreadID] = pthread_create(&analyzeConfOptPthreadID[currentAnalyzeConfOptPthreadID], \
+                NULL, getScore, (void *)&analyConfOptPthreadArg[currentAnalyzeConfOptPthreadID]);
                
-                currentPthreadID++;
-                currentPthreadID = currentPthreadID%MAX_PTHREAD_NUM;
+                currentAnalyzeConfOptPthreadID++;
+                currentAnalyzeConfOptPthreadID = currentAnalyzeConfOptPthreadID%MAX_ANALYZE_CONFOPT_PTHREAD_NUM;
                 
                 if(pthread_ret != NULL)
                 {
@@ -1242,6 +1252,7 @@ confScore buildConfScore(char *confName, char *xmlPath)
                     ret.MEM += temp_ret->MEM;
                     ret.IO += temp_ret->IO;
                     ret.NET += temp_ret->NET;
+                    free(pthread_ret);
                 }
             }
         }

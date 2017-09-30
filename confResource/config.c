@@ -55,10 +55,10 @@ char *createTempFuncCallTableTemplate = "create table %s(funcName varchar(128), 
 char *deleteTempFuncCallTableTemplate = "drop table if exists %s";
 
 char funcScoreTableName[MAX_PROGRAMNAME_NUM*2] = "";
-char tempFuncScoreTableName[MAX_PTHREAD_NUM][MAX_PROGRAMNAME_NUM*2] = {"", "", "", ""};
+char tempFuncScoreTableName[MAX_ANALYZE_XML_PTHREAD_NUM][MAX_PROGRAMNAME_NUM*2] = {"", "", "", ""};
 char classInheritTableName[MAX_PROGRAMNAME_NUM*2] = "";
 char funcCallTableName[MAX_PROGRAMNAME_NUM*2] = "";
-char tempFuncCallTableName[MAX_PTHREAD_NUM][MAX_PROGRAMNAME_NUM*2] = {"", "", "", ""};
+char tempFuncCallTableName[MAX_ANALYZE_XML_PTHREAD_NUM][MAX_PROGRAMNAME_NUM*2] = {"", "", "", ""};
 
 char programName[MAX_PROGRAMNAME_NUM] = "";
 
@@ -73,12 +73,21 @@ confOptMap *endConfOpt = NULL;
 confOptMap *currentConfOpt = NULL;
 int confOptNum = 0;
 
-pthread_t pthreadID[MAX_PTHREAD_NUM];
-int pthreadRet[MAX_PTHREAD_NUM] = { -1 };
-pthread_arg pthreadArg[MAX_PTHREAD_NUM];
-AnalyConfOpt pthreadConfScore[MAX_PTHREAD_NUM];
-int funcCallCount[MAX_PTHREAD_NUM];
-pthread_mutex_t pthread_mutex;
-int totalAnalyzeFileNum = 0;
-int curAnalyzeFileNum = 0;
-int currentPthreadID = 0;
+pthread_t analyzeXMLPthreadID[MAX_ANALYZE_XML_PTHREAD_NUM];
+int analyzeXMLPthreadRet[MAX_ANALYZE_XML_PTHREAD_NUM] = { -1 };
+pthread_t convertSRCPthreadID[MAX_CONVERT_SRC_PTHREAD_NUM];
+int ConvertSRCPthreadRet[MAX_CONVERT_SRC_PTHREAD_NUM] = { -1 };
+pthread_t analyzeConfOptPthreadID[MAX_ANALYZE_CONFOPT_PTHREAD_NUM];
+int analyzeConfOptPthreadRet[MAX_ANALYZE_CONFOPT_PTHREAD_NUM] = { -1 };
+
+convertSrcPthread_arg convSrcPthreadArg[MAX_CONVERT_SRC_PTHREAD_NUM];
+analyXmlPthread_arg analyXmlPthreadArg[MAX_ANALYZE_XML_PTHREAD_NUM];
+analyConfOptPthread_arg analyConfOptPthreadArg[MAX_ANALYZE_CONFOPT_PTHREAD_NUM];
+int funcCallCount[MAX_ANALYZE_CONFOPT_PTHREAD_NUM];
+int totalConvertSrcFileNum = 0;
+int totalAnalyzeXmlFileNum = 0;
+int curConvertSrcFileNum = 0;
+int curAnalyzeXmlFileNum = 0;
+int currentAnalyzeXmlPthreadID = 0;
+int currentConvertSrcPthreadID = 0;
+int currentAnalyzeConfOptPthreadID = 0;

@@ -31,7 +31,7 @@ void initTableName()
     replaceChar(funcCallTableName, '-', '_');
     replaceChar(funcCallTableName, '.', '_');
     int i;
-    for(i = 0; i < MAX_PTHREAD_NUM; i++)
+    for(i = 0; i < MAX_ANALYZE_XML_PTHREAD_NUM; i++)
     {
         sprintf(tempFuncScoreTableName[i], "temp%d_%s_funcScore", i+1, programName);
         replaceChar(tempFuncScoreTableName[i], '-', '_');
@@ -84,7 +84,7 @@ bool buildTempTable()
         ret = false;
     }
     int i;
-    for(i = 0; i < MAX_PTHREAD_NUM; i++)
+    for(i = 0; i < MAX_ANALYZE_XML_PTHREAD_NUM; i++)
     {
         sprintf(createTempFuncScoreTable, createTempFuncScoreTableTemplate, tempFuncScoreTableName[i]);
         if(executeCommand(createTempFuncScoreTable))
@@ -137,7 +137,7 @@ bool deleteTempTable()
         ret = false;
     }
     int i;
-    for(i = 0; i < MAX_PTHREAD_NUM; i++)
+    for(i = 0; i < MAX_ANALYZE_XML_PTHREAD_NUM; i++)
     {
         sprintf(deleteTempFuncScoreTable, deleteTempFuncScoreTableTemplate, tempFuncScoreTableName[i]);
         if(executeCommand(deleteTempFuncScoreTable))

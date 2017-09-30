@@ -46,7 +46,12 @@
 
 #define LOGINFO_LENGTH           1024 
 
-#define MAX_PTHREAD_NUM          4
+//convert source to xml file pthread number
+#define MAX_CONVERT_SRC_PTHREAD_NUM  10
+//analyze xml file pthread number
+#define MAX_ANALYZE_XML_PTHREAD_NUM  20
+//analyze config option pthread number
+#define MAX_ANALYZE_CONFOPT_PTHREAD_NUM  4
 
 typedef struct configurationScore
 {
@@ -105,19 +110,25 @@ typedef struct configOptionMap
     struct configOptionMap *next;
 } confOptMap;
 
-typedef struct pthread_argument
+typedef struct convertSrcPthread_argument
 {
     char src_dir[DIRPATH_MAX];
     char des_dir[DIRPATH_MAX];
     int pthreadID;
-} pthread_arg;
+} convertSrcPthread_arg;
 
-typedef struct AnalyzeConfOpt
+typedef struct analyzeXmlPthread_argument
+{
+    char src_dir[DIRPATH_MAX];
+    int pthreadID;
+} analyXmlPthread_arg;
+
+typedef struct analyzeConfOptPthread_argument
 {
     char confOptName[MAX_VARIABLE_LENGTH];
     char xmlFilePath[DIRPATH_MAX];
     int pthreadID;
-} AnalyConfOpt;
+} analyConfOptPthread_arg;
 
 extern char bind_address[CONFIG_VALUE_MAX_NUM];
 extern int port;
@@ -140,10 +151,10 @@ extern char *createTempFuncCallTableTemplate;
 extern char *deleteTempFuncCallTableTemplate;
 
 extern char funcScoreTableName[MAX_PROGRAMNAME_NUM*2];
-extern char tempFuncScoreTableName[MAX_PTHREAD_NUM][MAX_PROGRAMNAME_NUM*2];
+extern char tempFuncScoreTableName[MAX_ANALYZE_XML_PTHREAD_NUM][MAX_PROGRAMNAME_NUM*2];
 extern char classInheritTableName[MAX_PROGRAMNAME_NUM*2];
 extern char funcCallTableName[MAX_PROGRAMNAME_NUM*2];
-extern char tempFuncCallTableName[MAX_PTHREAD_NUM][MAX_PROGRAMNAME_NUM*2];
+extern char tempFuncCallTableName[MAX_ANALYZE_XML_PTHREAD_NUM][MAX_PROGRAMNAME_NUM*2];
 
 extern char srcPath[MAX_PATH_LENGTH];
 extern bool rebuild;
@@ -161,14 +172,23 @@ extern char programName[MAX_PROGRAMNAME_NUM];
 //current analyse xml file path
 extern char currentAnalyseXmlPath[DIRPATH_MAX];
 
-extern pthread_t pthreadID[MAX_PTHREAD_NUM];
-extern int pthreadRet[MAX_PTHREAD_NUM];
-extern pthread_arg pthreadArg[MAX_PTHREAD_NUM];
-extern AnalyConfOpt pthreadConfScore[MAX_PTHREAD_NUM];
-extern int funcCallCount[MAX_PTHREAD_NUM];
-extern pthread_mutex_t pthread_mutex;
-extern int totalAnalyzeFileNum;
-extern int curAnalyzeFileNum;
-extern int currentPthreadID;
+extern pthread_t analyzeXMLPthreadID[MAX_ANALYZE_XML_PTHREAD_NUM];
+extern int analyzeXMLPthreadRet[MAX_ANALYZE_XML_PTHREAD_NUM];
+extern pthread_t convertSRCPthreadID[MAX_CONVERT_SRC_PTHREAD_NUM];
+extern int ConvertSRCPthreadRet[MAX_CONVERT_SRC_PTHREAD_NUM];
+extern pthread_t analyzeConfOptPthreadID[MAX_ANALYZE_CONFOPT_PTHREAD_NUM];
+extern int analyzeConfOptPthreadRet[MAX_ANALYZE_CONFOPT_PTHREAD_NUM];
+
+extern convertSrcPthread_arg convSrcPthreadArg[MAX_CONVERT_SRC_PTHREAD_NUM];
+extern analyXmlPthread_arg analyXmlPthreadArg[MAX_ANALYZE_XML_PTHREAD_NUM];
+extern analyConfOptPthread_arg analyConfOptPthreadArg[MAX_ANALYZE_CONFOPT_PTHREAD_NUM];
+extern int funcCallCount[MAX_ANALYZE_CONFOPT_PTHREAD_NUM];
+extern int totalConvertSrcFileNum;
+extern int totalAnalyzeXmlFileNum;
+extern int curConvertSrcFileNum;
+extern int curAnalyzeXmlFileNum;
+extern int currentAnalyzeXmlPthreadID;
+extern int currentConvertSrcPthreadID;
+extern int currentAnalyzeConfOptPthreadID;
 
 #endif

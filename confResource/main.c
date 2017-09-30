@@ -47,13 +47,12 @@ int main(int argc, char **argv)
     //char *confArray[] = {"ap_daemons_to_start", "ap_daemons_limit", "server_limit", "max_workers", "threads_per_child", "ap_threads_per_child" };
     //char *confArray[] = {"share->max_rows", "key_cache->param_buff_size", "thd->variables.max_heap_table_size", "thd->variables.sortbuff_size"};
     //char *confArray[] = {"server.rdb_compression"};
-    pthread_mutex_init(&pthread_mutex, NULL);
     int i = 0;
     for(currentConfOpt = beginConfOpt; currentConfOpt != NULL; currentConfOpt = currentConfOpt->next)
     {
-        currentPthreadID = 0;
-        for(i = 0; i < MAX_PTHREAD_NUM; i++)
-            pthreadRet[i] = -1;
+        currentAnalyzeConfOptPthreadID = 0;
+        for(i = 0; i < MAX_ANALYZE_CONFOPT_PTHREAD_NUM; i++)
+            analyzeConfOptPthreadRet[i] = -1;
         time(&start); 
         memset(log_info, 0, LOGINFO_LENGTH);
         sprintf(log_info, "----------analysing configuration(%s) use resource info-----------\n", currentConfOpt->confName);
@@ -69,11 +68,11 @@ int main(int argc, char **argv)
             resultScore.NET += ret.NET;
         }
         void *pthread_ret = NULL;
-        for(i = 0; i < MAX_PTHREAD_NUM; i++)
+        for(i = 0; i < MAX_ANALYZE_CONFOPT_PTHREAD_NUM; i++)
         {
-            if(pthreadRet[i] == 0)
+            if(analyzeConfOptPthreadRet[i] == 0)
             {
-                pthread_join(pthreadID[i], NULL);
+                pthread_join(analyzeConfOptPthreadID[i], NULL);
                 if(pthread_ret != NULL)
                 {
                     confScore *temp_ret = (confScore *)pthread_ret;
@@ -94,7 +93,6 @@ int main(int argc, char **argv)
         RecordLog(log_info);
         RecordLog("------complete--------\n\n");
     }
-    pthread_mutex_destroy(&pthread_mutex);
 
     stopMysql();
     
