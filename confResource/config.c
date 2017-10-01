@@ -55,10 +55,17 @@ char *createTempFuncCallTableTemplate = "create table %s(funcName varchar(128), 
 char *deleteTempFuncCallTableTemplate = "drop table if exists %s";
 
 char funcScoreTableName[MAX_PROGRAMNAME_NUM*2] = "";
+<<<<<<< HEAD
+char tempFuncScoreTableName[MAX_ANALYZE_XML_PTHREAD_NUM][MAX_PROGRAMNAME_NUM*2];
+char classInheritTableName[MAX_PROGRAMNAME_NUM*2] = "";
+char funcCallTableName[MAX_PROGRAMNAME_NUM*2] = "";
+char tempFuncCallTableName[MAX_ANALYZE_XML_PTHREAD_NUM][MAX_PROGRAMNAME_NUM*2];
+=======
 char tempFuncScoreTableName[MAX_ANALYZE_XML_PTHREAD_NUM][MAX_PROGRAMNAME_NUM*2] = {"", "", "", ""};
 char classInheritTableName[MAX_PROGRAMNAME_NUM*2] = "";
 char funcCallTableName[MAX_PROGRAMNAME_NUM*2] = "";
 char tempFuncCallTableName[MAX_ANALYZE_XML_PTHREAD_NUM][MAX_PROGRAMNAME_NUM*2] = {"", "", "", ""};
+>>>>>>> 0cba1ea478ca4fcaf1801b003361ae335bd9852f
 
 char programName[MAX_PROGRAMNAME_NUM] = "";
 

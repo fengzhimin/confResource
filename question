@@ -6,3 +6,4 @@ POINTER_ARRAY *from_array,*to_array;
 {
 ...
 }
+在切片是没有考虑break，continue和goto情况

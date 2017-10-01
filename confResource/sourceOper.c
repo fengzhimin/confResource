@@ -13,6 +13,8 @@ static char sqlCommand[LINE_CHAR_MAX_NUM];
 static char src_dir[DIRPATH_MAX];
 static char subStr2[2][MAX_SUBSTR];
 static char lineData[LINE_CHAR_MAX_NUM];
+static char deleteTempFuncScoreTable[1024] = "";
+static char deleteTempFuncCallTable[1024] = "";
 
 bool getSoftWareConfInfo()
 {
@@ -556,9 +558,35 @@ bool initSoftware(char *srcPath)
     currentAnalyzeXmlPthreadID = 0;
     ret = analyzeProgram(temp_dir);
     for(i = 0; i < MAX_ANALYZE_XML_PTHREAD_NUM; i++)
+<<<<<<< HEAD
     {
         if(analyzeXMLPthreadRet[i] == 0)
             pthread_join(analyzeXMLPthreadID[i], NULL);
+    }
+    //delete temp funcScore table and temp funcCall table
+    for(i = 0; i < MAX_ANALYZE_XML_PTHREAD_NUM; i++)
+    {
+        sprintf(deleteTempFuncScoreTable, deleteTempFuncScoreTableTemplate, tempFuncScoreTableName[i]);
+        if(executeCommand(deleteTempFuncScoreTable))
+            ret = true;
+        else
+        {
+            RecordLog("delete tempFuncScore table failure!\n");
+            ret = false;
+        }
+        sprintf(deleteTempFuncCallTable, deleteTempFuncCallTableTemplate, tempFuncCallTableName[i]);
+        if(executeCommand(deleteTempFuncCallTable))
+        ret = true;
+        else
+        {
+            RecordLog("delete tempFuncCall table failure!\n");
+            ret = false;
+        }
+=======
+    {
+        if(analyzeXMLPthreadRet[i] == 0)
+            pthread_join(analyzeXMLPthreadID[i], NULL);
+>>>>>>> 0cba1ea478ca4fcaf1801b003361ae335bd9852f
     }
     ret = buildFuncScore();
     
