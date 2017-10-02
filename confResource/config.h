@@ -51,7 +51,7 @@
 //analyze xml file pthread number
 #define MAX_ANALYZE_XML_PTHREAD_NUM  20
 //analyze config option pthread number
-#define MAX_ANALYZE_CONFOPT_PTHREAD_NUM  4
+#define MAX_ANALYZE_CONFOPT_PTHREAD_NUM  1
 
 typedef struct configurationScore
 {
@@ -61,15 +61,14 @@ typedef struct configurationScore
     int NET;
 } confScore;
 
-typedef struct functionList
+typedef struct functionInfo
 {
     char funcName[MAX_FUNCNAME_LENGTH];
-    bool funcType;     //false = extern    true = static
+    char funcType[7];     //false = extern    true = static
     char argumentType[512];
-    int line;
     char sourceFile[DIRPATH_MAX];
-    struct functionList *next;
-} funcList;
+    struct functionInfo *next;
+} funcInfo;
 
 typedef struct variableDef
 {
@@ -79,11 +78,19 @@ typedef struct variableDef
     struct variableDef *next;
 } varDef;
 
+/****************************
+ * func: function call relationship
+ * @para funcName: function name
+ * @para argumentType: funcName argument type
+ * @para calledLine: funcName called line
+ * @para sourceFile: funcName defined source file
+****************************/
 typedef struct functionCallList
 {
     char funcName[MAX_FUNCNAME_LENGTH];
+    char funcType[7];     //false = extern    true = static
     char argumentType[512];
-    int line;
+    int calledLine;
     char sourceFile[DIRPATH_MAX];
     struct functionCallList *next;
 } funcCallList;

@@ -59,7 +59,7 @@ funcCallList *varCScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *var
  * @para varName: variable name
  * @para xmlFilePath: xml file path
 **********************************/
-funcList *CSclice(char *varName, char *xmlFilePath);
+funcInfo *CSclice(char *varName, char *xmlFilePath);
 
 /**********************************
  * func: extract configuration key used info in current node

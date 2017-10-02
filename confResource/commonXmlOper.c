@@ -9,16 +9,6 @@
 
 static char error_info[LOGINFO_LENGTH];
 static char src_dir[DIRPATH_MAX];
-static char sqlCommand[LINE_CHAR_MAX_NUM];
-
-#define ExtractVarUsedInfo(cur)    ExtractVarUsedInfoFromNode(cur, true)
-
-/*********************************
- * func: Extract variable used info
- * return: void
- * @para cur: current node
-**********************************/
-static void ExtractVarUsedInfoFromNode(xmlNodePtr cur, bool flag);
 
 bool JudgeVarUsedFromNode(xmlNodePtr cur, char *var, bool flag)
 {
@@ -27,17 +17,11 @@ bool JudgeVarUsedFromNode(xmlNodePtr cur, char *var, bool flag)
         if(!xmlStrcmp(cur->name, (const xmlChar*)"expr"))
         {
             xmlNodePtr temp_cur = cur->children;
-            xmlChar* attr_value = NULL;
             char *varName = NULL;
             while(temp_cur != NULL)
             {
                 if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
                 {
-                    if(temp_cur->children != NULL && !xmlStrcmp(temp_cur->children->name, (const xmlChar*)"name"))
-                        attr_value = xmlGetProp(temp_cur->children, (xmlChar*)"line");
-                    else
-                        attr_value = xmlGetProp(temp_cur, (xmlChar*)"line");
-                    
                     varName = (char*)xmlNodeGetContent(temp_cur);
                     //server.port <---> server.port[0]
                     if(strcasecmp(varName, var) == 0)
@@ -458,201 +442,6 @@ varType *ExtractVarTypeFromNode(xmlNodePtr cur, bool flag)
     return begin;
 }
 
-bool scanVarIsUsedFromNode(xmlNodePtr cur, char *varName, bool flag)
-{ 
-    bool ret = false;
-    while(cur != NULL)
-    {
-        if(!xmlStrcmp(cur->name, (const xmlChar*)"expr"))
-        {
-            xmlNodePtr temp_cur = cur->children;
-            xmlChar* attr_value = NULL;
-            while(temp_cur != NULL)
-            {
-                if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
-                {
-                    if(!xmlStrcmp(temp_cur->children->name, (const xmlChar*)"name"))
-                        attr_value = xmlGetProp(temp_cur->children, (xmlChar*)"line");
-                    else
-                        attr_value = xmlGetProp(temp_cur, (xmlChar*)"line");
-                    char *str = (char*)xmlNodeGetContent(temp_cur);
-                    if(strcasecmp(str, varName) == 0)
-                    {
-                        //printf("%s(%s) ", str, attr_value);
-                        ret = true;
-                    }
-                }
-                else
-                    ret |= scanVarIsUsedFromNode(temp_cur->children, varName, false);
-                temp_cur = temp_cur->next;
-            }
-        }
-        else
-            ret |= scanVarIsUsedFromNode(cur->children, varName, false);
-        
-        if(flag)
-            break;
-        cur = cur->next;
-    }
-    
-    return ret;
-}
-
-void ExtractFuncVarDef(char *xmlFilePath)
-{
-    xmlDocPtr doc;
-    xmlNodePtr cur;
-    xmlKeepBlanksDefault(0);
-    doc = xmlParseFile(xmlFilePath);
-    if(doc == NULL )
-    {
-        memset(error_info, 0, LOGINFO_LENGTH);
-        sprintf(error_info, "Document(%s) not parsed successfully. \n", xmlFilePath);
-		RecordLog(error_info);
-        return ;
-    }
-    cur = xmlDocGetRootElement(doc);
-    if (cur == NULL)
-    {
-        memset(error_info, 0, LOGINFO_LENGTH);
-        sprintf(error_info, "empty document(%s). \n", xmlFilePath);
-		RecordLog(error_info);  
-        xmlFreeDoc(doc);
-        return ;
-    }
-    
-    cur = cur->children;
-    while (cur != NULL)
-    {
-        if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
-        {
-            xmlNodePtr temp_cur = cur->children;
-            xmlChar* attr_value = NULL;
-            while(temp_cur != NULL)
-            {
-                if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
-                {
-                    attr_value = xmlGetProp(temp_cur, (xmlChar*)"line");
-                    printf("function: %s(%s)\n", (char*)xmlNodeGetContent(temp_cur), attr_value);
-                    break;
-                }
-                temp_cur = temp_cur->next;
-            }
-            
-            
-            varType *begin = ExtractVarDef(cur);
-            //varType *begin = ExtractVarType(cur);
-            varType *current = begin;
-            while(current != NULL)
-            {
-                begin = begin->next;
-                printf("%s %s(%d)\n", current->type, current->varName, current->line);
-                free(current);
-                current = begin;
-            }
-            /*
-            varDef *varInfluence = ExtractDirectInfluVar(cur, "key_cache->param_buff_size", NULL);
-            if(varInfluence != NULL)
-            {
-                varDef *varInfluCur = varInfluence;
-                while(varInfluCur != NULL)
-                {
-                    varInfluence = varInfluence->next;
-                    printf("%s(%d):%s\n", varInfluCur->varName, varInfluCur->line, varInfluCur->type?"golbal":"local");
-                    free(varInfluCur);
-                    varInfluCur = varInfluence;
-                }
-            }
-            */
-        }
-        cur = cur->next;
-    }
-      
-    xmlFreeDoc(doc); 
-}
-
-static void ExtractVarUsedInfoFromNode(xmlNodePtr cur, bool flag)
-{
-    while(cur != NULL)
-    {
-        if(!xmlStrcmp(cur->name, (const xmlChar*)"expr"))
-        {
-            xmlNodePtr temp_cur = cur->children;
-            xmlChar* attr_value = NULL;
-            while(temp_cur != NULL)
-            {
-                if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
-                {
-                    if(!xmlStrcmp(temp_cur->children->name, (const xmlChar*)"name"))
-                        attr_value = xmlGetProp(temp_cur->children, (xmlChar*)"line");
-                    else
-                        attr_value = xmlGetProp(temp_cur, (xmlChar*)"line");
-                    
-                    printf("%s(%s)\n", (char*)xmlNodeGetContent(temp_cur), attr_value);
-                }
-                else
-                    ExtractVarUsedInfoFromNode(temp_cur->children, false);
-                temp_cur = temp_cur->next;
-            }
-        }
-        else
-            ExtractVarUsedInfoFromNode(cur->children, false);
-        
-        if(flag)
-            break;
-        cur = cur->next;
-    }
-}
-
-void ExtractFuncVarUsedInfo(char *xmlFilePath)
-{
-    xmlDocPtr doc;
-    xmlNodePtr cur;
-    xmlKeepBlanksDefault(0);
-    doc = xmlParseFile(xmlFilePath);
-    if(doc == NULL )
-    {
-        memset(error_info, 0, LOGINFO_LENGTH);
-        sprintf(error_info, "Document(%s) not parsed successfully. \n", xmlFilePath);
-		RecordLog(error_info);
-        return ;
-    }
-    cur = xmlDocGetRootElement(doc);
-    if (cur == NULL)
-    {
-        memset(error_info, 0, LOGINFO_LENGTH);
-        sprintf(error_info, "empty document(%s). \n", xmlFilePath);
-		RecordLog(error_info);  
-        xmlFreeDoc(doc);
-        return ;
-    }
-    
-    cur = cur->children;
-    while (cur != NULL)
-    {
-        if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
-        {
-            xmlNodePtr temp_cur = cur->children;
-            xmlChar* attr_value = NULL;
-            while(temp_cur != NULL)
-            {
-                if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
-                {
-                    attr_value = xmlGetProp(temp_cur, (xmlChar*)"line");
-                    printf("function: %s(%s)\n", (char*)xmlNodeGetContent(temp_cur), attr_value);
-                    break;
-                }
-                temp_cur = temp_cur->next;
-            }
-            //function block
-            ExtractVarUsedInfo(temp_cur->next->next);
-        }
-        cur = cur->next;
-    }
-      
-    xmlFreeDoc(doc); 
-}
-
 void ExtractGlobalVarDef(char *xmlFilePath)
 {
     xmlDocPtr doc;
@@ -698,90 +487,6 @@ void ExtractGlobalVarDef(char *xmlFilePath)
     xmlFreeDoc(doc); 
 }
 
-funcList *ExtractVarUsedFunc(char *varName, char *xmlFilePath)
-{
-    funcList *begin = NULL;
-    funcList *end = NULL;
-    xmlDocPtr doc;
-    xmlNodePtr cur;
-    xmlKeepBlanksDefault(0);
-    doc = xmlParseFile(xmlFilePath);
-    if(doc == NULL )
-    {
-        memset(error_info, 0, LOGINFO_LENGTH);
-        sprintf(error_info, "Document(%s) not parsed successfully. \n", xmlFilePath);
-		RecordLog(error_info);
-        return NULL;
-    }
-    cur = xmlDocGetRootElement(doc);
-    if (cur == NULL)
-    {
-        memset(error_info, 0, LOGINFO_LENGTH);
-        sprintf(error_info, "empty document(%s). \n", xmlFilePath);
-		RecordLog(error_info);  
-        xmlFreeDoc(doc);
-        return NULL;
-    }
-    
-    cur = cur->children;
-    while (cur != NULL)
-    {
-        if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
-        {
-            xmlNodePtr temp_cur = cur->children;
-            xmlChar* attr_value = NULL;
-            bool funcType = false;
-            while(temp_cur != NULL)
-            {
-                if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"specifier"))
-                {
-                    if(strcasecmp((char*)xmlNodeGetContent(temp_cur), "static") == 0)
-                        funcType = true;
-                }
-                else if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
-                {
-                    attr_value = xmlGetProp(temp_cur, (xmlChar*)"line");
-                    //针对ClassName::funcName类情况
-                    if(attr_value == NULL)
-                        attr_value = xmlGetProp(temp_cur->next, (xmlChar*)"line");
-                    break;
-                }
-                temp_cur = temp_cur->next;
-            }
-            //对函数体分析
-            //block
-            if(scanVarIsUsed(temp_cur->next->next, varName))
-            {
-                memset(src_dir, 0, DIRPATH_MAX);
-                //删除开头的temp_和结尾的.xml
-                strncpy(src_dir, (char *)&(xmlFilePath[5]), strlen(xmlFilePath)-9);
-                if(begin == NULL)
-                    begin = end = malloc(sizeof(funcList));
-                else
-                    end = end->next = malloc(sizeof(funcList));
-                memset(end, 0, sizeof(funcList));
-                if(strlen((char*)xmlNodeGetContent(temp_cur)) < MAX_FUNCNAME_LENGTH)
-                {
-                    strcpy(end->funcName, (char*)xmlNodeGetContent(temp_cur));
-                    end->line = StrToInt((char *)attr_value);
-                    end->funcType = funcType;
-                    strcpy(end->sourceFile, src_dir);
-                }
-                else
-                {
-                    memset(error_info, 0, LOGINFO_LENGTH);
-                    sprintf(error_info, "%s:%s(%s) function name length more than %d\n", src_dir, (char*)xmlNodeGetContent(temp_cur), attr_value, MAX_FUNCNAME_LENGTH);
-                    RecordLog(error_info);
-                }
-                //printf("%s(%s): %s\n", (char*)xmlNodeGetContent(temp_cur), attr_value, src_dir);
-            }
-        }
-        cur = cur->next;
-    }
-      
-    xmlFreeDoc(doc);  
-    return begin;  
-}
 
 void scanAssignVarFromNode(xmlNodePtr cur, bool flag)
 {
@@ -908,7 +613,7 @@ varDef *ExtractDirectInfluVarFromNode(xmlNodePtr cur, char *varName, varType *va
                                                 end->type = true;
                                             else
                                                 end->type = false;
-                                            end->line = StrToInt(attr_value);
+                                            end->line = StrToInt((char *)attr_value);
                                             //printf("%s(%s)\n", influVarName, attr_value);
                                         }
                                         goto next;
@@ -970,7 +675,7 @@ next:
                                                 end = end->next = malloc(sizeof(varDef));
                                             strcpy(end->varName, influVarName);
                                             end->type = false;
-                                            end->line = StrToInt(attr_value);
+                                            end->line = StrToInt((char *)attr_value);
                                             break;
                                         }
                                         name = name->next;
@@ -1184,13 +889,13 @@ char *getCalledFuncArgumentType(xmlNodePtr cur, varType *funcDefVarType)
     return retTypeString;
 }
 
-funcList *Sclice(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc)(char *, xmlNodePtr , varType *, bool ))
+funcInfo *Sclice(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc)(char *, xmlNodePtr , varType *, bool ))
 {
     funcCallList *begin = NULL;
     funcCallList *end = NULL;
     funcCallList *current = NULL;
-    funcList *ret = NULL;
-    funcList *curFuncList = NULL;
+    funcInfo *ret = NULL;
+    funcInfo *curFuncList = NULL;
     xmlDocPtr doc;
     xmlNodePtr cur;
     xmlKeepBlanksDefault(0);
@@ -1217,31 +922,9 @@ funcList *Sclice(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc
     {
         if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
         {
-            xmlNodePtr temp_cur = cur->children;
-            xmlChar* attr_value = NULL;
-            while(temp_cur != NULL)
-            {
-                if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
-                {
-                    if(temp_cur->children->last != NULL)
-                    {
-                        if(xmlStrcmp(temp_cur->children->last->name, (const xmlChar*)"position"))
-                            attr_value = xmlGetProp(temp_cur->children->last, (xmlChar*)"line");
-                        else
-                            attr_value = xmlGetProp(temp_cur->children, (xmlChar*)"line");
-                          
-                    }
-                    else
-                        attr_value = xmlGetProp(temp_cur, (xmlChar*)"line");
-                    break;
-                }
-                temp_cur = temp_cur->next;
-            }
-            
             varType *beginVarType = ExtractVarType(cur);
             varType *currentVarType = beginVarType;
 
-            bool isInfluence = false;
             current = varScliceFunc(varName, cur, currentVarType, true);
             if(begin == NULL)
                 begin = end = current;
@@ -1249,7 +932,6 @@ funcList *Sclice(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc
                 end = end->next = current;
             while(current != NULL)
             {
-                isInfluence = true;
                 end = current;
                 current = current->next;
             }
@@ -1266,7 +948,6 @@ funcList *Sclice(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc
                         end = end->next = current;
                     while(current != NULL)
                     {
-                        isInfluence = true;
                         end = current;
                         current = current->next;
                     }
@@ -1289,60 +970,18 @@ funcList *Sclice(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc
     xmlFreeDoc(doc);
     
     current = begin;
-    char tempSqlCommand[LINE_CHAR_MAX_NUM];
     while(current != NULL)
     {
-        memset(tempSqlCommand, 0 , LINE_CHAR_MAX_NUM);
-        sprintf(tempSqlCommand, "select calledFuncType, CalledSrcFile from %s where calledFunc='%s' and line=%d", funcCallTableName, current->funcName, current->line);
-        MYSQL temp_db;
-        MYSQL *tempMysqlConnect = NULL;
-        tempMysqlConnect = mysql_init(&temp_db);
-        if(tempMysqlConnect == NULL)
-        {
-            RecordLog("init mysql failure\n");
-            return false;
-        }
-        if(NULL == mysql_real_connect((MYSQL *)tempMysqlConnect, bind_address, user, pass, database, port, NULL, 0))
-        {
-            memset(error_info, 0, LOGINFO_LENGTH);
-            sprintf(error_info, "connect failed: %s\n", mysql_error(tempMysqlConnect));
-            RecordLog(error_info);
-            mysql_close(tempMysqlConnect);
-            return false;
-        }
-        if(mysql_real_query(tempMysqlConnect, tempSqlCommand, strlen(tempSqlCommand)) != 0)
-        {
-            memset(error_info, 0, LOGINFO_LENGTH);
-            sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
-            RecordLog(error_info);
-            mysql_close(tempMysqlConnect);
-            return false;
-        }
+        
+        if(ret == NULL)
+            ret = curFuncList = malloc(sizeof(funcInfo));
         else
-        {
-            MYSQL_RES *res_ptr = mysql_store_result(tempMysqlConnect);
-            MYSQL_ROW sqlrow;
-            int rownum = mysql_num_rows(res_ptr);
-            if(rownum == 1)
-            {
-                sqlrow = mysql_fetch_row(res_ptr);
-                if(ret == NULL)
-                    ret = curFuncList = malloc(sizeof(funcList));
-                else
-                    curFuncList = curFuncList->next = malloc(sizeof(funcList));
-                memset(curFuncList, 0, sizeof(funcList));
-                strcpy(curFuncList->funcName, current->funcName);
-                strcpy(curFuncList->sourceFile, sqlrow[1]);
-                strcpy(curFuncList->argumentType, current->argumentType);
-                if(strcasecmp(sqlrow[0], "extern") == 0)
-                    curFuncList->funcType = false;
-                else
-                    curFuncList->funcType = true;
-
-                mysql_free_result(res_ptr);
-            }
-        }
-        mysql_close(tempMysqlConnect);
+            curFuncList = curFuncList->next = malloc(sizeof(funcInfo));
+        memset(curFuncList, 0, sizeof(funcInfo));
+        strcpy(curFuncList->funcName, current->funcName);
+        strcpy(curFuncList->sourceFile, current->sourceFile);
+        strcpy(curFuncList->argumentType, current->argumentType);
+        strcpy(curFuncList->funcType, current->funcType);
         begin = begin->next;
         free(current);
         current = begin;
@@ -1350,13 +989,13 @@ funcList *Sclice(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc
     return ret;
 }
 
-funcList *ScliceDebug(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc)(char *, xmlNodePtr , varType *, bool ))
+funcInfo *ScliceDebug(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc)(char *, xmlNodePtr , varType *, bool ))
 {
     funcCallList *begin = NULL;
     funcCallList *end = NULL;
     funcCallList *current = NULL;
-    funcList *ret = NULL;
-    funcList *curFuncList = NULL;
+    funcInfo *ret = NULL;
+    funcInfo *curFuncList = NULL;
     xmlDocPtr doc;
     xmlNodePtr cur;
     xmlKeepBlanksDefault(0);
@@ -1465,42 +1104,18 @@ funcList *ScliceDebug(char *varName, char *xmlFilePath, funcCallList *(*varSclic
     }
       
     xmlFreeDoc(doc);
-    
     current = begin;
     while(current != NULL)
     {
-        memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
-        sprintf(sqlCommand, "select calledFuncType, CalledSrcFile from %s where calledFunc='%s' and line=%d", funcCallTableName, current->funcName, current->line);
-        if(!executeCommand(sqlCommand))
-        {
-            memset(error_info, 0, LOGINFO_LENGTH);
-            sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
-            RecordLog(error_info);
-        }
+        if(ret == NULL)
+            ret = curFuncList = malloc(sizeof(funcInfo));
         else
-        {
-            MYSQL_RES *res_ptr = mysql_store_result(mysqlConnect);
-            MYSQL_ROW sqlrow;
-            int rownum = mysql_num_rows(res_ptr);
-            if(rownum == 1)
-            {
-                sqlrow = mysql_fetch_row(res_ptr);
-                if(ret == NULL)
-                    ret = curFuncList = malloc(sizeof(funcList));
-                else
-                    curFuncList = curFuncList->next = malloc(sizeof(funcList));
-                memset(curFuncList, 0, sizeof(funcList));
-                strcpy(curFuncList->funcName, current->funcName);
-                strcpy(curFuncList->sourceFile, sqlrow[1]);
-                strcpy(curFuncList->argumentType, current->argumentType);
-                if(strcasecmp(sqlrow[0], "extern") == 0)
-                    curFuncList->funcType = false;
-                else
-                    curFuncList->funcType = true;
-
-                mysql_free_result(res_ptr);
-            }
-        }
+            curFuncList = curFuncList->next = malloc(sizeof(funcInfo));
+        memset(curFuncList, 0, sizeof(funcInfo));
+        strcpy(curFuncList->funcName, current->funcName);
+        strcpy(curFuncList->sourceFile, current->sourceFile);
+        strcpy(curFuncList->argumentType, current->argumentType);
+        strcpy(curFuncList->funcType, current->funcType);
         begin = begin->next;
         free(current);
         current = begin;

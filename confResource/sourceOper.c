@@ -10,7 +10,6 @@
 static char error_info[LOGINFO_LENGTH];
 static char xml_dir[DIRPATH_MAX];
 static char sqlCommand[LINE_CHAR_MAX_NUM];
-static char src_dir[DIRPATH_MAX];
 static char subStr2[2][MAX_SUBSTR];
 static char lineData[LINE_CHAR_MAX_NUM];
 static char deleteTempFuncScoreTable[1024] = "";
@@ -223,6 +222,8 @@ bool CodeToXML(char *srcPath, char *desPath)
         else
             return false;
     }
+    
+    return false;
 }
 
 static void *pthread_handle_Convert(void *arg)
@@ -558,7 +559,6 @@ bool initSoftware(char *srcPath)
     currentAnalyzeXmlPthreadID = 0;
     ret = analyzeProgram(temp_dir);
     for(i = 0; i < MAX_ANALYZE_XML_PTHREAD_NUM; i++)
-<<<<<<< HEAD
     {
         if(analyzeXMLPthreadRet[i] == 0)
             pthread_join(analyzeXMLPthreadID[i], NULL);
@@ -582,11 +582,6 @@ bool initSoftware(char *srcPath)
             RecordLog("delete tempFuncCall table failure!\n");
             ret = false;
         }
-=======
-    {
-        if(analyzeXMLPthreadRet[i] == 0)
-            pthread_join(analyzeXMLPthreadID[i], NULL);
->>>>>>> 0cba1ea478ca4fcaf1801b003361ae335bd9852f
     }
     ret = buildFuncScore();
     
@@ -968,80 +963,7 @@ bool buildFuncScore()
     return ret;
 }
 
-void getVarUsedFunc(char *varName, char *xmlPath)
-{
-    DIR *pdir;
-    struct dirent *pdirent;
-    struct stat statbuf;
-    
-    char child_dir[DIRPATH_MAX];
-    pdir = opendir(xmlPath);
-    if(pdir)
-    {
-        while((pdirent = readdir(pdir)) != NULL)
-        {
-            //跳过"."和".."和隐藏文件夹
-            if(strcmp(pdirent->d_name, ".") == 0 || strcmp(pdirent->d_name, "..") == 0 || (pdirent->d_name[0] == '.'))
-                continue;
-            
-            memset(child_dir, 0, DIRPATH_MAX);
-            sprintf(child_dir, "%s/%s", xmlPath, pdirent->d_name);
-            if(lstat(child_dir, &statbuf) < 0)
-            {
-                memset(error_info, 0, LOGINFO_LENGTH);
-                sprintf(error_info, "lstat %s to failed: %s.\n", child_dir, strerror(errno));
-                RecordLog(error_info);
-                closedir(pdir);
-                
-                return ;
-            }
-            
-            //judge whether directory or not
-            if(S_ISDIR(statbuf.st_mode))
-            {
-                getVarUsedFunc(varName, child_dir);
-            }
-            if(S_ISREG(statbuf.st_mode))
-            {
-                memset(xml_dir, 0, DIRPATH_MAX);
-                sprintf(xml_dir, "%s/%s", xmlPath, pdirent->d_name);
-                if(judgeCSrcXmlFile(xml_dir))
-                {
-                    funcList * ret = ExtractVarUsedFunc(varName, xml_dir);
-                    if(ret != NULL)
-                    {
-                        funcList *current = ret;
-                        while(current != NULL)
-                        {
-                            memset(src_dir, 0, DIRPATH_MAX);
-                            //删除开头的temp_和结尾的.xml
-                            strncpy(src_dir, (char *)&(xml_dir[5]), strlen(xml_dir)-9);
-                            printf("%s: %s(%d)\n", src_dir, current->funcName, current->line);
-                            current = current->next;
-                        }
-                        //delete funcList value
-                        current = ret;
-                        while(current != NULL)
-                        {
-                            ret = ret->next;
-                            free(current);
-                            current = ret;
-                        }
-                    }
-                }
-            }
-        }
-    }
-    else
-    {
-        memset(error_info, 0, LOGINFO_LENGTH);
-        sprintf(error_info, "open directory %s to failed: %s.\n", xmlPath, strerror(errno));
-        RecordLog(error_info);
-    }
-    closedir(pdir);
-}
-
-confScore getFuncScore(char *funcName, bool funcType, char *argumentType, char *srcFile, int curPthreadID)
+confScore getFuncScore(char *funcName, char *funcType, char *argumentType, char *srcFile, int curPthreadID)
 {
     funcCallCount[curPthreadID]++;
     confScore ret;
@@ -1085,12 +1007,9 @@ confScore getFuncScore(char *funcName, bool funcType, char *argumentType, char *
     //一个程序中可能会存在多个名称相同的static函数
     //一个源文件中不可能存在多个名称相同的static函数
     char tempSqlCommand[LINE_CHAR_MAX_NUM] = "";
-    if(funcType)
-        sprintf(tempSqlCommand, "select calledFunc, calledFuncType, CalledSrcFile, forNum, whileNum, calledFuncArgumentType from %s where \
-        funcName='%s' and funcCallType='static' and sourceFile='%s' and argumentType like '%s'", funcCallTableName, funcName, srcFile, selectArgumentType);
-    else
-        sprintf(tempSqlCommand, "select calledFunc, calledFuncType, CalledSrcFile, forNum, whileNum, calledFuncArgumentType from %s where \
-        funcName='%s' and funcCallType='extern' and sourceFile='%s' and argumentType like '%s'", funcCallTableName, funcName, srcFile, selectArgumentType);
+    sprintf(tempSqlCommand, "select calledFunc, calledFuncType, CalledSrcFile, forNum, whileNum, calledFuncArgumentType from %s where \
+    funcName='%s' and funcCallType='%s' and sourceFile='%s' and argumentType like '%s'", funcCallTableName, funcName, funcType, srcFile, selectArgumentType);
+    
     MYSQL temp_db;
     MYSQL *tempMysqlConnect = NULL;
     tempMysqlConnect = mysql_init(&temp_db);
@@ -1124,18 +1043,13 @@ confScore getFuncScore(char *funcName, bool funcType, char *argumentType, char *
         //funcCallCount[curPthreadID] 为函数调用的最大深度
         if(rownum != 0 && funcCallCount[curPthreadID] < max_funcCallRecursive_NUM)
         {
-            while(sqlrow1 = mysql_fetch_row(res_ptr1))
+            while((sqlrow1 = mysql_fetch_row(res_ptr1)) != NULL)
             {
                 int multiple = StrToInt(sqlrow1[3])*FORNUM + StrToInt(sqlrow1[4])*WHILENUM + 1;
-                bool temp_funcType = false;
-                if(strcasecmp(sqlrow1[1], "static") == 0)
-                {
-                    temp_funcType = true;
-                }
-#if DEBUG == 1                
+#if DEBUG == 2               
                 printf("(%s(%s)->%s(%s))\n", funcName, argumentType, sqlrow1[0], sqlrow1[5]);
 #endif                
-                confScore temp_ret = getFuncScore(sqlrow1[0], temp_funcType, sqlrow1[5], sqlrow1[2], curPthreadID);
+                confScore temp_ret = getFuncScore(sqlrow1[0], sqlrow1[1], sqlrow1[5], sqlrow1[2], curPthreadID);
                 ret.CPU += (temp_ret.CPU*multiple);
                 ret.MEM += (temp_ret.MEM*multiple);
                 ret.IO += (temp_ret.IO*multiple);
@@ -1145,12 +1059,8 @@ confScore getFuncScore(char *funcName, bool funcType, char *argumentType, char *
         }
         //get function score from funcScore table
         memset(tempSqlCommand, 0, LINE_CHAR_MAX_NUM);
-        if(funcType)
-            sprintf(tempSqlCommand, "select CPU, MEM, IO, NET from %s where \
-            funcName='%s' and type='static' and sourceFile='%s' and argumentType like '%s'", funcScoreTableName, funcName, srcFile, selectArgumentType);
-        else
-            sprintf(tempSqlCommand, "select CPU, MEM, IO, NET from %s where \
-            funcName='%s' and type='extern' and sourceFile='%s' and argumentType like '%s'", funcScoreTableName, funcName, srcFile, selectArgumentType);
+        sprintf(tempSqlCommand, "select CPU, MEM, IO, NET from %s where funcName='%s' and type='%s'\
+        and sourceFile='%s' and argumentType like '%s'", funcScoreTableName, funcName, funcType, srcFile, selectArgumentType);
         if(mysql_real_query(tempMysqlConnect, tempSqlCommand, strlen(tempSqlCommand)) != 0)
         {
             memset(error_info, 0, LOGINFO_LENGTH);
@@ -1165,7 +1075,7 @@ confScore getFuncScore(char *funcName, bool funcType, char *argumentType, char *
             rownum = mysql_num_rows(res_ptr2);
             if(rownum != 0)
             {
-                while(sqlrow2 = mysql_fetch_row(res_ptr2))
+                while((sqlrow2 = mysql_fetch_row(res_ptr2)) != NULL)
                 {
                     ret.CPU += StrToInt(sqlrow2[0]);
                     ret.MEM += StrToInt(sqlrow2[1]);
@@ -1187,7 +1097,7 @@ static void *getScore(void *arg)
     confScore *ret = malloc(sizeof(confScore));
     memset(ret, 0, sizeof(confScore));
     analyConfOptPthread_arg *argument = (analyConfOptPthread_arg *)arg;
-    funcList * ret_begin = NULL;
+    funcInfo * ret_begin = NULL;
     if(judgeCSrcXmlFile(argument->xmlFilePath))
         ret_begin = CSclice(argument->confOptName, argument->xmlFilePath);
     else if(judgeCPPSrcXmlFile(argument->xmlFilePath))
@@ -1195,7 +1105,7 @@ static void *getScore(void *arg)
 
     if(ret_begin != NULL)
     {
-        funcList *current = ret_begin;
+        funcInfo *current = ret_begin;
         while(current != NULL)
         {
             funcCallCount[argument->pthreadID] = 0;
@@ -1206,7 +1116,7 @@ static void *getScore(void *arg)
             ret->NET += temp_ret.NET;
             current = current->next;                        
         }
-        //delete funcList value
+        //delete funcInfo value
         current = ret_begin;
         while(current != NULL)
         {

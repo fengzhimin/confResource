@@ -9,8 +9,6 @@
 #include "sourceOper.h"
 
 static char error_info[LOGINFO_LENGTH];
-static char src_dir[DIRPATH_MAX];
-static char sqlCommand[LINE_CHAR_MAX_NUM];
 
 #define scanCallFunction(tempFuncCallTableName, cur, funcName, funcType, funcArgumentType, srcPath, varTypeBegin)   \
     scanCallFunctionFromNode(tempFuncCallTableName, cur, funcName, funcType, funcArgumentType, srcPath, varTypeBegin, true)
@@ -192,7 +190,7 @@ funcCallList *scanCCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, bool 
                 //get called function argument type and filePath
                 char tempSqlCommand[LINE_CHAR_MAX_NUM] = "";
                 int rownum = 0;
-                sprintf(tempSqlCommand, "select calledFuncArgumentType, CalledSrcFile from %s where calledFunc='%s' and line=%s",\
+                sprintf(tempSqlCommand, "select calledFuncType, calledFuncArgumentType, CalledSrcFile from %s where calledFunc='%s' and line=%s",\
                     funcCallTableName, callFuncName, (char *)attr_value);
                 MYSQL temp_db;
                 MYSQL *tempMysqlConnect = NULL;
@@ -227,7 +225,7 @@ funcCallList *scanCCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, bool 
                     //count 为递归的最大深度
                     if(rownum != 0)
                     {
-                        while(sqlrow = mysql_fetch_row(res_ptr))
+                        while((sqlrow = mysql_fetch_row(res_ptr)) != NULL)
                         {
                             if(begin == NULL)
                                 begin = end = malloc(sizeof(funcCallList));
@@ -235,9 +233,10 @@ funcCallList *scanCCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, bool 
                                 end = end->next = malloc(sizeof(funcCallList));
                             memset(end, 0, sizeof(funcCallList));
                             strcpy(end->funcName, callFuncName);
-                            end->line = StrToInt((char *)attr_value);
-                            strcpy(end->argumentType, sqlrow[0]);
-                            strcpy(end->sourceFile, sqlrow[1]);
+                            end->calledLine = StrToInt((char *)attr_value);
+                            strcpy(end->funcType, sqlrow[0]);
+                            strcpy(end->argumentType, sqlrow[1]);
+                            strcpy(end->sourceFile, sqlrow[2]);
                             mysql_free_result(res_ptr);
                             break;
                         }
@@ -619,7 +618,7 @@ funcCallList *varCScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *var
                 }
                 else if(!xmlStrcmp(argument_list->name, (const xmlChar*)"argument_list"))
                 {
-                    if(scanVarIsUsed(argument_list, varName))
+                    if(JudgeVarUsed(argument_list, varName))
                     {
                         if(begin == NULL)
                             begin = end = malloc(sizeof(funcCallList));
@@ -627,10 +626,10 @@ funcCallList *varCScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *var
                             end = end->next = malloc(sizeof(funcCallList));
                         memset(end, 0, sizeof(funcCallList));
                         strcpy(end->funcName, calledFuncName);
-                        end->line = StrToInt((char *)attr_value);
+                        end->calledLine = StrToInt((char *)attr_value);
                         //get called function argument type and filePath
                         char tempSqlCommand[LINE_CHAR_MAX_NUM] = "";
-                        sprintf(tempSqlCommand, "select calledFuncArgumentType, CalledSrcFile from %s where calledFunc='%s' and line=%s",\
+                        sprintf(tempSqlCommand, "select calledFuncType, calledFuncArgumentType, CalledSrcFile from %s where calledFunc='%s' and line=%s",\
                             funcCallTableName, calledFuncName, (char *)attr_value);
                         MYSQL temp_db;
                         MYSQL *tempMysqlConnect = NULL;
@@ -662,13 +661,14 @@ funcCallList *varCScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *var
                             MYSQL_ROW sqlrow;
                             res_ptr = mysql_store_result(tempMysqlConnect);
                             int rownum = mysql_num_rows(res_ptr);
-                            //count 为递归的最大深度
+
                             if(rownum != 0)
                             {
-                                while(sqlrow = mysql_fetch_row(res_ptr))
+                                while((sqlrow = mysql_fetch_row(res_ptr)) != NULL)
                                 {
-                                    strcpy(end->argumentType, sqlrow[0]);
-                                    strcpy(end->sourceFile, sqlrow[1]);
+                                    strcpy(end->funcType, sqlrow[0]);
+                                    strcpy(end->argumentType, sqlrow[1]);
+                                    strcpy(end->sourceFile, sqlrow[2]);
                                     mysql_free_result(res_ptr);
                                     break;
                                 }
@@ -726,7 +726,7 @@ funcCallList *varCScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *var
     return begin;
 }
 
-funcList *CSclice(char *varName, char *xmlFilePath)
+funcInfo *CSclice(char *varName, char *xmlFilePath)
 {
 #if DEBUG == 1
     return ScliceDebug(varName, xmlFilePath, varCScliceFuncFromNode);

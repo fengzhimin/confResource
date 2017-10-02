@@ -136,14 +136,6 @@ bool deleteTempXMLFile();
 bool buildFuncScore();
 
 /****************************************
- * func: get variable used function
- * return: void
- * @para varName: variable name
- * @para xmlPath: xml file path
-*****************************************/
-void getVarUsedFunc(char *varName, char *xmlPath);
-
-/****************************************
  * func: build configuration score
  * return: score
  * @para confName: configuration name
@@ -159,7 +151,7 @@ confScore buildConfScore(char *confName, char *xmlPath);
  * @para srcFile: function defined source file path
  * @para curPthreadID: current run pthread ID
 *****************************************/
-confScore getFuncScore(char *funcName, bool funcType, char *argumentType, char *srcFile, int curPthreadID);
+confScore getFuncScore(char *funcName, char *funcType, char *argumentType, char *srcFile, int curPthreadID);
 
 /****************************************
  * func: get configuration key influence variable and function info

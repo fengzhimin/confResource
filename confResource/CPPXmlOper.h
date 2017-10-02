@@ -64,6 +64,6 @@ funcCallList *varCPPScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *v
  * @para varName: variable name
  * @para xmlFilePath: xml file path
 **********************************/
-funcList *CPPSclice(char *varName, char *xmlFilePath);
+funcInfo *CPPSclice(char *varName, char *xmlFilePath);
 
 #endif
