@@ -559,10 +559,13 @@ varDef *ExtractDirectInfluVarFromNode(xmlNodePtr cur, char *varName, varType *va
                             bool isInfluence = false;
                             if(!xmlStrcmp(influName->name, (const xmlChar*)"name"))
                             {
-                                if(strcasecmp(varName, (char*)xmlNodeGetContent(influName)) == 0)
+                                char *var = (char*)xmlNodeGetContent(influName);
+                                if(strcasecmp(varName, var) == 0)
                                 {
                                     isInfluence = true;
                                 }
+                                else if(strstr(var, varName) != NULL && var[strlen(varName)] == '[')
+                                    isInfluence = true;
                             }
                             else if(!xmlStrcmp(influName->name, (const xmlChar*)"call") && JudgeVarUsed(influName, varName))
                             {
@@ -652,10 +655,13 @@ next:
                                         bool isInfluence = false;
                                         if(!xmlStrcmp(name->name, (const xmlChar*)"name"))
                                         {
-                                            if(strcasecmp(varName, (char*)xmlNodeGetContent(name)) == 0)
+                                            char *var = (char*)xmlNodeGetContent(name);
+                                            if(strcasecmp(varName, var) == 0)
                                             {
                                                 isInfluence = true;
                                             }
+                                            else if(strstr(var, varName) != NULL && var[strlen(varName)] == '[')
+                                                isInfluence = true;
                                         }
                                         else if(!xmlStrcmp(name->name, (const xmlChar*)"call") && JudgeVarUsed(name, varName))
                                         {
@@ -979,9 +985,14 @@ funcInfo *Sclice(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc
             curFuncList = curFuncList->next = malloc(sizeof(funcInfo));
         memset(curFuncList, 0, sizeof(funcInfo));
         strcpy(curFuncList->funcName, current->funcName);
-        strcpy(curFuncList->sourceFile, current->sourceFile);
-        strcpy(curFuncList->argumentType, current->argumentType);
-        strcpy(curFuncList->funcType, current->funcType);
+        curFuncList->type = current->type;
+        if(curFuncList->type == 'S')
+        {
+            strcpy(curFuncList->sourceFile, current->sourceFile);
+            strcpy(curFuncList->argumentType, current->argumentType);
+            strcpy(curFuncList->funcType, current->funcType);
+        }
+        
         begin = begin->next;
         free(current);
         current = begin;
@@ -1113,9 +1124,14 @@ funcInfo *ScliceDebug(char *varName, char *xmlFilePath, funcCallList *(*varSclic
             curFuncList = curFuncList->next = malloc(sizeof(funcInfo));
         memset(curFuncList, 0, sizeof(funcInfo));
         strcpy(curFuncList->funcName, current->funcName);
-        strcpy(curFuncList->sourceFile, current->sourceFile);
-        strcpy(curFuncList->argumentType, current->argumentType);
-        strcpy(curFuncList->funcType, current->funcType);
+        curFuncList->type = current->type;
+        curFuncList->calledLine = current->calledLine;
+        if(curFuncList->type == 'S')
+        {
+            strcpy(curFuncList->sourceFile, current->sourceFile);
+            strcpy(curFuncList->argumentType, current->argumentType);
+            strcpy(curFuncList->funcType, current->funcType);
+        }
         begin = begin->next;
         free(current);
         current = begin;

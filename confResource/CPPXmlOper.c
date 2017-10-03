@@ -263,7 +263,7 @@ funcCallList *scanCPPCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, boo
             if(cur->children->last != NULL)
             {
                 xmlChar* attr_value = NULL;
-                char callFuncName[128] = {};
+                char calledFuncName[128] = {};
                 if(xmlStrcmp(cur->children->last->name, (const xmlChar*)"position"))
                 {
                     attr_value = xmlGetProp(cur->children->last, (xmlChar*)"line");
@@ -274,7 +274,7 @@ funcCallList *scanCPPCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, boo
                 }
 
                 if(!xmlStrcmp(cur->children->children->name, (const xmlChar*)"text"))
-                    strcat(callFuncName, (char*)xmlNodeGetContent(cur->children));
+                    strcat(calledFuncName, (char*)xmlNodeGetContent(cur->children));
                 else
                 {
                     if(strcasecmp((char*)xmlNodeGetContent(cur->children->last->prev), "::") != 0)
@@ -288,22 +288,29 @@ funcCallList *scanCPPCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, boo
                         {
                             if(strcasecmp(current->varName, varName) == 0)
                             {
-                                sprintf(callFuncName, "%s::", current->type);
+                                sprintf(calledFuncName, "%s::", current->type);
                                 break;
                             }
                             current = current->next;
                         }
-                        strcat(callFuncName, (char*)xmlNodeGetContent(cur->children->last));
+                        strcat(calledFuncName, (char*)xmlNodeGetContent(cur->children->last));
                     }
                     else
-                        strcat(callFuncName, (char*)xmlNodeGetContent(cur->children));
+                        strcat(calledFuncName, (char*)xmlNodeGetContent(cur->children));
                 }
+                if(begin == NULL)
+                    begin = end = malloc(sizeof(funcCallList));
+                else
+                    end = end->next = malloc(sizeof(funcCallList));
+                memset(end, 0, sizeof(funcCallList));
+                strcpy(end->funcName, calledFuncName);
+                end->calledLine = StrToInt((char *)attr_value);
 
                 //get called function argument type and filePath
                 char tempSqlCommand[LINE_CHAR_MAX_NUM] = "";
                 int rownum = 0;
                 sprintf(tempSqlCommand, "select calledFuncType, calledFuncArgumentType, CalledSrcFile from %s where calledFunc='%s' and line=%s",\
-                    funcCallTableName, callFuncName, (char *)attr_value);
+                    funcCallTableName, calledFuncName, (char *)attr_value);
                 MYSQL temp_db;
                 MYSQL *tempMysqlConnect = NULL;
                 tempMysqlConnect = mysql_init(&temp_db);
@@ -337,23 +344,26 @@ funcCallList *scanCPPCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, boo
                     //count 为递归的最大深度
                     if(rownum != 0)
                     {
+                        //self-define function
                         while((sqlrow = mysql_fetch_row(res_ptr)) != NULL)
                         {
-                            if(begin == NULL)
-                                begin = end = malloc(sizeof(funcCallList));
-                            else
-                                end = end->next = malloc(sizeof(funcCallList));
-                            memset(end, 0, sizeof(funcCallList));
-                            strcpy(end->funcName, callFuncName);
-                            end->calledLine = StrToInt((char *)attr_value);
                             strcpy(end->funcType, sqlrow[0]);
                             strcpy(end->argumentType, sqlrow[1]);
                             strcpy(end->sourceFile, sqlrow[2]);
+                            end->type = 'S';
                             mysql_free_result(res_ptr);
                             break;
                         }
 #if DEBUG == 1         
-                        printf("%s(%s):%s\n", callFuncName, attr_value, end->argumentType);
+                        printf("%s(%s):%s\n", calledFuncName, attr_value, end->argumentType);
+#endif
+                    }
+                    else
+                    {
+                        //library function
+                        end->type = 'L';
+#if DEBUG == 1         
+                        printf("%s(%s)\n", calledFuncName, attr_value);
 #endif
                     }
                 }
@@ -883,16 +893,26 @@ funcCallList *varCPPScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *v
                             //count 为递归的最大深度
                             if(rownum != 0)
                             {
+                                //self-define function
                                 while((sqlrow = mysql_fetch_row(res_ptr)) != NULL)
                                 {
                                     strcpy(end->funcType, sqlrow[0]);
                                     strcpy(end->argumentType, sqlrow[1]);
                                     strcpy(end->sourceFile, sqlrow[2]);
+                                    end->type = 'S';
                                     mysql_free_result(res_ptr);
                                     break;
                                 }
 #if DEBUG == 1
                                 printf("%s(%s):%s\n", calledFuncName, attr_value, end->argumentType);
+#endif
+                            }
+                            else
+                            {
+                                //library function
+                                end->type = 'L';
+#if DEBUG == 1         
+                                printf("%s(%s)\n", calledFuncName, attr_value);
 #endif
                             }
                         }

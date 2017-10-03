@@ -14,7 +14,7 @@
 
 #define OPENLOG  1      //0=不记录日志   1=记录日志
 
-#define DEBUG    0      //0=不打印调试信息    1 = 打印调试信息
+#define DEBUG    1      //0=不打印调试信息    1 = 打印调试信息
 
 #define LINE_CHAR_MAX_NUM      1024   //一行最大字符个数
 
@@ -67,6 +67,8 @@ typedef struct functionInfo
     char funcType[7];     //false = extern    true = static
     char argumentType[512];
     char sourceFile[DIRPATH_MAX];
+    char type;
+    int calledLine;  //when type is equal to library, calledLine is called line
     struct functionInfo *next;
 } funcInfo;
 
@@ -84,6 +86,7 @@ typedef struct variableDef
  * @para argumentType: funcName argument type
  * @para calledLine: funcName called line
  * @para sourceFile: funcName defined source file
+ * @para type: library function(L) or self-defined function(S)
 ****************************/
 typedef struct functionCallList
 {
@@ -92,6 +95,7 @@ typedef struct functionCallList
     char argumentType[512];
     int calledLine;
     char sourceFile[DIRPATH_MAX];
+    char type;
     struct functionCallList *next;
 } funcCallList;
 

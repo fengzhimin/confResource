@@ -175,23 +175,29 @@ funcCallList *scanCCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, bool 
             if(cur->children->last != NULL)
             {
                 xmlChar* attr_value = NULL;
-                char *callFuncName = NULL;
+                char *calledFuncName = NULL;
                 if(xmlStrcmp(cur->children->last->name, (const xmlChar*)"position"))
                 {
                     attr_value = xmlGetProp(cur->children->last, (xmlChar*)"line");
-                    callFuncName = (char*)xmlNodeGetContent(cur->children->last);
+                    calledFuncName = (char*)xmlNodeGetContent(cur->children->last);
                 }
                 else
                 {
                     attr_value = xmlGetProp(cur->children, (xmlChar*)"line");
-                    callFuncName = (char*)xmlNodeGetContent(cur->children);
+                    calledFuncName = (char*)xmlNodeGetContent(cur->children);
                 }
-                
+                if(begin == NULL)
+                    begin = end = malloc(sizeof(funcCallList));
+                else
+                    end = end->next = malloc(sizeof(funcCallList));
+                memset(end, 0, sizeof(funcCallList));
+                strcpy(end->funcName, calledFuncName);
+                end->calledLine = StrToInt((char *)attr_value);
                 //get called function argument type and filePath
                 char tempSqlCommand[LINE_CHAR_MAX_NUM] = "";
                 int rownum = 0;
                 sprintf(tempSqlCommand, "select calledFuncType, calledFuncArgumentType, CalledSrcFile from %s where calledFunc='%s' and line=%s",\
-                    funcCallTableName, callFuncName, (char *)attr_value);
+                    funcCallTableName, calledFuncName, (char *)attr_value);
                 MYSQL temp_db;
                 MYSQL *tempMysqlConnect = NULL;
                 tempMysqlConnect = mysql_init(&temp_db);
@@ -225,23 +231,26 @@ funcCallList *scanCCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, bool 
                     //count 为递归的最大深度
                     if(rownum != 0)
                     {
+                        //self-defined function
                         while((sqlrow = mysql_fetch_row(res_ptr)) != NULL)
                         {
-                            if(begin == NULL)
-                                begin = end = malloc(sizeof(funcCallList));
-                            else
-                                end = end->next = malloc(sizeof(funcCallList));
-                            memset(end, 0, sizeof(funcCallList));
-                            strcpy(end->funcName, callFuncName);
-                            end->calledLine = StrToInt((char *)attr_value);
                             strcpy(end->funcType, sqlrow[0]);
                             strcpy(end->argumentType, sqlrow[1]);
                             strcpy(end->sourceFile, sqlrow[2]);
+                            end->type = 'S';
                             mysql_free_result(res_ptr);
                             break;
                         }
 #if DEBUG == 1         
-                        printf("%s(%s):%s\n", callFuncName, attr_value, end->argumentType);
+                        printf("%s(%s):%s\n", calledFuncName, attr_value, end->argumentType);
+#endif
+                    }
+                    else
+                    {
+                        //library function
+                        end->type = 'L';
+#if DEBUG == 1         
+                        printf("%s(%s)\n", calledFuncName, attr_value);
 #endif
                     }
                 }
@@ -669,11 +678,20 @@ funcCallList *varCScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *var
                                     strcpy(end->funcType, sqlrow[0]);
                                     strcpy(end->argumentType, sqlrow[1]);
                                     strcpy(end->sourceFile, sqlrow[2]);
+                                    end->type = 'S';
                                     mysql_free_result(res_ptr);
                                     break;
                                 }
 #if DEBUG == 1
                                 printf("%s(%s):%s\n", calledFuncName, attr_value, end->argumentType);
+#endif
+                            }
+                            else
+                            {
+                                //library function
+                                end->type = 'L';
+#if DEBUG == 1
+                                printf("%s(%s)\n", calledFuncName, attr_value);
 #endif
                             }
                         }
