@@ -652,7 +652,9 @@ next:
                                     xmlNodePtr name = expr->children;
                                     while(name != NULL)
                                     {
+                                        /*
                                         bool isInfluence = false;
+                                        
                                         if(!xmlStrcmp(name->name, (const xmlChar*)"name"))
                                         {
                                             char *var = (char*)xmlNodeGetContent(name);
@@ -666,15 +668,21 @@ next:
                                         else if(!xmlStrcmp(name->name, (const xmlChar*)"call") && JudgeVarUsed(name, varName))
                                         {
                                             isInfluence = true;
-                                        }
-                                        if(isInfluence)
+                                        }*/
+                                        if(JudgeVarUsed(name, varName))
                                         {
-                                            char *influVarName = (char*)xmlNodeGetContent(init->prev);
+                                            char *influVarName = NULL;
                                             xmlChar* attr_value = NULL;
                                             if(!xmlStrcmp(init->prev->children->name, (const xmlChar*)"name"))
+                                            {
+                                                influVarName = (char*)xmlNodeGetContent(init->prev->children);
                                                 attr_value = xmlGetProp(init->prev->children, (xmlChar*)"line");
+                                            }
                                             else
+                                            {
+                                                influVarName = (char*)xmlNodeGetContent(init->prev);
                                                 attr_value = xmlGetProp(init->prev, (xmlChar*)"line");
+                                            }
                                             if(begin == NULL)
                                                 begin = end = malloc(sizeof(varDef));
                                             else
