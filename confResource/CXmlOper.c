@@ -241,7 +241,7 @@ funcCallList *scanCCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, bool 
                             mysql_free_result(res_ptr);
                             break;
                         }
-#if DEBUG == 2         
+#if DEBUG == 1         
                         printf("%s(%s):%s\n", calledFuncName, attr_value, end->argumentType);
 #endif
                     }
@@ -249,7 +249,7 @@ funcCallList *scanCCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, bool 
                     {
                         //library function
                         end->type = 'L';
-#if DEBUG == 2         
+#if DEBUG == 1         
                         printf("%s(%s)\n", calledFuncName, attr_value);
 #endif
                     }
@@ -682,7 +682,7 @@ funcCallList *varCScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *var
                                     mysql_free_result(res_ptr);
                                     break;
                                 }
-#if DEBUG == 2
+#if DEBUG == 1
                                 printf("%s(%s):%s\n", calledFuncName, attr_value, end->argumentType);
 #endif
                             }
@@ -690,7 +690,7 @@ funcCallList *varCScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *var
                             {
                                 //library function
                                 end->type = 'L';
-#if DEBUG == 2
+#if DEBUG == 1
                                 printf("%s(%s)\n", calledFuncName, attr_value);
 #endif
                             }
