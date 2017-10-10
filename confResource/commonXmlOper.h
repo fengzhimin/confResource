@@ -24,7 +24,8 @@
 #define ExtractVarDef(cur)  ExtractVarDefFromNode(cur, true)
 #define ExtractVarType(cur)   ExtractVarTypeFromNode(cur, true)
 #define scanAssignVar(cur)   scanAssignVarFromNode(cur, true)
-#define ExtractDirectInfluVar(cur, varName, varTypeBegin) ExtractDirectInfluVarFromNode(cur, varName, varTypeBegin, true)
+#define ExtractDirectInfluVar(cur, varName, varTypeBegin)  ExtractDirectInfluVarFromNode(cur, varName, varTypeBegin, true)
+#define ScliceInflVar(varName, cur, varTypeBegin)  ScliceInflVarInfo(varName, cur, NULL, NULL, varTypeBegin)
 
 /*********************************
  * func: judge a variable whether be used in current node or not
@@ -109,7 +110,18 @@ char *ExtractFuncArgumentType(xmlNodePtr cur);
 char *getCalledFuncArgumentType(xmlNodePtr cur, varType *funcDefVarType);
 
 /**********************************
- * func: variable sclice
+ * func: sclice influence variable
+ * return: not null = exist influence   null = not exist influence
+ * @para varName: variable name
+ * @para cur: current analyze node
+ * @para inflVarName: influenced variable name
+ * @para curInflVar: current influenced variable list
+ * @para varTypeBegin: current node self-define vaiable info
+**********************************/
+varDef *ScliceInflVarInfo(char *varName, xmlNodePtr cur, char *inflVarName, varDef *curInflVar, varType *varTypeBegin);
+
+/**********************************
+ * func: variable sclice return influence function
  * return: not null = exist influence   null = not exist influence
  * @para varName: variable name
  * @para xmlFilePath: xml file path

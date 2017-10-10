@@ -1,28 +1,40 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Session Name="/home/fzm/confResource/confResource.workspace">
-  <int Value="0" Name="m_selectedTab"/>
+  <int Value="1" Name="m_selectedTab"/>
   <wxString Value="/home/fzm/confResource/confResource.workspace" Name="m_workspaceName"/>
   <TabInfoArray Name="TabInfoArray">
     <TabInfo>
+      <wxString Value="/home/fzm/confResource/confResource/main.c" Name="FileName"/>
+      <int Value="18" Name="FirstVisibleLine"/>
+      <int Value="35" Name="CurrentLine"/>
+      <wxArrayString Name="Bookmarks"/>
+      <IntVector Name="CollapsedFolds"/>
+    </TabInfo>
+    <TabInfo>
       <wxString Value="/home/fzm/confResource/confResource/input.conf" Name="FileName"/>
       <int Value="0" Name="FirstVisibleLine"/>
-      <int Value="9" Name="CurrentLine"/>
-      <wxArrayString Name="Bookmarks">
-        <wxString Value="13:3"/>
-      </wxArrayString>
+      <int Value="8" Name="CurrentLine"/>
+      <wxArrayString Name="Bookmarks"/>
       <IntVector Name="CollapsedFolds"/>
     </TabInfo>
     <TabInfo>
       <wxString Value="/home/fzm/confResource/confResource/config.h" Name="FileName"/>
-      <int Value="28" Name="FirstVisibleLine"/>
-      <int Value="53" Name="CurrentLine"/>
+      <int Value="0" Name="FirstVisibleLine"/>
+      <int Value="16" Name="CurrentLine"/>
       <wxArrayString Name="Bookmarks"/>
       <IntVector Name="CollapsedFolds"/>
     </TabInfo>
     <TabInfo>
       <wxString Value="/home/fzm/confResource/confResource/commonXmlOper.c" Name="FileName"/>
-      <int Value="503" Name="FirstVisibleLine"/>
-      <int Value="536" Name="CurrentLine"/>
+      <int Value="1036" Name="FirstVisibleLine"/>
+      <int Value="988" Name="CurrentLine"/>
+      <wxArrayString Name="Bookmarks"/>
+      <IntVector Name="CollapsedFolds"/>
+    </TabInfo>
+    <TabInfo>
+      <wxString Value="/home/fzm/confResource/confResource/commonXmlOper.h" Name="FileName"/>
+      <int Value="10" Name="FirstVisibleLine"/>
+      <int Value="120" Name="CurrentLine"/>
       <wxArrayString Name="Bookmarks"/>
       <IntVector Name="CollapsedFolds"/>
     </TabInfo>

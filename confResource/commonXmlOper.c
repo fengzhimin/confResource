@@ -906,6 +906,109 @@ char *getCalledFuncArgumentType(xmlNodePtr cur, varType *funcDefVarType)
     return retTypeString;
 }
 
+varDef *ScliceInflVarInfo(char *varName, xmlNodePtr cur, char *inflVarName, varDef *curInflVar, varType *varTypeBegin)
+{
+    varDef *begin = NULL;
+    varDef *endInflVar = curInflVar;
+    if(endInflVar != NULL)
+    {
+        while(endInflVar->next != NULL)
+            endInflVar = endInflVar->next;
+    }
+    
+    varDef *end = NULL;
+    varDef *current = NULL;
+    if(inflVarName == NULL)
+        begin = end = current = ExtractDirectInfluVar(cur, varName, varTypeBegin);
+    else
+        begin = end = current = ExtractDirectInfluVar(cur, inflVarName, varTypeBegin);
+        
+    if(begin != NULL)
+    {
+        current = begin;
+        while(current != NULL)
+        {
+            end = current;
+            current = current->next;
+        }
+        varDef *varInfluCur = begin;
+        while(varInfluCur != NULL)
+        {
+            bool isExist = false;
+            varDef *tmpCurInflVar = NULL;
+            for(tmpCurInflVar = curInflVar; tmpCurInflVar != NULL; tmpCurInflVar = tmpCurInflVar->next)
+            {
+                if(strcasecmp(varInfluCur->varName, tmpCurInflVar->varName) == 0)
+                {
+                    isExist = true;
+                    break;
+                }
+            }
+            if(!isExist)
+            {
+                if(strcasecmp(varInfluCur->varName, varName) != 0)
+                {
+                    if(curInflVar == NULL)
+                        endInflVar = curInflVar = malloc(sizeof(varType));
+                    else
+                        endInflVar = endInflVar->next = malloc(sizeof(varType));
+                    memset(endInflVar, 0, sizeof(varDef));
+                    strcpy(endInflVar->varName, varInfluCur->varName);
+                    endInflVar->line = varInfluCur->line;
+                    endInflVar->type = varInfluCur->type;
+                    
+                    varDef *tmpBegin = ScliceInflVarInfo(varName, cur, varInfluCur->varName, curInflVar, varTypeBegin);
+                    if(tmpBegin != NULL)
+                    {
+                        varDef *tmpCurrent = NULL;
+                        for(tmpCurrent = tmpBegin; tmpCurrent != NULL; tmpCurrent = tmpCurrent->next)
+                        {
+                            isExist = false;
+                            for(current = begin; current != NULL; current = current->next)
+                            {
+                                if(strcasecmp(current->varName, tmpCurrent->varName) == 0 || strcasecmp(varName, tmpCurrent->varName) == 0)
+                                {
+                                    isExist = true;
+                                    break;
+                                }
+                            }
+                            if(!isExist)
+                            {
+                                end = end->next = malloc(sizeof(varDef));
+                                memset(end, 0, sizeof(varDef));
+                                *end = *tmpCurrent;
+                                end->next = NULL;
+                            }
+                        }
+                        tmpCurrent = tmpBegin;
+                        while(tmpCurrent != NULL)
+                        {
+                            tmpBegin = tmpBegin->next;
+                            free(tmpCurrent);
+                            tmpCurrent = tmpBegin;
+                        }
+                    }
+                }
+            }
+
+            varInfluCur = varInfluCur->next;
+        }
+    }
+    
+    if(inflVarName == NULL)
+    {
+        endInflVar = curInflVar;
+        while(endInflVar != NULL)
+        {
+            curInflVar = curInflVar->next;
+            free(endInflVar);
+            endInflVar = curInflVar;
+        }
+    }
+    
+    return begin;
+}
+
 funcInfo *Sclice(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc)(char *, xmlNodePtr , varType *, bool ))
 {
     funcCallList *begin = NULL;
@@ -952,7 +1055,8 @@ funcInfo *Sclice(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc
                 end = current;
                 current = current->next;
             }
-            varDef *varInfluence = ExtractDirectInfluVar(cur, varName, currentVarType);
+            //direct influence variable
+            varDef *varInfluence = ScliceInflVar(varName, cur, currentVarType);
             if(varInfluence != NULL)
             {
                 varDef *varInfluCur = varInfluence;
@@ -1080,15 +1184,13 @@ funcInfo *ScliceDebug(char *varName, char *xmlFilePath, funcCallList *(*varSclic
                 end = current;
                 current = current->next;
             }
-            varDef *varInfluence = ExtractDirectInfluVar(cur, varName, currentVarType);
+            varDef *varInfluence = ScliceInflVar(varName, cur, currentVarType);
             if(varInfluence != NULL)
             {
                 varDef *varInfluCur = varInfluence;
                 while(varInfluCur != NULL)
                 {
-#if DEBUG == 1
                     printf("%s influence %s(%d)\n", varName, varInfluCur->varName, varInfluCur->line);
-#endif
                     current = varScliceFunc(varInfluCur->varName, cur, currentVarType, true);
                     if(begin == NULL)
                         begin = end = current;
@@ -1112,15 +1214,13 @@ funcInfo *ScliceDebug(char *varName, char *xmlFilePath, funcCallList *(*varSclic
                 free(currentVarType);
                 currentVarType = beginVarType;
             }
-#if DEBUG == 1
             if(isInfluence)
             {
                 memset(src_dir, 0, DIRPATH_MAX);
                 //删除开头的temp_和结尾的.xml
                 strncpy(src_dir, (char *)&(xmlFilePath[5]), strlen(xmlFilePath)-9);
-                printf("source Path: %s\tfunction: %s(%s)\n", src_dir, (char*)xmlNodeGetContent(temp_cur), attr_value);
+                //printf("source Path: %s\tfunction: %s(%s)\n", src_dir, (char*)xmlNodeGetContent(temp_cur), attr_value);
             }
-#endif
         }
         cur = cur->next;
     }
