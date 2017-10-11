@@ -42,9 +42,15 @@ bool ExtractFuncFromCXML(char *docName, char *tempFuncScoreTableName, char *temp
     cur = cur->children;
     while (cur != NULL)
     {
-        if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
+        if(!xmlStrcmp(cur->name, (const xmlChar*)"function") || \
+            (!xmlStrcmp(cur->name, (const xmlChar*)"extern") && cur->children != NULL && !xmlStrcmp(cur->last->name, (const xmlChar*)"function")))
         {
-            xmlNodePtr temp_cur = cur->children;
+            xmlNodePtr funcNode;
+            if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
+                funcNode = cur;
+            else
+                funcNode = cur->last;
+            xmlNodePtr temp_cur = funcNode->children;
             char *funcType = "extern";
             while(temp_cur != NULL)
             {
@@ -63,7 +69,7 @@ bool ExtractFuncFromCXML(char *docName, char *tempFuncScoreTableName, char *temp
                     xmlChar* attr_value = xmlGetProp(temp_cur, (xmlChar*)"line");
                     char tempSqlCommand[LINE_CHAR_MAX_NUM] = "";
                     //get function argument type string
-                    char *argumentTypeString = ExtractFuncArgumentType(cur);
+                    char *argumentTypeString = ExtractFuncArgumentType(funcNode);
                     sprintf(tempSqlCommand, "insert into %s (funcName, type, argumentType, sourceFile, line) value('%s', '%s', '%s', '%s', %s)", tempFuncScoreTableName,\
                         (char*)xmlNodeGetContent(temp_cur), funcType, argumentTypeString, src_dir, attr_value);
                     
@@ -73,9 +79,9 @@ bool ExtractFuncFromCXML(char *docName, char *tempFuncScoreTableName, char *temp
                         sprintf(error_info, "execute commad %s failure.\n", tempSqlCommand);
                         RecordLog(error_info);
                     }
-                    varType *begin = ExtractVarType(cur);
+                    varType *begin = ExtractVarType(funcNode);
                     varType *current = begin;
-                    scanCallFunction(tempFuncCallTableName, cur, (char*)xmlNodeGetContent(temp_cur), funcType, argumentTypeString, src_dir, begin);
+                    scanCallFunction(tempFuncCallTableName, funcNode, (char*)xmlNodeGetContent(temp_cur), funcType, argumentTypeString, src_dir, begin);
                     while(current != NULL)
                     {
                         begin = begin->next;
@@ -999,9 +1005,15 @@ bool ScliceConfKey(char *confName, char *xmlFilePath)
     cur = cur->children;
     while (cur != NULL)
     {
-        if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
+        if(!xmlStrcmp(cur->name, (const xmlChar*)"function") || \
+            (!xmlStrcmp(cur->name, (const xmlChar*)"extern") && cur->children != NULL && !xmlStrcmp(cur->last->name, (const xmlChar*)"function")))
         {
-            xmlNodePtr temp_cur = cur->children;
+            xmlNodePtr funcNode;
+            if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
+                funcNode = cur;
+            else
+                funcNode = cur->last;
+            xmlNodePtr temp_cur = funcNode->children;
             xmlChar* attr_value = NULL;
             while(temp_cur != NULL)
             {
@@ -1013,7 +1025,7 @@ bool ScliceConfKey(char *confName, char *xmlFilePath)
                 temp_cur = temp_cur->next;
             }
             
-            if(literalScliceVar(confName, cur))
+            if(literalScliceVar(confName, funcNode))
             {
                 printf("function: %s(%s)\n", (char*)xmlNodeGetContent(temp_cur), attr_value);
                 ret = true;

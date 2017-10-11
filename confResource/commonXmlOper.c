@@ -1040,12 +1040,18 @@ funcInfo *Sclice(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc
     cur = cur->children;
     while (cur != NULL)
     {
-        if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
+        if(!xmlStrcmp(cur->name, (const xmlChar*)"function") || \
+            (!xmlStrcmp(cur->name, (const xmlChar*)"extern") && cur->children != NULL && !xmlStrcmp(cur->children->name, (const xmlChar*)"function")))
         {
-            varType *beginVarType = ExtractVarType(cur);
+            xmlNodePtr funcNode;
+            if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
+                funcNode = cur;
+            else
+                funcNode = cur->children;
+            varType *beginVarType = ExtractVarType(funcNode);
             varType *currentVarType = beginVarType;
 
-            current = varScliceFunc(varName, cur, currentVarType, true);
+            current = varScliceFunc(varName, funcNode, currentVarType, true);
             if(begin == NULL)
                 begin = end = current;
             else if(current != NULL)
@@ -1056,13 +1062,13 @@ funcInfo *Sclice(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc
                 current = current->next;
             }
             //direct influence variable
-            varDef *varInfluence = ScliceInflVar(varName, cur, currentVarType);
+            varDef *varInfluence = ScliceInflVar(varName, funcNode, currentVarType);
             if(varInfluence != NULL)
             {
                 varDef *varInfluCur = varInfluence;
                 while(varInfluCur != NULL)
                 {
-                    current = varScliceFunc(varInfluCur->varName, cur, currentVarType, true);
+                    current = varScliceFunc(varInfluCur->varName, funcNode, currentVarType, true);
                     if(begin == NULL)
                         begin = end = current;
                     else if(current != NULL)
@@ -1146,9 +1152,15 @@ funcInfo *ScliceDebug(char *varName, char *xmlFilePath, funcCallList *(*varSclic
     cur = cur->children;
     while (cur != NULL)
     {
-        if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
+        if(!xmlStrcmp(cur->name, (const xmlChar*)"function") || \
+            (!xmlStrcmp(cur->name, (const xmlChar*)"extern") && cur->children != NULL && !xmlStrcmp(cur->last->name, (const xmlChar*)"function")))
         {
-            xmlNodePtr temp_cur = cur->children;
+            xmlNodePtr funcNode;
+            if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
+                funcNode = cur;
+            else
+                funcNode = cur->last;
+            xmlNodePtr temp_cur = funcNode->children;
             xmlChar* attr_value = NULL;
             while(temp_cur != NULL)
             {
@@ -1169,11 +1181,11 @@ funcInfo *ScliceDebug(char *varName, char *xmlFilePath, funcCallList *(*varSclic
                 temp_cur = temp_cur->next;
             }
             
-            varType *beginVarType = ExtractVarType(cur);
+            varType *beginVarType = ExtractVarType(funcNode);
             varType *currentVarType = beginVarType;
 
             bool isInfluence = false;
-            current = varScliceFunc(varName, cur, currentVarType, true);
+            current = varScliceFunc(varName, funcNode, currentVarType, true);
             if(begin == NULL)
                 begin = end = current;
             else if(current != NULL)
@@ -1184,14 +1196,14 @@ funcInfo *ScliceDebug(char *varName, char *xmlFilePath, funcCallList *(*varSclic
                 end = current;
                 current = current->next;
             }
-            varDef *varInfluence = ScliceInflVar(varName, cur, currentVarType);
+            varDef *varInfluence = ScliceInflVar(varName, funcNode, currentVarType);
             if(varInfluence != NULL)
             {
                 varDef *varInfluCur = varInfluence;
                 while(varInfluCur != NULL)
                 {
                     printf("%s influence %s(%d)\n", varName, varInfluCur->varName, varInfluCur->line);
-                    current = varScliceFunc(varInfluCur->varName, cur, currentVarType, true);
+                    current = varScliceFunc(varInfluCur->varName, funcNode, currentVarType, true);
                     if(begin == NULL)
                         begin = end = current;
                     else if(current != NULL)
@@ -1210,7 +1222,6 @@ funcInfo *ScliceDebug(char *varName, char *xmlFilePath, funcCallList *(*varSclic
             while(currentVarType != NULL)
             {
                 beginVarType = beginVarType->next;
-                //printf("%s(%d):%s\n", current->type, current->line, current->varName);
                 free(currentVarType);
                 currentVarType = beginVarType;
             }
@@ -1219,7 +1230,7 @@ funcInfo *ScliceDebug(char *varName, char *xmlFilePath, funcCallList *(*varSclic
                 memset(src_dir, 0, DIRPATH_MAX);
                 //删除开头的temp_和结尾的.xml
                 strncpy(src_dir, (char *)&(xmlFilePath[5]), strlen(xmlFilePath)-9);
-                //printf("source Path: %s\tfunction: %s(%s)\n", src_dir, (char*)xmlNodeGetContent(temp_cur), attr_value);
+                printf("source Path: %s\tfunction: %s(%s)\n", src_dir, (char*)xmlNodeGetContent(temp_cur), attr_value);
             }
         }
         cur = cur->next;

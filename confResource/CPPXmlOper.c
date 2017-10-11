@@ -41,9 +41,15 @@ bool ExtractFuncFromCPPXML(char *docName, char *tempFuncScoreTableName, char *te
     cur = cur->children;
     while (cur != NULL)
     {
-        if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
+        if(!xmlStrcmp(cur->name, (const xmlChar*)"function") || \
+            (!xmlStrcmp(cur->name, (const xmlChar*)"extern") && cur->children != NULL && !xmlStrcmp(cur->last->name, (const xmlChar*)"function")))
         {
-            xmlNodePtr temp_cur = cur->children;
+            xmlNodePtr funcNode;
+            if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
+                funcNode = cur;
+            else
+                funcNode = cur->last;
+            xmlNodePtr temp_cur = funcNode->children;
             char *funcType = "extern";
             while(temp_cur != NULL)
             {
@@ -75,7 +81,7 @@ bool ExtractFuncFromCPPXML(char *docName, char *tempFuncScoreTableName, char *te
 
                     char tempSqlCommand[LINE_CHAR_MAX_NUM] = "";
                     //get function argument type string
-                    char *argumentTypeString = ExtractFuncArgumentType(cur);
+                    char *argumentTypeString = ExtractFuncArgumentType(funcNode);
                     sprintf(tempSqlCommand, "insert into %s (funcName, type, argumentType, sourceFile, line) value('%s', '%s', '%s', '%s', %s)", tempFuncScoreTableName,\
                         (char*)xmlNodeGetContent(temp_cur), funcType, argumentTypeString, src_dir, attr_value);
                     
@@ -86,9 +92,9 @@ bool ExtractFuncFromCPPXML(char *docName, char *tempFuncScoreTableName, char *te
                         RecordLog(error_info);
                     }
 
-                    varType *begin = ExtractVarType(cur);
+                    varType *begin = ExtractVarType(funcNode);
                     varType *current = begin;
-                    scanCallFunction(tempFuncCallTableName, cur, (char*)xmlNodeGetContent(temp_cur), funcType, argumentTypeString, src_dir, begin);
+                    scanCallFunction(tempFuncCallTableName, funcNode, (char*)xmlNodeGetContent(temp_cur), funcType, argumentTypeString, src_dir, begin);
                     while(current != NULL)
                     {
                         begin = begin->next;
