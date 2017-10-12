@@ -67,17 +67,7 @@ bool ExtractFuncFromCPPXML(char *docName, char *tempFuncScoreTableName, char *te
                     char src_dir[DIRPATH_MAX] = "";
                     //删除开头的temp_和结尾的.xml
                     strncpy(src_dir, (char *)&(docName[5]), strlen(docName)-9);
-                    xmlChar* attr_value = NULL;
-                    if(temp_cur->children->last != NULL)
-                    {
-                        if(xmlStrcmp(temp_cur->children->last->name, (const xmlChar*)"position"))
-                            attr_value = xmlGetProp(temp_cur->children->last, (xmlChar*)"line");
-                        else
-                            attr_value = xmlGetProp(temp_cur->children, (xmlChar*)"line");
-                          
-                    }
-                    else
-                        attr_value = xmlGetProp(temp_cur, (xmlChar*)"line");
+                    xmlChar* attr_value = getLine(temp_cur);
 
                     char tempSqlCommand[LINE_CHAR_MAX_NUM] = "";
                     //get function argument type string
@@ -186,16 +176,8 @@ static void scanCallFunctionFromNode(char *tempFuncCallTableName, xmlNodePtr cur
         {
             if(cur->children->last != NULL)
             {
-                xmlChar* attr_value = NULL;
+                xmlChar* attr_value = getLine(cur->children);
                 char callFuncName[128] = {};
-                if(xmlStrcmp(cur->children->last->name, (const xmlChar*)"position"))
-                {
-                    attr_value = xmlGetProp(cur->children->last, (xmlChar*)"line");
-                }
-                else
-                {
-                    attr_value = xmlGetProp(cur->children, (xmlChar*)"line");
-                }
                 if(!xmlStrcmp(cur->children->children->name, (const xmlChar*)"text"))
                     strcat(callFuncName, (char*)xmlNodeGetContent(cur->children));
                 else
@@ -268,17 +250,8 @@ funcCallList *scanCPPCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, boo
         {
             if(cur->children->last != NULL)
             {
-                xmlChar* attr_value = NULL;
+                xmlChar* attr_value = getLine(cur->children);
                 char calledFuncName[128] = {};
-                if(xmlStrcmp(cur->children->last->name, (const xmlChar*)"position"))
-                {
-                    attr_value = xmlGetProp(cur->children->last, (xmlChar*)"line");
-                }
-                else
-                {
-                    attr_value = xmlGetProp(cur->children, (xmlChar*)"line");
-                }
-
                 if(!xmlStrcmp(cur->children->children->name, (const xmlChar*)"text"))
                     strcat(calledFuncName, (char*)xmlNodeGetContent(cur->children));
                 else
@@ -505,297 +478,314 @@ bool ExtractClassInheritFromCPPXML(char *docName)
     return true;  
 }
 
-funcCallList *varCPPScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *varTypeBegin, bool flag)
+funcCallList *varCPPScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *varTypeBegin, bool flag)
 {
     funcCallList *begin = NULL;
     funcCallList *end = NULL;
     funcCallList *current = NULL;
+    int currentLine = 0;
     while(cur != NULL)
     {
         bool recursive_flag = true;
         if(!xmlStrcmp(cur->name, (const xmlChar*)"if"))
         {
-            xmlNodePtr condition = cur->children;
-            while(condition != NULL)
+            currentLine = StrToInt((char *)xmlGetProp(cur, (xmlChar*)"line"));
+            if(varInfo.line < currentLine)
             {
-                if(!xmlStrcmp(condition->name, (const xmlChar*)"condition"))
+                xmlNodePtr condition = cur->children;
+                while(condition != NULL)
                 {
-                    //判断if条件中是否使用了varName变量，如果使用则该变量影响整个if块
-                    if(JudgeVarUsed(condition, varName))
+                    if(!xmlStrcmp(condition->name, (const xmlChar*)"condition"))
                     {
-                        //打印整个if-else结构块                   
-                        current = scanCPPCallFunc(cur, varTypeBegin);                       
-                        if(begin == NULL)
-                            begin = end = current;
-                        else if(current != NULL)
-                            end = end->next = current;
-                        bool isExit = false;
-                        while(current != NULL)
+                        //判断if条件中是否使用了varName变量，如果使用则该变量影响整个if块
+                        if(JudgeVarUsed(condition, varInfo.varName))
                         {
-                            if(strcasecmp(current->funcName, "exit") == 0)
-                                isExit = true;
-                            end = current;
-                            current = current->next;
-                        }
-                        //scanAssignVar(cur);
-                        if(isExit)
-                        {
-                            current = scanBackCPPCallFunc(cur, varTypeBegin);
+                            //打印整个if-else结构块                   
+                            current = scanCPPCallFunc(cur, varTypeBegin);                       
                             if(begin == NULL)
                                 begin = end = current;
                             else if(current != NULL)
                                 end = end->next = current;
+                            bool isExit = false;
                             while(current != NULL)
                             {
+                                if(strcasecmp(current->funcName, "exit") == 0)
+                                    isExit = true;
                                 end = current;
                                 current = current->next;
-                            }                       
-                        }
-                        else
-                        {
-                            xmlNodePtr then = condition->next;
-                            while(then != NULL)
-                            {
-                                if(JudgeExistChildNode(then, "return"))
-                                {                              
-                                    current = scanBackCPPCallFunc(cur, varTypeBegin);
-                                    if(begin == NULL)
-                                        begin = end = current;
-                                    else if(current != NULL)
-                                        end = end->next = current;
-                                    while(current != NULL)
-                                    {
-                                        end = current;
-                                        current = current->next;
-                                    }                       
-                                    //scanBackAssignVar(cur);
-                                    break;
-                                }
-                                then = then->next;
                             }
-                        }
-                        
-                        recursive_flag = false;
-                        break;
-                    }
-                }
-                condition = condition->next;
-            }
-        }
-        else if(!xmlStrcmp(cur->name, (const xmlChar*)"while"))
-        {
-            xmlNodePtr condition = cur->children;
-            while(condition != NULL)
-            {
-                if(!xmlStrcmp(condition->name, (const xmlChar*)"condition"))
-                {
-                    //判断while条件中是否使用了varName变量，如果使用则该变量影响整个while块
-                    if(JudgeVarUsed(condition, varName))
-                    {
-                        //打印整个while结构块                       
-                        current = scanCPPCallFunc(cur, varTypeBegin);                       
-                        if(begin == NULL)
-                            begin = end = current;
-                        else if(current != NULL)
-                            end = end->next = current;
-                        bool isExit = false;
-                        while(current != NULL)
-                        {
-                            if(strcasecmp(current->funcName, "exit") == 0)
-                                isExit = true;
-                            end = current;
-                            current = current->next;
-                        }
-                        //scanAssignVar(cur);
-                        if(isExit)
-                        {
-                            current = scanBackCPPCallFunc(cur, varTypeBegin);
-                            if(begin == NULL)
-                                begin = end = current;
-                            else if(current != NULL)
-                                end = end->next = current;
-                            while(current != NULL)
+                            //scanAssignVar(cur);
+                            if(isExit)
                             {
-                                end = current;
-                                current = current->next;
-                            }                       
-                        }
-                        else
-                        {
-                            xmlNodePtr block = condition->next;
-                            while(block != NULL)
-                            {
-                                if(JudgeExistChildNode(block, "return"))
-                                {                               
-                                    current = scanBackCPPCallFunc(cur, varTypeBegin);
-                                    if(begin == NULL)
-                                        begin = end = current;
-                                    else if(current != NULL)
-                                        end = end->next = current;
-                                    while(current != NULL)
-                                    {
-                                        end = current;
-                                        current = current->next;
-                                    }                                
-                                    //scanBackAssignVar(cur);
-                                    break;
-                                }
-                                block = block->next;
-                            }
-                        }
-                        
-                        recursive_flag = false;
-                        break;
-                    }
-                }
-                condition = condition->next;
-            }
-        }
-        else if(!xmlStrcmp(cur->name, (const xmlChar*)"do"))
-        {
-            xmlNodePtr condition = cur->children;
-            while(condition != NULL)
-            {
-                if(!xmlStrcmp(condition->name, (const xmlChar*)"condition"))
-                {
-                    //判断do-while条件中是否使用了varName变量，如果使用则该变量影响整个do-while块
-                    if(JudgeVarUsed(condition, varName))
-                    {
-                        //打印整个do-while结构块
-                        current = scanCPPCallFunc(cur, varTypeBegin);                       
-                        if(begin == NULL)
-                            begin = end = current;
-                        else if(current != NULL)
-                            end = end->next = current;
-                        bool isExit = false;
-                        while(current != NULL)
-                        {
-                            if(strcasecmp(current->funcName, "exit") == 0)
-                                isExit = true;
-                            end = current;
-                            current = current->next;
-                        }
-                        //scanAssignVar(cur);
-                        if(isExit)
-                        {
-                            current = scanBackCPPCallFunc(cur, varTypeBegin);
-                            if(begin == NULL)
-                                begin = end = current;
-                            else if(current != NULL)
-                                end = end->next = current;
-                            while(current != NULL)
-                            {
-                                end = current;
-                                current = current->next;
-                            }                       
-                        }
-                        else
-                        {
-                            xmlNodePtr block = condition->prev;
-                            while(block != NULL)
-                            {
-                                if(JudgeExistChildNode(block, "return"))
-                                {
-                                    current = scanBackCPPCallFunc(cur, varTypeBegin);
-                                    if(begin == NULL)
-                                        begin = end = current;
-                                    else if(current != NULL)
-                                        end = end->next = current;
-                                    while(current != NULL)
-                                    {
-                                        end = current;
-                                        current = current->next;
-                                    }
-                                    //scanBackAssignVar(cur);
-                                    break;
-                                }
-                                block = block->prev;
-                            }
-                        }
-                        
-                        recursive_flag = false;
-                        break;
-                    }
-                }
-                condition = condition->next;
-            }
-        }
-        else if(!xmlStrcmp(cur->name, (const xmlChar*)"for"))
-        {
-            xmlNodePtr control = cur->children;
-            while(control != NULL)
-            {
-                if(!xmlStrcmp(control->name, (const xmlChar*)"control"))
-                {
-                    xmlNodePtr condition = control->children;
-                    while(condition != NULL)
-                    {
-                        //判断for条件中是否使用了varName变量，如果使用则该变量影响整个for块
-                        if(!xmlStrcmp(condition->name, (const xmlChar*)"condition"))
-                        {
-                            if(JudgeVarUsed(condition, varName))
-                            {
-                                //打印整个for结构块
-                                current = scanCPPCallFunc(cur, varTypeBegin);                       
+                                current = scanBackCPPCallFunc(cur, varTypeBegin);
                                 if(begin == NULL)
                                     begin = end = current;
                                 else if(current != NULL)
                                     end = end->next = current;
-                                bool isExit = false;
                                 while(current != NULL)
                                 {
-                                    if(strcasecmp(current->funcName, "exit") == 0)
-                                        isExit = true;
                                     end = current;
                                     current = current->next;
-                                }
-                                //scanAssignVar(cur);
-                                if(isExit)
+                                }                       
+                            }
+                            else
+                            {
+                                xmlNodePtr then = condition->next;
+                                while(then != NULL)
                                 {
-                                    current = scanBackCPPCallFunc(cur, varTypeBegin);
+                                    if(JudgeExistChildNode(then, "return"))
+                                    {                              
+                                        current = scanBackCPPCallFunc(cur, varTypeBegin);
+                                        if(begin == NULL)
+                                            begin = end = current;
+                                        else if(current != NULL)
+                                            end = end->next = current;
+                                        while(current != NULL)
+                                        {
+                                            end = current;
+                                            current = current->next;
+                                        }                       
+                                        //scanBackAssignVar(cur);
+                                        break;
+                                    }
+                                    then = then->next;
+                                }
+                            }
+                            
+                            recursive_flag = false;
+                            break;
+                        }
+                    }
+                    condition = condition->next;
+                }
+            }
+        }
+        else if(!xmlStrcmp(cur->name, (const xmlChar*)"while"))
+        {
+            currentLine = StrToInt((char *)xmlGetProp(cur, (xmlChar*)"line"));
+            if(varInfo.line < currentLine)
+            {
+                xmlNodePtr condition = cur->children;
+                while(condition != NULL)
+                {
+                    if(!xmlStrcmp(condition->name, (const xmlChar*)"condition"))
+                    {
+                        //判断while条件中是否使用了varName变量，如果使用则该变量影响整个while块
+                        if(JudgeVarUsed(condition, varInfo.varName))
+                        {
+                            //打印整个while结构块                       
+                            current = scanCPPCallFunc(cur, varTypeBegin);                       
+                            if(begin == NULL)
+                                begin = end = current;
+                            else if(current != NULL)
+                                end = end->next = current;
+                            bool isExit = false;
+                            while(current != NULL)
+                            {
+                                if(strcasecmp(current->funcName, "exit") == 0)
+                                    isExit = true;
+                                end = current;
+                                current = current->next;
+                            }
+                            //scanAssignVar(cur);
+                            if(isExit)
+                            {
+                                current = scanBackCPPCallFunc(cur, varTypeBegin);
+                                if(begin == NULL)
+                                    begin = end = current;
+                                else if(current != NULL)
+                                    end = end->next = current;
+                                while(current != NULL)
+                                {
+                                    end = current;
+                                    current = current->next;
+                                }                       
+                            }
+                            else
+                            {
+                                xmlNodePtr block = condition->next;
+                                while(block != NULL)
+                                {
+                                    if(JudgeExistChildNode(block, "return"))
+                                    {                               
+                                        current = scanBackCPPCallFunc(cur, varTypeBegin);
+                                        if(begin == NULL)
+                                            begin = end = current;
+                                        else if(current != NULL)
+                                            end = end->next = current;
+                                        while(current != NULL)
+                                        {
+                                            end = current;
+                                            current = current->next;
+                                        }                                
+                                        //scanBackAssignVar(cur);
+                                        break;
+                                    }
+                                    block = block->next;
+                                }
+                            }
+                            
+                            recursive_flag = false;
+                            break;
+                        }
+                    }
+                    condition = condition->next;
+                }
+            }
+        }
+        else if(!xmlStrcmp(cur->name, (const xmlChar*)"do"))
+        {
+            currentLine = StrToInt((char *)xmlGetProp(cur, (xmlChar*)"line"));
+            if(varInfo.line < currentLine)
+            {
+                xmlNodePtr condition = cur->children;
+                while(condition != NULL)
+                {
+                    if(!xmlStrcmp(condition->name, (const xmlChar*)"condition"))
+                    {
+                        //判断do-while条件中是否使用了varName变量，如果使用则该变量影响整个do-while块
+                        if(JudgeVarUsed(condition, varInfo.varName))
+                        {
+                            //打印整个do-while结构块
+                            current = scanCPPCallFunc(cur, varTypeBegin);                       
+                            if(begin == NULL)
+                                begin = end = current;
+                            else if(current != NULL)
+                                end = end->next = current;
+                            bool isExit = false;
+                            while(current != NULL)
+                            {
+                                if(strcasecmp(current->funcName, "exit") == 0)
+                                    isExit = true;
+                                end = current;
+                                current = current->next;
+                            }
+                            //scanAssignVar(cur);
+                            if(isExit)
+                            {
+                                current = scanBackCPPCallFunc(cur, varTypeBegin);
+                                if(begin == NULL)
+                                    begin = end = current;
+                                else if(current != NULL)
+                                    end = end->next = current;
+                                while(current != NULL)
+                                {
+                                    end = current;
+                                    current = current->next;
+                                }                       
+                            }
+                            else
+                            {
+                                xmlNodePtr block = condition->prev;
+                                while(block != NULL)
+                                {
+                                    if(JudgeExistChildNode(block, "return"))
+                                    {
+                                        current = scanBackCPPCallFunc(cur, varTypeBegin);
+                                        if(begin == NULL)
+                                            begin = end = current;
+                                        else if(current != NULL)
+                                            end = end->next = current;
+                                        while(current != NULL)
+                                        {
+                                            end = current;
+                                            current = current->next;
+                                        }
+                                        //scanBackAssignVar(cur);
+                                        break;
+                                    }
+                                    block = block->prev;
+                                }
+                            }
+                            
+                            recursive_flag = false;
+                            break;
+                        }
+                    }
+                    condition = condition->next;
+                }
+            }
+        }
+        else if(!xmlStrcmp(cur->name, (const xmlChar*)"for"))
+        {
+            currentLine = StrToInt((char *)xmlGetProp(cur, (xmlChar*)"line"));
+            if(varInfo.line < currentLine)
+            {
+                xmlNodePtr control = cur->children;
+                while(control != NULL)
+                {
+                    if(!xmlStrcmp(control->name, (const xmlChar*)"control"))
+                    {
+                        xmlNodePtr condition = control->children;
+                        while(condition != NULL)
+                        {
+                            //判断for条件中是否使用了varName变量，如果使用则该变量影响整个for块
+                            if(!xmlStrcmp(condition->name, (const xmlChar*)"condition"))
+                            {
+                                if(JudgeVarUsed(condition, varInfo.varName))
+                                {
+                                    //打印整个for结构块
+                                    current = scanCPPCallFunc(cur, varTypeBegin);                       
                                     if(begin == NULL)
                                         begin = end = current;
                                     else if(current != NULL)
                                         end = end->next = current;
+                                    bool isExit = false;
                                     while(current != NULL)
                                     {
+                                        if(strcasecmp(current->funcName, "exit") == 0)
+                                            isExit = true;
                                         end = current;
                                         current = current->next;
-                                    }                       
-                                }
-                                else
-                                {
-                                    xmlNodePtr block = control->next;
-                                    while(block != NULL)
-                                    {
-                                        if(JudgeExistChildNode(block, "return"))
-                                        {
-                                            current = scanBackCPPCallFunc(cur, varTypeBegin);
-                                            if(begin == NULL)
-                                                begin = end = current;
-                                            else if(current != NULL)
-                                                end = end->next = current;
-                                            while(current != NULL)
-                                            {
-                                                end = current;
-                                                current = current->next;
-                                            }
-                                            //scanBackAssignVar(cur);
-                                            break;
-                                        }
-                                        block = block->next;
                                     }
+                                    //scanAssignVar(cur);
+                                    if(isExit)
+                                    {
+                                        current = scanBackCPPCallFunc(cur, varTypeBegin);
+                                        if(begin == NULL)
+                                            begin = end = current;
+                                        else if(current != NULL)
+                                            end = end->next = current;
+                                        while(current != NULL)
+                                        {
+                                            end = current;
+                                            current = current->next;
+                                        }                       
+                                    }
+                                    else
+                                    {
+                                        xmlNodePtr block = control->next;
+                                        while(block != NULL)
+                                        {
+                                            if(JudgeExistChildNode(block, "return"))
+                                            {
+                                                current = scanBackCPPCallFunc(cur, varTypeBegin);
+                                                if(begin == NULL)
+                                                    begin = end = current;
+                                                else if(current != NULL)
+                                                    end = end->next = current;
+                                                while(current != NULL)
+                                                {
+                                                    end = current;
+                                                    current = current->next;
+                                                }
+                                                //scanBackAssignVar(cur);
+                                                break;
+                                            }
+                                            block = block->next;
+                                        }
+                                    }
+                                    
+                                    recursive_flag = false;
+                                    break;
                                 }
-                                
-                                recursive_flag = false;
-                                break;
                             }
+                            condition = condition->next;
                         }
-                        condition = condition->next;
+                        break;
                     }
-                    break;
+                    control = control->next;
                 }
-                control = control->next;
             }
         }
         else if(!xmlStrcmp(cur->name, (const xmlChar*)"call"))
@@ -810,15 +800,6 @@ funcCallList *varCPPScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *v
                 {
                     if(cur->children->last != NULL)
                     {
-                        if(xmlStrcmp(cur->children->last->name, (const xmlChar*)"position"))
-                        {
-                            attr_value = xmlGetProp(cur->children->last, (xmlChar*)"line");
-                        }
-                        else
-                        {
-                            attr_value = xmlGetProp(cur->children, (xmlChar*)"line");
-                        }
-                        
                         if(!xmlStrcmp(cur->children->children->name, (const xmlChar*)"text"))
                             strcat(calledFuncName, (char*)xmlNodeGetContent(cur->children));
                         else
@@ -847,13 +828,16 @@ funcCallList *varCPPScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *v
                     }
                     else
                     {
-                        attr_value = xmlGetProp(argument_list, (xmlChar*)"line");
                         strcpy(calledFuncName, (char*)xmlNodeGetContent(argument_list));
                     }
+                    attr_value = getLine(argument_list);
+                    currentLine = StrToInt((char *)attr_value);
+                    if(varInfo.line > currentLine)
+                        break;
                 }
                 else if(!xmlStrcmp(argument_list->name, (const xmlChar*)"argument_list"))
                 {
-                    if(JudgeVarUsed(argument_list, varName))
+                    if(JudgeVarUsed(argument_list, varInfo.varName))
                     {
                         if(begin == NULL)
                             begin = end = malloc(sizeof(funcCallList));
@@ -931,7 +915,7 @@ funcCallList *varCPPScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *v
                     {
                         if(!xmlStrcmp(argument->name, (const xmlChar*)"argument"))
                         {
-                            current = varCPPScliceFuncFromNode(varName, argument->children, varTypeBegin, false);
+                            current = varCPPScliceFuncFromNode(varInfo, argument->children, varTypeBegin, false);
                             if(begin == NULL)
                                 begin = end = current;
                             else if(current != NULL)
@@ -951,7 +935,7 @@ funcCallList *varCPPScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *v
         
         if(recursive_flag)
         {
-            current = varCPPScliceFuncFromNode(varName, cur->children, varTypeBegin, false);
+            current = varCPPScliceFuncFromNode(varInfo, cur->children, varTypeBegin, false);
             if(begin == NULL)
                 begin = end = current;
             else if(current != NULL)

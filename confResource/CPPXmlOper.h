@@ -19,7 +19,7 @@
 #include "mysqlOper.h"
 #include "commonXmlOper.h"
 
-#define varCPPScliceFunc(varName, cur, varTypeBegin)   varCPPScliceFuncFromNode(varName, cur, varTypeBegin, true)
+#define varCPPScliceFunc(varInfo, cur, varTypeBegin)   varCPPScliceFuncFromNode(varInfo, cur, varTypeBegin, true)
 #define scanCPPCallFunc(cur, varTypeBegin)    scanCPPCallFuncFromNode(cur, varTypeBegin, true)
 
 /*******************************
@@ -53,10 +53,10 @@ bool ExtractClassInheritFromCPPXML(char *docName);
 /*********************************
  * func: sclice variable influence function call
  * return: influence call function header point
- * @para varName: variable name
+ * @para varInfo: analyse variable info
  * @para cur: current node
 **********************************/
-funcCallList *varCPPScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *varTypeBegin, bool flag);
+funcCallList *varCPPScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *varTypeBegin, bool flag);
 
 /**********************************
  * func: C++ language variable sclice

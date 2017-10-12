@@ -109,6 +109,13 @@ char *ExtractFuncArgumentType(xmlNodePtr cur);
 *******************************/
 char *getCalledFuncArgumentType(xmlNodePtr cur, varType *funcDefVarType);
 
+/********************************
+ * func: get current node min line number
+ * return: NULL = no line
+ * @para cur: current node
+********************************/
+xmlChar *getLine(xmlNodePtr cur);
+
 /**********************************
  * func: sclice influence variable
  * return: not null = exist influence   null = not exist influence
@@ -123,19 +130,19 @@ varDef *ScliceInflVarInfo(char *varName, xmlNodePtr cur, char *inflVarName, varD
 /**********************************
  * func: variable sclice return influence function
  * return: not null = exist influence   null = not exist influence
- * @para varName: variable name
+ * @para varInfo: analyse variable info
  * @para xmlFilePath: xml file path
  * @para varScliceFunc: C or C++ variable Sclice function point
 **********************************/
-funcInfo *Sclice(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc)(char *, xmlNodePtr , varType *, bool));
+funcInfo *Sclice(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc)(varDef, xmlNodePtr , varType *, bool));
 
 /**********************************
  * func: variable sclice
  * return: not null = exist influence   null = not exist influence
- * @para varName: variable name
+ * @para varInfo: analyse variable info
  * @para xmlFilePath: xml file path
  * @para varScliceFunc: C or C++ variable Sclice function point
 **********************************/
-funcInfo *ScliceDebug(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc)(char *, xmlNodePtr , varType *, bool));
+funcInfo *ScliceDebug(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc)(varDef, xmlNodePtr , varType *, bool));
 
 #endif

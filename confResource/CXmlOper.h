@@ -20,7 +20,7 @@
 #include "commonXmlOper.h"
 
 #define scanCCallFunc(cur, varTypeBegin)    scanCCallFuncFromNode(cur, varTypeBegin, true)
-#define varCScliceFunc(varName, cur)   varCScliceFuncFromNode(varName, cur, true)
+#define varCScliceFunc(varInfo, cur)   varCScliceFuncFromNode(varInfo, cur, true)
 #define ExtractConfKeyUsedInfo(cur, confKey)   ExtractConfKeyUsedInfoFromNode(cur, confKey, true)
 #define literalScliceVar(literalName, cur)   literalScliceVarFromNode(literalName, cur, true)
 
@@ -48,10 +48,10 @@ funcCallList *scanBackCCallFunc(xmlNodePtr cur, varType *varTypeBegin);
 /*********************************
  * func: sclice variable influence function call
  * return: influence call function header point
- * @para varName: variable name
+ * @para varInfo: analyse variable info
  * @para cur: current node
 **********************************/
-funcCallList *varCScliceFuncFromNode(char *varName, xmlNodePtr cur, varType *varTypeBegin, bool flag);
+funcCallList *varCScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *varTypeBegin, bool flag);
 
 /**********************************
  * func: C language variable sclice
