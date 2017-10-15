@@ -2,4 +2,5 @@
 libmysqlclient: sudo apt-get install libmysqlclient-dev
 libxml2: sudo apt-get install libxml2-dev
 依赖如下程序：
+mysql数据库: sudo apt-get install mysql-server
 srcml: http://www.srcml.org/
