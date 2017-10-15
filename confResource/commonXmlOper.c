@@ -583,6 +583,7 @@ varDef *ExtractDirectInfluVarFromNode(xmlNodePtr cur, char *varName, varType *va
                                                 begin = end = malloc(sizeof(varDef));
                                             else
                                                 end = end->next = malloc(sizeof(varDef));
+                                            memset(end, 0, sizeof(varDef));
                                             strcpy(end->varName, influVarName);
                                         }
                                         varType *varTypeCurrent = varTypeBegin;
@@ -669,6 +670,7 @@ next:
                                     begin = end = malloc(sizeof(varDef));
                                 else
                                     end = end->next = malloc(sizeof(varDef));
+                                memset(end, 0, sizeof(varDef));
                                 strcpy(end->varName, influVarName);
                                 end->type = false;
                                 end->line = StrToInt((char *)attr_value);
@@ -1205,6 +1207,7 @@ funcInfo *ScliceDebug(char *varName, char *xmlFilePath, funcCallList *(*varSclic
             varDef *varInfluence = ScliceInflVar(varName, funcNode, currentVarType);
             if(varInfluence != NULL)
             {
+                isInfluence = true;
                 varDef *varInfluCur = varInfluence;
                 while(varInfluCur != NULL)
                 {
@@ -1216,7 +1219,6 @@ funcInfo *ScliceDebug(char *varName, char *xmlFilePath, funcCallList *(*varSclic
                         end = end->next = current;
                     while(current != NULL)
                     {
-                        isInfluence = true;
                         end = current;
                         current = current->next;
                     }

@@ -968,6 +968,7 @@ confScore getFuncScore(char *funcName, char *funcType, char *argumentType, char 
     funcCallCount[curPthreadID]++;
     confScore ret;
     memset(&ret, 0, sizeof(confScore));
+    char tempSqlCommand[LINE_CHAR_MAX_NUM] = "";
     int argumentNum = getSpecCharNumFromStr(argumentType, '/') + 1;
     char selectArgumentType[512] = "(";
     if(argumentNum == 0)
@@ -1006,10 +1007,10 @@ confScore getFuncScore(char *funcName, char *funcType, char *argumentType, char 
     //一个程序中只能有一个extern函数
     //一个程序中可能会存在多个名称相同的static函数
     //一个源文件中不可能存在多个名称相同的static函数
-    char tempSqlCommand[LINE_CHAR_MAX_NUM] = "";
+    memset(tempSqlCommand, 0, LINE_CHAR_MAX_NUM);
     sprintf(tempSqlCommand, "select calledFunc, calledFuncType, CalledSrcFile, forNum, whileNum, calledFuncArgumentType from %s where \
     funcName='%s' and funcCallType='%s' and sourceFile='%s' and argumentType like '%s'", funcCallTableName, funcName, funcType, srcFile, selectArgumentType);
-    
+
     MYSQL temp_db;
     MYSQL *tempMysqlConnect = NULL;
     tempMysqlConnect = mysql_init(&temp_db);
@@ -1026,6 +1027,32 @@ confScore getFuncScore(char *funcName, char *funcType, char *argumentType, char 
         mysql_close(tempMysqlConnect);
         return ret;
     }
+    char temp_SqlCommand[LINE_CHAR_MAX_NUM] = "";
+    sprintf(temp_SqlCommand, "select distinct argumentType from %s where \
+    funcName='%s' and funcCallType='%s' and sourceFile='%s'", funcCallTableName, funcName, funcType, srcFile);
+    if(mysql_real_query(tempMysqlConnect, temp_SqlCommand, strlen(temp_SqlCommand)) != 0)
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
+        RecordLog(error_info);
+        mysql_close(tempMysqlConnect);
+        return ret;
+    }
+    else
+    {
+        MYSQL_RES *res_ptr;
+        res_ptr = mysql_store_result(tempMysqlConnect);
+        int rownum = mysql_num_rows(res_ptr);
+        //判断是否存在函数重载
+        if(rownum <= 1)
+        {
+            memset(tempSqlCommand, 0, LINE_CHAR_MAX_NUM);
+            sprintf(tempSqlCommand, "select calledFunc, calledFuncType, CalledSrcFile, forNum, whileNum, calledFuncArgumentType from %s where \
+            funcName='%s' and funcCallType='%s' and sourceFile='%s'", funcCallTableName, funcName, funcType, srcFile);
+        }
+        mysql_free_result(res_ptr);
+    }
+        
     if(mysql_real_query(tempMysqlConnect, tempSqlCommand, strlen(tempSqlCommand)) != 0)
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -1046,7 +1073,7 @@ confScore getFuncScore(char *funcName, char *funcType, char *argumentType, char 
             while((sqlrow1 = mysql_fetch_row(res_ptr1)) != NULL)
             {
                 int multiple = StrToInt(sqlrow1[3])*FORNUM + StrToInt(sqlrow1[4])*WHILENUM + 1;
-#if DEBUG == 2               
+#if DEBUG == 1               
                 printf("(%s(%s)->%s(%s))\n", funcName, argumentType, sqlrow1[0], sqlrow1[5]);
 #endif                
                 confScore temp_ret = getFuncScore(sqlrow1[0], sqlrow1[1], sqlrow1[5], sqlrow1[2], curPthreadID);
@@ -1061,6 +1088,32 @@ confScore getFuncScore(char *funcName, char *funcType, char *argumentType, char 
         memset(tempSqlCommand, 0, LINE_CHAR_MAX_NUM);
         sprintf(tempSqlCommand, "select CPU, MEM, IO, NET from %s where funcName='%s' and type='%s'\
         and sourceFile='%s' and argumentType like '%s'", funcScoreTableName, funcName, funcType, srcFile, selectArgumentType);
+        memset(temp_SqlCommand, 0, LINE_CHAR_MAX_NUM);
+        sprintf(temp_SqlCommand, "select count(*) from %s where funcName='%s' and type='%s'\
+        and sourceFile='%s'", funcScoreTableName, funcName, funcType, srcFile);
+        if(mysql_real_query(tempMysqlConnect, temp_SqlCommand, strlen(temp_SqlCommand)) != 0)
+        {
+            memset(error_info, 0, LOGINFO_LENGTH);
+            sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
+            RecordLog(error_info);
+            mysql_close(tempMysqlConnect);
+            return ret;
+        }
+        else
+        {
+            MYSQL_RES *res_ptr;
+            res_ptr = mysql_store_result(tempMysqlConnect);
+            int rownum = mysql_num_rows(res_ptr);
+            //判断是否存在函数重载
+            if(rownum <= 1)
+            {
+                memset(tempSqlCommand, 0, LINE_CHAR_MAX_NUM); 
+                sprintf(tempSqlCommand, "select CPU, MEM, IO, NET from %s where funcName='%s' and type='%s'\
+                and sourceFile='%s'", funcScoreTableName, funcName, funcType, srcFile);
+            }
+            mysql_free_result(res_ptr);
+        }
+        
         if(mysql_real_query(tempMysqlConnect, tempSqlCommand, strlen(tempSqlCommand)) != 0)
         {
             memset(error_info, 0, LOGINFO_LENGTH);
