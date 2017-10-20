@@ -26,8 +26,20 @@
  * func: Extract function Name from C Plus Plus language XML file
  * return: true = success    false = failure
  * @para docName: xml path
+ * @para tempFuncScoreTableName: temporary funcScore table name
+ * @para tempFuncCallTableName: temporary funcCall table name
 ********************************/
 bool ExtractFuncFromCPPXML(char *docName, char *tempFuncScoreTableName, char *tempFuncCallTableName);
+
+/*******************************
+ * func: Extract C++ function Name from current node
+ * return: true = success    false = failure
+ * @para docName: xml path
+ * @para cur: current node
+ * @para tempFuncScoreTableName: temporary funcScore table name
+ * @para tempFuncCallTableName: temporary funcCall table name
+********************************/
+bool ExtractCPPFunc(char *docName, xmlNodePtr cur, char *tempFuncScoreTableName, char *tempFuncCallTableName);
 
 /*******************************
  * func: scan call function from current node

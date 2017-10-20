@@ -58,8 +58,6 @@ bool ExtractFuncFromCXML(char *docName, char *tempFuncScoreTableName, char *temp
                 {
                     if(strcasecmp((char*)xmlNodeGetContent(temp_cur), "static") == 0)
                         funcType = "static";
-                    else if(strcasecmp((char*)xmlNodeGetContent(temp_cur), "inline") == 0)
-                        break;
                 }
                 else if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
                 {
@@ -245,7 +243,7 @@ funcCallList *scanCCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, bool 
                             break;
                         }
 #if DEBUG == 1         
-                        printf("%s(%s):%s\n", calledFuncName, attr_value, end->argumentType);
+                        printf("%s(%s)\n", calledFuncName, attr_value);
 #endif
                     }
                     else
@@ -706,7 +704,7 @@ funcCallList *varCScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *va
                                     break;
                                 }
 #if DEBUG == 1
-                                printf("%s(%s):%s\n", calledFuncName, attr_value, end->argumentType);
+                                printf("%s(%s)\n", calledFuncName, attr_value);
 #endif
                             }
                             else

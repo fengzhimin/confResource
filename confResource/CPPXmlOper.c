@@ -17,6 +17,7 @@ static void scanCallFunctionFromNode(char *tempFuncCallTableName, xmlNodePtr cur
     
 bool ExtractFuncFromCPPXML(char *docName, char *tempFuncScoreTableName, char *tempFuncCallTableName)
 {
+    bool ret = true;
     xmlDocPtr doc;
     xmlNodePtr cur;
     xmlKeepBlanksDefault(0);
@@ -38,8 +39,18 @@ bool ExtractFuncFromCPPXML(char *docName, char *tempFuncScoreTableName, char *te
         return false;
     }
     
+    ret |= ExtractCPPFunc(docName, cur, tempFuncScoreTableName, tempFuncCallTableName);
+      
+    xmlFreeDoc(doc);
+    optDataBaseOper(tempFuncScoreTableName, tempFuncCallTableName);
+    return ret;  
+}
+
+bool ExtractCPPFunc(char *docName, xmlNodePtr cur, char *tempFuncScoreTableName, char *tempFuncCallTableName)
+{
+    bool ret = true;
     cur = cur->children;
-    while (cur != NULL)
+    while(cur != NULL)
     {
         if(!xmlStrcmp(cur->name, (const xmlChar*)"function") || \
             (!xmlStrcmp(cur->name, (const xmlChar*)"extern") && cur->children != NULL && !xmlStrcmp(cur->last->name, (const xmlChar*)"function")))
@@ -59,8 +70,6 @@ bool ExtractFuncFromCPPXML(char *docName, char *tempFuncScoreTableName, char *te
                 {
                     if(strcasecmp((char*)xmlNodeGetContent(temp_cur), "static") == 0)
                         funcType = "static";
-                    else if(strcasecmp((char*)xmlNodeGetContent(temp_cur), "inline") == 0)
-                        break;
                 }
                 else if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
                 {
@@ -80,6 +89,7 @@ bool ExtractFuncFromCPPXML(char *docName, char *tempFuncScoreTableName, char *te
                         memset(error_info, 0, LOGINFO_LENGTH);
                         sprintf(error_info, "execute commad %s failure.\n", tempSqlCommand);
                         RecordLog(error_info);
+                        ret = false;
                     }
 
                     varType *begin = ExtractVarType(funcNode);
@@ -151,12 +161,21 @@ bool ExtractFuncFromCPPXML(char *docName, char *tempFuncScoreTableName, char *te
             }
             
         }
+        else if(!xmlStrcmp(cur->name, (const xmlChar*)"extern") && cur->children != NULL)
+        {
+            //handle extern "C"
+            xmlNodePtr children = cur->children;
+            while(children != NULL)
+            {
+                if(!xmlStrcmp(children->name, (const xmlChar*)"block"))
+                    ret = ExtractCPPFunc(docName, children, tempFuncScoreTableName, tempFuncCallTableName);
+                children = children->next;
+            }
+        }
         cur = cur->next;
     }
-      
-    xmlFreeDoc(doc);
-    optDataBaseOper(tempFuncScoreTableName, tempFuncCallTableName);
-    return true;  
+    
+    return ret;
 }
 
 /*******************************
@@ -334,7 +353,7 @@ funcCallList *scanCPPCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, boo
                             break;
                         }
 #if DEBUG == 1         
-                        printf("%s(%s):%s\n", calledFuncName, attr_value, end->argumentType);
+                        printf("%s(%s)\n", calledFuncName, attr_value);
 #endif
                     }
                     else
@@ -894,7 +913,7 @@ funcCallList *varCPPScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *
                                     break;
                                 }
 #if DEBUG == 1
-                                printf("%s(%s):%s\n", calledFuncName, attr_value, end->argumentType);
+                                printf("%s(%s)\n", calledFuncName, attr_value);
 #endif
                             }
                             else

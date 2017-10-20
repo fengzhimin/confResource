@@ -8,3 +8,10 @@ POINTER_ARRAY *from_array,*to_array;
 }
 在切片是没有考虑break，continue和goto情况
 srcml无法正确简析sql_connect.cc文件中的get_key_conn函数
+无法处理以下情况的值传递:
+void one_thread_per_connection_scheduler()
+{
+  scheduler_init();
+  one_thread_per_connection_scheduler_functions.max_threads= max_connections;
+  thread_scheduler= &one_thread_per_connection_scheduler_functions;
+}

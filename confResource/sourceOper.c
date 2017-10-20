@@ -540,6 +540,7 @@ bool initSoftware(char *srcPath)
     totalAnalyzeXmlFileNum = totalConvertSrcFileNum = getTotalAnalyzeFileNum(srcPath);
     
     int i;
+    
     for(i = 0; i < MAX_CONVERT_SRC_PTHREAD_NUM; i++)
         ConvertSRCPthreadRet[i] = -1;
     curConvertSrcFileNum = 0;
@@ -1009,7 +1010,7 @@ confScore getFuncScore(char *funcName, char *funcType, char *argumentType, char 
     //一个源文件中不可能存在多个名称相同的static函数
     memset(tempSqlCommand, 0, LINE_CHAR_MAX_NUM);
     sprintf(tempSqlCommand, "select calledFunc, calledFuncType, CalledSrcFile, forNum, whileNum, calledFuncArgumentType from %s where \
-    funcName='%s' and funcCallType='%s' and sourceFile='%s' and argumentType like '%s'", funcCallTableName, funcName, funcType, srcFile, selectArgumentType);
+    funcName='%s' and funcCallType='%s' and sourceFile='%s' and argumentType like '%s' and type='S' order by line asc", funcCallTableName, funcName, funcType, srcFile, selectArgumentType);
 
     MYSQL temp_db;
     MYSQL *tempMysqlConnect = NULL;
@@ -1048,7 +1049,7 @@ confScore getFuncScore(char *funcName, char *funcType, char *argumentType, char 
         {
             memset(tempSqlCommand, 0, LINE_CHAR_MAX_NUM);
             sprintf(tempSqlCommand, "select calledFunc, calledFuncType, CalledSrcFile, forNum, whileNum, calledFuncArgumentType from %s where \
-            funcName='%s' and funcCallType='%s' and sourceFile='%s'", funcCallTableName, funcName, funcType, srcFile);
+            funcName='%s' and funcCallType='%s' and sourceFile='%s'  and type='S' order by line asc", funcCallTableName, funcName, funcType, srcFile);
         }
         mysql_free_result(res_ptr);
     }
@@ -1074,7 +1075,7 @@ confScore getFuncScore(char *funcName, char *funcType, char *argumentType, char 
             {
                 int multiple = StrToInt(sqlrow1[3])*FORNUM + StrToInt(sqlrow1[4])*WHILENUM + 1;
 #if DEBUG == 1               
-                printf("(%s(%s)->%s(%s))\n", funcName, argumentType, sqlrow1[0], sqlrow1[5]);
+                printf("(%s->%s)\n", funcName, sqlrow1[0]);
 #endif                
                 confScore temp_ret = getFuncScore(sqlrow1[0], sqlrow1[1], sqlrow1[5], sqlrow1[2], curPthreadID);
                 ret.CPU += (temp_ret.CPU*multiple);
@@ -1130,6 +1131,14 @@ confScore getFuncScore(char *funcName, char *funcType, char *argumentType, char 
             {
                 while((sqlrow2 = mysql_fetch_row(res_ptr2)) != NULL)
                 {
+#if PRINT_INFLUENCE_FUNCTION == 1
+                    int temp = StrToInt(sqlrow2[0]);
+                    temp += StrToInt(sqlrow2[1]);
+                    temp += StrToInt(sqlrow2[2]);
+                    temp += StrToInt(sqlrow2[3]);
+                    if(temp > 0)
+                        printf("***func: %s(%s) influence resource!***\n", funcName, srcFile);
+#endif
                     ret.CPU += StrToInt(sqlrow2[0]);
                     ret.MEM += StrToInt(sqlrow2[1]);
                     ret.IO += StrToInt(sqlrow2[2]);
