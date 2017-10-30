@@ -15,3 +15,8 @@ void one_thread_per_connection_scheduler()
   one_thread_per_connection_scheduler_functions.max_threads= max_connections;
   thread_scheduler= &one_thread_per_connection_scheduler_functions;
 }
+应该还考虑头文件中的类，例如：sql_class.h Unique类
+
+filesort.cc  filesort  while (memory_available >= min_sort_memory)  206
+
+srcml无法处理init_alloc_root的解析my_alloc.c

@@ -43,7 +43,8 @@ bool ExtractFuncFromCXML(char *docName, char *tempFuncScoreTableName, char *temp
     while (cur != NULL)
     {
         if(!xmlStrcmp(cur->name, (const xmlChar*)"function") || \
-            (!xmlStrcmp(cur->name, (const xmlChar*)"extern") && cur->children != NULL && !xmlStrcmp(cur->last->name, (const xmlChar*)"function")))
+            (!xmlStrcmp(cur->name, (const xmlChar*)"extern") && cur->children != NULL && !xmlStrcmp(cur->last->name, (const xmlChar*)"function")) || \
+            (!xmlStrcmp(cur->name, (const xmlChar*)"decl_stmt") && cur->children != NULL && !xmlStrcmp(cur->last->name, (const xmlChar*)"decl")))
         {
             xmlNodePtr funcNode;
             if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
@@ -61,6 +62,8 @@ bool ExtractFuncFromCXML(char *docName, char *tempFuncScoreTableName, char *temp
                 }
                 else if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
                 {
+                    if(strcasecmp("__attribute__", (char*)xmlNodeGetContent(temp_cur)) == 0)
+                        break;
                     char src_dir[DIRPATH_MAX] = "";
                     //删除开头的temp_和结尾的.xml
                     strncpy(src_dir, (char *)&(docName[5]), strlen(docName)-9);
@@ -70,7 +73,6 @@ bool ExtractFuncFromCXML(char *docName, char *tempFuncScoreTableName, char *temp
                     char *argumentTypeString = ExtractFuncArgumentType(funcNode);
                     sprintf(tempSqlCommand, "insert into %s (funcName, type, argumentType, sourceFile, line) value('%s', '%s', '%s', '%s', %s)", tempFuncScoreTableName,\
                         (char*)xmlNodeGetContent(temp_cur), funcType, argumentTypeString, src_dir, attr_value);
-                    
                     if(!executeSQLCommand(NULL, tempSqlCommand))
                     {
                         memset(error_info, 0, LOGINFO_LENGTH);
@@ -130,7 +132,7 @@ static void scanCallFunctionFromNode(char *tempFuncCallTableName, xmlNodePtr cur
                     callFuncName = (char*)xmlNodeGetContent(cur->children);
                 }
                 //删除递归调用
-                if(strcasecmp(callFuncName, funcName) != 0)
+                if(strcasecmp(callFuncName, funcName) != 0 && strcasecmp(callFuncName, "__attribute__") != 0)
                 {
                     xmlNodePtr parentNode = cur->parent;
                     int forNum = 0;
