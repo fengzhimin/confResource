@@ -14,9 +14,9 @@
 
 #define OPENLOG  1      //0=不记录日志   1=记录日志
 
-#define DEBUG    0      //0=不打印调试信息    1 = 打印调试信息
+#define DEBUG    1      //0=不打印调试信息    1 = 打印调试信息
 
-#define PRINT_INFLUENCE_FUNCTION  0    //1 = 打印直接影响资源分数的函数  0 = 不打印
+#define PRINT_INFLUENCE_FUNCTION  1    //1 = 打印直接影响资源分数的函数  0 = 不打印
 
 #define LINE_CHAR_MAX_NUM      1024   //一行最大字符个数
 
@@ -53,7 +53,7 @@
 //analyze xml file pthread number
 #define MAX_ANALYZE_XML_PTHREAD_NUM  15
 //analyze config option pthread number
-#define MAX_ANALYZE_CONFOPT_PTHREAD_NUM  6
+#define MAX_ANALYZE_CONFOPT_PTHREAD_NUM  1
 
 typedef struct configurationScore
 {
@@ -142,6 +142,30 @@ typedef struct analyzeConfOptPthread_argument
     char xmlFilePath[DIRPATH_MAX];
     int pthreadID;
 } analyConfOptPthread_arg;
+
+/****************************
+ * @type: default value type    true = maximum   false = minimum
+ * @defValue: default value
+****************************/
+typedef struct confVariableDefValue
+{
+    bool type;
+    int defValue;
+} confVarDefValue;
+
+/********************************
+ * func: 标记被影响函数的名称以及xml路径和第几个参数所影响
+ * @para index: 参数索引
+ * @para funcName: 函数名称
+ * @para xmlFilePath: 函数存放位置
+*********************************/
+typedef struct variableDirectInflFunc
+{
+    int index;
+    char funcName[MAX_FUNCNAME_LENGTH];
+    char xmlFilePath[DIRPATH_MAX];
+    struct variableDirectInflFunc *next;
+} varDirectInflFunc;
 
 extern char bind_address[CONFIG_VALUE_MAX_NUM];
 extern int port;

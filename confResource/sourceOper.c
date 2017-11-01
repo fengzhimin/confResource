@@ -1137,7 +1137,7 @@ confScore getFuncScore(char *funcName, char *funcType, char *argumentType, char 
                     temp += StrToInt(sqlrow2[2]);
                     temp += StrToInt(sqlrow2[3]);
                     if(temp > 0)
-                        printf("***func: %s(%s) influence resource!***\n", funcName, srcFile);
+                        printf("\033[31m***func: %s(%s) influence resource!***\033[0m\n", funcName, srcFile);
 #endif
                     ret.CPU += StrToInt(sqlrow2[0]);
                     ret.MEM += StrToInt(sqlrow2[1]);
@@ -1161,181 +1161,202 @@ static void *getScore(void *arg)
     analyConfOptPthread_arg *argument = (analyConfOptPthread_arg *)arg;
     funcInfo * ret_begin = NULL;
     if(judgeCSrcXmlFile(argument->xmlFilePath))
+    {
         ret_begin = CSclice(argument->confOptName, argument->xmlFilePath);
+    }
     else if(judgeCPPSrcXmlFile(argument->xmlFilePath))
+    {
         ret_begin = CPPSclice(argument->confOptName, argument->xmlFilePath);
+    }
 
     if(ret_begin != NULL)
     {
-        funcInfo *current = ret_begin;
-        while(current != NULL)
+        confVarDefValue defaultValue;
+        if(judgeCSrcXmlFile(argument->xmlFilePath))
         {
-            //clear funcCallCount value
-            funcCallCount[argument->pthreadID] = 0;
-            if(current->type == 'S')
+            defaultValue = getCVarDefaultValue(argument->confOptName, argument->xmlFilePath);
+        }
+        else if(judgeCPPSrcXmlFile(argument->xmlFilePath))
+        {
+            defaultValue = getCPPVarDefaultValue(argument->confOptName, argument->xmlFilePath);
+        }
+        //if(defaultValue.defValue != -1)
+        {
+            funcInfo *current = ret_begin;
+            while(current != NULL)
             {
-                //handle self-define function
-                confScore temp_ret = getFuncScore(current->funcName, current->funcType, current->argumentType, current->sourceFile, argument->pthreadID);
-                ret->CPU += temp_ret.CPU;
-                ret->MEM += temp_ret.MEM;
-                ret->IO += temp_ret.IO;
-                ret->NET += temp_ret.NET;
+                //clear funcCallCount value
+                funcCallCount[argument->pthreadID] = 0;
+                if(current->type == 'S')
+                {
+                    //handle self-define function
+                    confScore temp_ret = getFuncScore(current->funcName, current->funcType, current->argumentType, current->sourceFile, argument->pthreadID);
+                    ret->CPU += temp_ret.CPU;
+                    ret->MEM += temp_ret.MEM;
+                    ret->IO += temp_ret.IO;
+                    ret->NET += temp_ret.NET;
+                }
+                else
+                {
+                    //handle library function
+                    MYSQL temp_db;
+                    MYSQL *tempMysqlConnect = NULL;
+                    MYSQL_RES *res_ptr;
+                    MYSQL_ROW sqlrow;
+                    tempMysqlConnect = mysql_init(&temp_db);
+                    if(tempMysqlConnect == NULL)
+                    {
+                        RecordLog("init mysql failure\n");
+                        return NULL;
+                    }
+                    if(NULL == mysql_real_connect((MYSQL *)tempMysqlConnect, bind_address, user, pass, database, port, NULL, 0))
+                    {
+                        memset(error_info, 0, LOGINFO_LENGTH);
+                        sprintf(error_info, "connect failed: %s\n", mysql_error(tempMysqlConnect));
+                        RecordLog(error_info);
+                        mysql_close(tempMysqlConnect);
+                        return NULL;
+                    }
+                    char tempSqlCommand[LINE_CHAR_MAX_NUM] = "";
+                    //get for, while, do-while count
+                    int forcount = 0;
+                    int whilecount = 0;
+                    sprintf(tempSqlCommand, "select forNum, whileNum from %s where calledFunc='%s' and line=%d and type='L'", \
+                    funcCallTableName, current->funcName, current->calledLine);
+                    if(mysql_real_query(tempMysqlConnect, tempSqlCommand, strlen(tempSqlCommand)) != 0)
+                    {
+                        memset(error_info, 0, LOGINFO_LENGTH);
+                        sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
+                        RecordLog(error_info);
+                        mysql_close(tempMysqlConnect);
+                        return NULL;
+                    }
+                    else
+                    {
+                        res_ptr = mysql_store_result(tempMysqlConnect);
+                        int rownum = mysql_num_rows(res_ptr);
+                        if(rownum != 0)
+                        {
+                            forcount = StrToInt(sqlrow[0]);
+                            whilecount = StrToInt(sqlrow[1]);
+                            mysql_free_result(res_ptr);
+                        }
+                    }
+                    int multiple = forcount*FORNUM + whilecount*WHILENUM + 1;
+                    //get IO score from funcLibrary table
+                    memset(tempSqlCommand, 0, LINE_CHAR_MAX_NUM);
+                    sprintf(tempSqlCommand, "select score from funcLibrary where funcName='%s' and type='IO'", current->funcName);
+                    if(mysql_real_query(tempMysqlConnect, tempSqlCommand, strlen(tempSqlCommand)) != 0)
+                    {
+                        memset(error_info, 0, LOGINFO_LENGTH);
+                        sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
+                        RecordLog(error_info);
+                        mysql_close(tempMysqlConnect);
+                        return NULL;
+                    }
+                    else
+                    {
+                        res_ptr = mysql_store_result(tempMysqlConnect);
+                        int rownum = mysql_num_rows(res_ptr);
+                        if(rownum != 0)
+                        {
+                            while((sqlrow = mysql_fetch_row(res_ptr)) != NULL)
+                            {
+                                ret->IO += StrToInt(sqlrow[0])*multiple;
+                            }
+                            mysql_free_result(res_ptr);
+                        }
+                    }
+                    //get NET score from funcLibrary table
+                    memset(tempSqlCommand, 0, LINE_CHAR_MAX_NUM);
+                    sprintf(tempSqlCommand, "select score from funcLibrary where funcName='%s' and type='NET'", current->funcName);
+                    if(mysql_real_query(tempMysqlConnect, tempSqlCommand, strlen(tempSqlCommand)) != 0)
+                    {
+                        memset(error_info, 0, LOGINFO_LENGTH);
+                        sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
+                        RecordLog(error_info);
+                        mysql_close(tempMysqlConnect);
+                        return NULL;
+                    }
+                    else
+                    {
+                        res_ptr = mysql_store_result(tempMysqlConnect);
+                        int rownum = mysql_num_rows(res_ptr);
+                        if(rownum != 0)
+                        {
+                            while((sqlrow = mysql_fetch_row(res_ptr)) != NULL)
+                            {
+                                ret->NET += StrToInt(sqlrow[0])*multiple;
+                            }
+                            mysql_free_result(res_ptr);
+                        }
+                    }
+                    //get CPU score from funcLibrary table
+                    memset(tempSqlCommand, 0, LINE_CHAR_MAX_NUM);
+                    sprintf(tempSqlCommand, "select score from funcLibrary where funcName='%s' and type='CPU'", current->funcName);
+                    if(mysql_real_query(tempMysqlConnect, tempSqlCommand, strlen(tempSqlCommand)) != 0)
+                    {
+                        memset(error_info, 0, LOGINFO_LENGTH);
+                        sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
+                        RecordLog(error_info);
+                        mysql_close(tempMysqlConnect);
+                        return NULL;
+                    }
+                    else
+                    {
+                        res_ptr = mysql_store_result(tempMysqlConnect);
+                        int rownum = mysql_num_rows(res_ptr);
+                        if(rownum != 0)
+                        {
+                            while((sqlrow = mysql_fetch_row(res_ptr)) != NULL)
+                            {
+                                ret->CPU += StrToInt(sqlrow[0])*multiple;
+                            }
+                            mysql_free_result(res_ptr);
+                        }
+                    }
+                    //get MEM score from funcLibrary table
+                    memset(tempSqlCommand, 0, LINE_CHAR_MAX_NUM);
+                    sprintf(tempSqlCommand, "select score from funcLibrary where funcName='%s' and type='MEM'", current->funcName);
+                    if(mysql_real_query(tempMysqlConnect, tempSqlCommand, strlen(tempSqlCommand)) != 0)
+                    {
+                        memset(error_info, 0, LOGINFO_LENGTH);
+                        sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
+                        RecordLog(error_info);
+                        mysql_close(tempMysqlConnect);
+                        return NULL;
+                    }
+                    else
+                    {
+                        res_ptr = mysql_store_result(tempMysqlConnect);
+                        int rownum = mysql_num_rows(res_ptr);
+                        if(rownum != 0)
+                        {
+                            while((sqlrow = mysql_fetch_row(res_ptr)) != NULL)
+                            {
+                                ret->MEM += StrToInt(sqlrow[0])*multiple;
+                            }
+                            mysql_free_result(res_ptr);
+                        }
+                    }
+                    mysql_close(tempMysqlConnect);
+                }
+                
+                current = current->next;                        
             }
-            else
+            //delete funcInfo value
+            current = ret_begin;
+            while(current != NULL)
             {
-                //handle library function
-                MYSQL temp_db;
-                MYSQL *tempMysqlConnect = NULL;
-                MYSQL_RES *res_ptr;
-                MYSQL_ROW sqlrow;
-                tempMysqlConnect = mysql_init(&temp_db);
-                if(tempMysqlConnect == NULL)
-                {
-                    RecordLog("init mysql failure\n");
-                    return NULL;
-                }
-                if(NULL == mysql_real_connect((MYSQL *)tempMysqlConnect, bind_address, user, pass, database, port, NULL, 0))
-                {
-                    memset(error_info, 0, LOGINFO_LENGTH);
-                    sprintf(error_info, "connect failed: %s\n", mysql_error(tempMysqlConnect));
-                    RecordLog(error_info);
-                    mysql_close(tempMysqlConnect);
-                    return NULL;
-                }
-                char tempSqlCommand[LINE_CHAR_MAX_NUM] = "";
-                //get for, while, do-while count
-                int forcount = 0;
-                int whilecount = 0;
-                sprintf(tempSqlCommand, "select forNum, whileNum from %s where calledFunc='%s' and line=%d and type='L'", \
-                funcCallTableName, current->funcName, current->calledLine);
-                if(mysql_real_query(tempMysqlConnect, tempSqlCommand, strlen(tempSqlCommand)) != 0)
-                {
-                    memset(error_info, 0, LOGINFO_LENGTH);
-                    sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
-                    RecordLog(error_info);
-                    mysql_close(tempMysqlConnect);
-                    return NULL;
-                }
-                else
-                {
-                    res_ptr = mysql_store_result(tempMysqlConnect);
-                    int rownum = mysql_num_rows(res_ptr);
-                    if(rownum != 0)
-                    {
-                        forcount = StrToInt(sqlrow[0]);
-                        whilecount = StrToInt(sqlrow[1]);
-                        mysql_free_result(res_ptr);
-                    }
-                }
-                int multiple = forcount*FORNUM + whilecount*WHILENUM + 1;
-                //get IO score from funcLibrary table
-                memset(tempSqlCommand, 0, LINE_CHAR_MAX_NUM);
-                sprintf(tempSqlCommand, "select score from funcLibrary where funcName='%s' and type='IO'", current->funcName);
-                if(mysql_real_query(tempMysqlConnect, tempSqlCommand, strlen(tempSqlCommand)) != 0)
-                {
-                    memset(error_info, 0, LOGINFO_LENGTH);
-                    sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
-                    RecordLog(error_info);
-                    mysql_close(tempMysqlConnect);
-                    return NULL;
-                }
-                else
-                {
-                    res_ptr = mysql_store_result(tempMysqlConnect);
-                    int rownum = mysql_num_rows(res_ptr);
-                    if(rownum != 0)
-                    {
-                        while((sqlrow = mysql_fetch_row(res_ptr)) != NULL)
-                        {
-                            ret->IO += StrToInt(sqlrow[0])*multiple;
-                        }
-                        mysql_free_result(res_ptr);
-                    }
-                }
-                //get NET score from funcLibrary table
-                memset(tempSqlCommand, 0, LINE_CHAR_MAX_NUM);
-                sprintf(tempSqlCommand, "select score from funcLibrary where funcName='%s' and type='NET'", current->funcName);
-                if(mysql_real_query(tempMysqlConnect, tempSqlCommand, strlen(tempSqlCommand)) != 0)
-                {
-                    memset(error_info, 0, LOGINFO_LENGTH);
-                    sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
-                    RecordLog(error_info);
-                    mysql_close(tempMysqlConnect);
-                    return NULL;
-                }
-                else
-                {
-                    res_ptr = mysql_store_result(tempMysqlConnect);
-                    int rownum = mysql_num_rows(res_ptr);
-                    if(rownum != 0)
-                    {
-                        while((sqlrow = mysql_fetch_row(res_ptr)) != NULL)
-                        {
-                            ret->NET += StrToInt(sqlrow[0])*multiple;
-                        }
-                        mysql_free_result(res_ptr);
-                    }
-                }
-                //get CPU score from funcLibrary table
-                memset(tempSqlCommand, 0, LINE_CHAR_MAX_NUM);
-                sprintf(tempSqlCommand, "select score from funcLibrary where funcName='%s' and type='CPU'", current->funcName);
-                if(mysql_real_query(tempMysqlConnect, tempSqlCommand, strlen(tempSqlCommand)) != 0)
-                {
-                    memset(error_info, 0, LOGINFO_LENGTH);
-                    sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
-                    RecordLog(error_info);
-                    mysql_close(tempMysqlConnect);
-                    return NULL;
-                }
-                else
-                {
-                    res_ptr = mysql_store_result(tempMysqlConnect);
-                    int rownum = mysql_num_rows(res_ptr);
-                    if(rownum != 0)
-                    {
-                        while((sqlrow = mysql_fetch_row(res_ptr)) != NULL)
-                        {
-                            ret->CPU += StrToInt(sqlrow[0])*multiple;
-                        }
-                        mysql_free_result(res_ptr);
-                    }
-                }
-                //get MEM score from funcLibrary table
-                memset(tempSqlCommand, 0, LINE_CHAR_MAX_NUM);
-                sprintf(tempSqlCommand, "select score from funcLibrary where funcName='%s' and type='MEM'", current->funcName);
-                if(mysql_real_query(tempMysqlConnect, tempSqlCommand, strlen(tempSqlCommand)) != 0)
-                {
-                    memset(error_info, 0, LOGINFO_LENGTH);
-                    sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
-                    RecordLog(error_info);
-                    mysql_close(tempMysqlConnect);
-                    return NULL;
-                }
-                else
-                {
-                    res_ptr = mysql_store_result(tempMysqlConnect);
-                    int rownum = mysql_num_rows(res_ptr);
-                    if(rownum != 0)
-                    {
-                        while((sqlrow = mysql_fetch_row(res_ptr)) != NULL)
-                        {
-                            ret->MEM += StrToInt(sqlrow[0])*multiple;
-                        }
-                        mysql_free_result(res_ptr);
-                    }
-                }
-                mysql_close(tempMysqlConnect);
+                ret_begin = ret_begin->next;
+                free(current);
+                current = ret_begin;
             }
             
-            current = current->next;                        
-        }
-        //delete funcInfo value
-        current = ret_begin;
-        while(current != NULL)
-        {
-            ret_begin = ret_begin->next;
-            free(current);
-            current = ret_begin;
+            ret->CPU *= defaultValue.defValue;
+            ret->IO *= defaultValue.defValue;
+            ret->MEM *= defaultValue.defValue;
+            ret->NET *= defaultValue.defValue;
         }
     }
     

@@ -23,6 +23,7 @@
 #define varCScliceFunc(varInfo, cur)   varCScliceFuncFromNode(varInfo, cur, true)
 #define ExtractConfKeyUsedInfo(cur, confKey)   ExtractConfKeyUsedInfoFromNode(cur, confKey, true)
 #define literalScliceVar(literalName, cur)   literalScliceVarFromNode(literalName, cur, true)
+#define getCDirectInflFunc(varName, funcBlockNode)  getCDirectInflFuncFromNode(varName, funcBlockNode, NULL, true)
 
 /*******************************
  * func: Extract function Name from C language XML file
@@ -60,6 +61,23 @@ funcCallList *varCScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *va
  * @para xmlFilePath: xml file path
 **********************************/
 funcInfo *CSclice(char *varName, char *xmlFilePath);
+
+/************************************
+ * func: get C language variable direct influence function information
+ * return: influenced function info list
+ * @para varName: analysed variable name
+ * @para funcBlockNode: analysed function block node
+ * @para varTypeBegin: 为了兼容C++处理函数， 此处值为NULL
+*************************************/
+varDirectInflFunc *getCDirectInflFuncFromNode(char *varName, xmlNodePtr funcBlockNode, varType *varTypeBegin, bool flag);
+
+/*************************************
+ * func: get C language variable default value
+ * return: confVarDefValue.defValue = -1 : no default value
+ * @para varName: analysed variable name
+ * @para xmlFilePath: xml file path
+**************************************/
+confVarDefValue getCVarDefaultValue(char *varName, char *xmlFilePath);
 
 /**********************************
  * func: extract configuration key used info in current node

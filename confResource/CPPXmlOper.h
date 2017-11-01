@@ -21,6 +21,7 @@
 
 #define varCPPScliceFunc(varInfo, cur, varTypeBegin)   varCPPScliceFuncFromNode(varInfo, cur, varTypeBegin, true)
 #define scanCPPCallFunc(cur, varTypeBegin)    scanCPPCallFuncFromNode(cur, varTypeBegin, true)
+#define getCPPDirectInflFunc(varName, funcBlockNode, varTypeBegin)  getCPPDirectInflFuncFromNode(varName, funcBlockNode, varTypeBegin, true)
 
 /*******************************
  * func: Extract function Name from C Plus Plus language XML file
@@ -77,5 +78,22 @@ funcCallList *varCPPScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *
  * @para xmlFilePath: xml file path
 **********************************/
 funcInfo *CPPSclice(char *varName, char *xmlFilePath);
+
+/************************************
+ * func: get C++ language variable direct influence function information
+ * return: influenced function info list
+ * @para varName: analysed variable name
+ * @para funcBlockNode: analysed function block node
+ * @para varTypeBegin: analysed funcBlockNode variable define info
+*************************************/
+varDirectInflFunc *getCPPDirectInflFuncFromNode(char *varName, xmlNodePtr funcBlockNode, varType *varTypeBegin, bool flag);
+
+/*************************************
+ * func: get C++ language variable default value
+ * return: confVarDefValue.defValue = -1 : no default value
+ * @para varName: analysed variable name
+ * @para xmlFilePath: xml file path
+**************************************/
+confVarDefValue getCPPVarDefaultValue(char *varName, char *xmlFilePath);
 
 #endif

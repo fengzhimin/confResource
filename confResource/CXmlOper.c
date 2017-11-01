@@ -776,6 +776,183 @@ funcInfo *CSclice(char *varName, char *xmlFilePath)
 #endif
 }
 
+varDirectInflFunc *getCDirectInflFuncFromNode(char *varName, xmlNodePtr funcBlockNode, varType *varTypeBegin, bool flag)
+{
+    varDirectInflFunc *begin = NULL;
+    varDirectInflFunc *end = NULL;
+    varDirectInflFunc *current = NULL;
+    while(funcBlockNode != NULL)
+    {
+        if(!xmlStrcmp(funcBlockNode->name, (const xmlChar*)"call"))
+        {
+            xmlNodePtr argument_list = funcBlockNode->children;
+            xmlChar* attr_value = NULL;
+            char *calledFuncName = NULL;
+            while(argument_list != NULL)
+            {
+                if(!xmlStrcmp(argument_list->name, (const xmlChar*)"name"))
+                {
+                    attr_value = getLine(argument_list);
+                    calledFuncName = (char*)xmlNodeGetContent(argument_list);
+                }
+                else if(!xmlStrcmp(argument_list->name, (const xmlChar*)"argument_list"))
+                {
+                    int paraPosition = getArguPosition(varName, argument_list);
+                    if(paraPosition != -1)
+                    {
+                        //get called function filePath
+                        char tempSqlCommand[LINE_CHAR_MAX_NUM] = "";
+                        sprintf(tempSqlCommand, "select CalledSrcFile from %s where calledFunc='%s' and line=%s",\
+                            funcCallTableName, calledFuncName, (char *)attr_value);
+                        MYSQL temp_db;
+                        MYSQL *tempMysqlConnect = NULL;
+                        tempMysqlConnect = mysql_init(&temp_db);
+                        if(tempMysqlConnect == NULL)
+                        {
+                            RecordLog("init mysql failure\n");
+                            return NULL;
+                        }
+                        if(NULL == mysql_real_connect((MYSQL *)tempMysqlConnect, bind_address, user, pass, database, port, NULL, 0))
+                        {
+                            memset(error_info, 0, LOGINFO_LENGTH);
+                            sprintf(error_info, "connect failed: %s\n", mysql_error(tempMysqlConnect));
+                            RecordLog(error_info);
+                            mysql_close(tempMysqlConnect);
+                            return NULL;
+                        }
+                        if(mysql_real_query(tempMysqlConnect, tempSqlCommand, strlen(tempSqlCommand)) != 0)
+                        {
+                            memset(error_info, 0, LOGINFO_LENGTH);
+                            sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
+                            RecordLog(error_info);
+                            mysql_close(tempMysqlConnect);
+                            return NULL;
+                        }
+                        else
+                        {
+                            MYSQL_RES *res_ptr;
+                            MYSQL_ROW sqlrow;
+                            res_ptr = mysql_store_result(tempMysqlConnect);
+                            int rownum = mysql_num_rows(res_ptr);
+
+                            if(rownum != 0)
+                            {
+                                while((sqlrow = mysql_fetch_row(res_ptr)) != NULL)
+                                {
+                                    if(begin == NULL)
+                                        begin = end = malloc(sizeof(varDirectInflFunc));
+                                    else
+                                        end = end->next = malloc(sizeof(varDirectInflFunc));
+                                    memset(end, 0, sizeof(varDirectInflFunc));
+                                    strcpy(end->funcName, calledFuncName);
+                                    sprintf(end->xmlFilePath, "temp_%s.xml", sqlrow[0]);
+                                    end->index = paraPosition;
+                                    mysql_free_result(res_ptr);
+                                    break;
+                                }
+                            }
+                        }
+                        mysql_close(tempMysqlConnect);
+                    }
+                }
+                argument_list = argument_list->next;
+            }
+        }
+        current = getCDirectInflFuncFromNode(varName, funcBlockNode->children, varTypeBegin, false);
+        if(begin == NULL)
+            begin = end = current;
+        else if(current != NULL)
+            end = end->next = current;
+        while(current != NULL)
+        {
+            end = current;
+            current = current->next;
+        }
+        if(flag)
+            break;
+        funcBlockNode = funcBlockNode->next;
+    }
+    
+    return begin;
+}
+
+confVarDefValue getCVarDefaultValue(char *varName, char *xmlFilePath)
+{
+    confVarDefValue ret;
+    ret.defValue = -1;
+    xmlDocPtr doc;
+    xmlNodePtr cur;
+    xmlKeepBlanksDefault(0);
+    doc = xmlParseFile(xmlFilePath);
+    if(doc == NULL )
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "Document(%s) not parsed successfully. \n", xmlFilePath);
+		RecordLog(error_info);
+        return ret;
+    }
+    cur = xmlDocGetRootElement(doc);
+    if (cur == NULL)
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "empty document(%s). \n", xmlFilePath);
+		RecordLog(error_info);  
+        xmlFreeDoc(doc);
+        return ret;
+    }
+    
+    cur = cur->children;
+    while (cur != NULL)
+    {
+        if(!xmlStrcmp(cur->name, (const xmlChar*)"function") || \
+            (!xmlStrcmp(cur->name, (const xmlChar*)"extern") && cur->children != NULL && !xmlStrcmp(cur->last->name, (const xmlChar*)"function")) || \
+            (!xmlStrcmp(cur->name, (const xmlChar*)"decl_stmt") && cur->children != NULL && !xmlStrcmp(cur->last->name, (const xmlChar*)"decl")))
+        {
+            xmlNodePtr funcNode;
+            if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
+                funcNode = cur;
+            else
+                funcNode = cur->last;
+                
+            if(JudgeVarUsed(funcNode, varName))
+            {
+                ret = getVarDefValue(varName, funcNode);
+                if(ret.defValue == -1)
+                {
+                    varDirectInflFunc *begin = NULL;
+                    varDirectInflFunc *current = NULL;
+
+                    begin = current = getCDirectInflFunc(varName, funcNode);
+                    while(current != NULL)
+                    {
+                        if(judgeCSrcXmlFile(current->xmlFilePath))
+                            ret = ExtractSpeciParaDefValue(current->index, current->funcName, current->xmlFilePath, getCDirectInflFuncFromNode);
+                        else
+                            ret = ExtractSpeciParaDefValue(current->index, current->funcName, current->xmlFilePath, getCPPDirectInflFuncFromNode);
+                        if(ret.defValue != -1)
+                            break;
+                        current = current->next;
+                    }
+                    current = begin;
+                    while(current != NULL)
+                    {
+                        begin = begin->next;
+                        free(current);
+                        current = begin;
+                    }
+                }
+                xmlFreeDoc(doc);
+                return ret;
+            }
+        }
+        cur = cur->next;
+    }
+      
+    xmlFreeDoc(doc);
+    
+    return ret;
+}
+
 bool ExtractConfKeyUsedInfoFromNode(xmlNodePtr cur, char *confName, bool flag)
 {
     while(cur != NULL)
@@ -1023,7 +1200,8 @@ bool ScliceConfKey(char *confName, char *xmlFilePath)
     while (cur != NULL)
     {
         if(!xmlStrcmp(cur->name, (const xmlChar*)"function") || \
-            (!xmlStrcmp(cur->name, (const xmlChar*)"extern") && cur->children != NULL && !xmlStrcmp(cur->last->name, (const xmlChar*)"function")))
+            (!xmlStrcmp(cur->name, (const xmlChar*)"extern") && cur->children != NULL && !xmlStrcmp(cur->last->name, (const xmlChar*)"function")) || \
+            (!xmlStrcmp(cur->name, (const xmlChar*)"decl_stmt") && cur->children != NULL && !xmlStrcmp(cur->last->name, (const xmlChar*)"decl")))
         {
             xmlNodePtr funcNode;
             if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
