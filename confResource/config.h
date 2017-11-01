@@ -143,6 +143,30 @@ typedef struct analyzeConfOptPthread_argument
     int pthreadID;
 } analyConfOptPthread_arg;
 
+/****************************
+ * @type: default value type    true = maximum   false = minimum
+ * @defValue: default value
+****************************/
+typedef struct confVariableDefValue
+{
+    bool type;
+    int defValue;
+} confVarDefValue;
+
+/********************************
+ * func: 标记被影响函数的名称以及xml路径和第几个参数所影响
+ * @para index: 参数索引
+ * @para funcName: 函数名称
+ * @para xmlFilePath: 函数存放位置
+*********************************/
+typedef struct variableDirectInflFunc
+{
+    int index;
+    char funcName[MAX_FUNCNAME_LENGTH];
+    char xmlFilePath[DIRPATH_MAX];
+    struct variableDirectInflFunc *next;
+} varDirectInflFunc;
+
 extern char bind_address[CONFIG_VALUE_MAX_NUM];
 extern int port;
 extern char user[CONFIG_VALUE_MAX_NUM];

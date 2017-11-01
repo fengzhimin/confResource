@@ -1051,7 +1051,8 @@ funcInfo *Sclice(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc
     while (cur != NULL)
     {
         if(!xmlStrcmp(cur->name, (const xmlChar*)"function") || \
-            (!xmlStrcmp(cur->name, (const xmlChar*)"extern") && cur->children != NULL && !xmlStrcmp(cur->children->name, (const xmlChar*)"function")))
+            (!xmlStrcmp(cur->name, (const xmlChar*)"extern") && cur->children != NULL && !xmlStrcmp(cur->children->name, (const xmlChar*)"function")) || \
+            (!xmlStrcmp(cur->name, (const xmlChar*)"decl_stmt") && cur->children != NULL && !xmlStrcmp(cur->last->name, (const xmlChar*)"decl")))
         {
             xmlNodePtr funcNode;
             if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
@@ -1074,7 +1075,7 @@ funcInfo *Sclice(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc
                 end = current;
                 current = current->next;
             }
-            //direct influence variable
+            //influence variable
             varDef *varInfluence = ScliceInflVar(varName, funcNode, currentVarType);
             if(varInfluence != NULL)
             {
@@ -1166,7 +1167,8 @@ funcInfo *ScliceDebug(char *varName, char *xmlFilePath, funcCallList *(*varSclic
     while (cur != NULL)
     {
         if(!xmlStrcmp(cur->name, (const xmlChar*)"function") || \
-            (!xmlStrcmp(cur->name, (const xmlChar*)"extern") && cur->children != NULL && !xmlStrcmp(cur->last->name, (const xmlChar*)"function")))
+            (!xmlStrcmp(cur->name, (const xmlChar*)"extern") && cur->children != NULL && !xmlStrcmp(cur->last->name, (const xmlChar*)"function")) || \
+            (!xmlStrcmp(cur->name, (const xmlChar*)"decl_stmt") && cur->children != NULL && !xmlStrcmp(cur->last->name, (const xmlChar*)"decl")))
         {
             xmlNodePtr funcNode;
             if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
@@ -1269,3 +1271,287 @@ funcInfo *ScliceDebug(char *varName, char *xmlFilePath, funcCallList *(*varSclic
     return ret;
 }
 
+confVarDefValue judgeVarDefValueModel(char *varName, xmlNodePtr expr)
+{
+    confVarDefValue ret;
+    ret.defValue = -1;
+    if(xmlStrcmp(expr->name, (const xmlChar*)"expr"))
+        return ret;
+    xmlNodePtr exprChildren = expr->children;
+    char *operatorContent = NULL;
+    while(exprChildren != NULL)
+    {
+        if(!xmlStrcmp(exprChildren->name, (const xmlChar*)"operator"))
+        {
+            operatorContent = (char *)xmlNodeGetContent(exprChildren);
+            if(operatorContent[0] == '<' || operatorContent[0] == '>')
+            {
+                xmlNodePtr prev = exprChildren->prev;
+                xmlNodePtr next = exprChildren->next;
+                if(prev != NULL && next != NULL)
+                {
+                    if(!xmlStrcmp(prev->name, (const xmlChar*)"name") && \
+                    !xmlStrcmp(next->name, (const xmlChar*)"literal") && \
+                    !xmlStrcmp(xmlGetProp(next, (xmlChar*)"type"), (const xmlChar*)"number"))
+                    {
+                        /*
+                         * varaible-name Operator default-value
+                         * example: varName < 100
+                         */
+                        if(strcasecmp((char *)xmlNodeGetContent(prev), varName) == 0)
+                        {
+                            //judge maximum value or minimum value
+                            if(operatorContent[0] == '<')
+                                ret.type = false;
+                            else
+                                ret.type = true;
+                            ret.defValue = StrToInt((char *)xmlNodeGetContent(next));
+                            
+                            return ret;
+                        }
+                    }
+                    else if(!xmlStrcmp(next->name, (const xmlChar*)"name") && \
+                    !xmlStrcmp(prev->name, (const xmlChar*)"literal") &&\
+                    !xmlStrcmp(xmlGetProp(prev, (xmlChar*)"type"), (const xmlChar*)"number"))
+                    {
+                        /*
+                         * default-value Operator varaible-name
+                         * example: 100 > varName
+                         */
+                        if(strcasecmp((char *)xmlNodeGetContent(next), varName) == 0)
+                        {
+                            //judge maximum value or minimum value
+                            if(operatorContent[0] == '<')
+                                ret.type = true;
+                            else
+                                ret.type = false;
+                            ret.defValue = StrToInt((char *)xmlNodeGetContent(prev));
+                            
+                            return ret;
+                        }  
+                    }
+                }
+            }
+        }
+        exprChildren = exprChildren->next;
+    }
+    
+    return ret;
+}
+confVarDefValue getVarDefValueFromNode(char *varName, xmlNodePtr funcNode, bool flag)
+{
+    confVarDefValue ret;
+    ret.defValue = -1;
+#if DEBUG == 1
+    int currentLine = 0;
+#endif
+    while(funcNode != NULL)
+    {
+        if(!xmlStrcmp(funcNode->name, (const xmlChar*)"if"))
+        {
+#if DEBUG == 1
+            currentLine = StrToInt((char *)xmlGetProp(funcNode, (xmlChar*)"line"));
+#endif
+            xmlNodePtr condition = funcNode->children;
+            while(condition != NULL)
+            {
+                if(!xmlStrcmp(condition->name, (const xmlChar*)"condition"))
+                {
+                    xmlNodePtr conditionExpr = condition->children;
+                    while(conditionExpr != NULL)
+                    {
+                        if(!xmlStrcmp(conditionExpr->name, (const xmlChar*)"expr"))
+                        {
+                            ret = judgeVarDefValueModel(varName, conditionExpr);
+                            if(ret.defValue != -1)
+                            {
+#if DEBUG == 1
+                                printf("default value line: %d\n", currentLine);
+#endif
+                                return ret;
+                            }
+                            else
+                                goto next;
+                        }
+                        conditionExpr = conditionExpr->next;
+                    }
+                }
+                condition = condition->next;
+            }
+        }
+next:
+        ret = getVarDefValueFromNode(varName, funcNode->children, false);
+        if(ret.defValue != -1)
+            return ret;
+    
+        if(flag)
+            break;
+        
+        funcNode = funcNode->next;
+    }
+    
+    return ret;
+}
+
+char *getParaNameByIndex(xmlNodePtr parameterListNode, int index)
+{
+    if(xmlStrcmp(parameterListNode->name, (const xmlChar*)"parameter_list"))
+        return NULL;
+    xmlNodePtr parameterNode = parameterListNode->children;
+    while(parameterNode != NULL)
+    {
+        if(!xmlStrcmp(parameterNode->name, (const xmlChar*)"parameter"))
+        {
+            if(index-- == 0)
+            {
+                xmlNodePtr decl = parameterNode->children;
+                while(decl != NULL)
+                {
+                    if(!xmlStrcmp(decl->name, (const xmlChar*)"decl"))
+                    {
+                        xmlNodePtr name = decl->children;
+                        while(name != NULL)
+                        {
+                            if(!xmlStrcmp(name->name, (const xmlChar*)"name"))
+                                return (char *)xmlNodeGetContent(name);
+                            name = name->next;
+                        }
+                    }
+                    decl = decl->next;
+                }
+            }
+        }
+        
+        parameterNode = parameterNode->next;
+    }
+    
+    return NULL;
+}
+
+int getParaPosition(char *paraName, xmlNodePtr paraListNode)
+{
+    int ret = 0;
+    if(xmlStrcmp(paraListNode->name, (const xmlChar*)"argument_list"))
+        return -1;
+    xmlNodePtr argument = paraListNode->children;
+    while(argument != NULL)
+    {
+        if(!xmlStrcmp(argument->name, (const xmlChar*)"argument"))
+        {
+            //这里只是忽略的查找某个参数是否包含要被查找的字符串
+            if(strstr((char *)xmlNodeGetContent(argument), paraName) != NULL)
+                return ret;
+            ret++;
+        }
+        
+        argument = argument->next;
+    }
+    
+    return -1;
+}
+
+confVarDefValue ExtractSpeciParaDefValue(int paraIndex, char *funcName, char *xmlFilePath, \
+    varDirectInflFunc *(*DirectInflFunc)(char *, xmlNodePtr, varType *, bool))
+{
+    confVarDefValue ret;
+    ret.defValue = -1;
+    xmlDocPtr doc;
+    xmlNodePtr cur;
+    xmlKeepBlanksDefault(0);
+    doc = xmlParseFile(xmlFilePath);
+    if(doc == NULL )
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "Document(%s) not parsed successfully. \n", xmlFilePath);
+		RecordLog(error_info);
+        return ret;
+    }
+    cur = xmlDocGetRootElement(doc);
+    if (cur == NULL)
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "empty document(%s). \n", xmlFilePath);
+		RecordLog(error_info);  
+        xmlFreeDoc(doc);
+        return ret;
+    }
+    
+    cur = cur->children;
+    while (cur != NULL)
+    {
+        if(!xmlStrcmp(cur->name, (const xmlChar*)"function") || \
+            (!xmlStrcmp(cur->name, (const xmlChar*)"extern") && cur->children != NULL && !xmlStrcmp(cur->last->name, (const xmlChar*)"function")) || \
+            (!xmlStrcmp(cur->name, (const xmlChar*)"decl_stmt") && cur->children != NULL && !xmlStrcmp(cur->last->name, (const xmlChar*)"decl")))
+        {
+            xmlNodePtr funcNode;
+            if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
+                funcNode = cur;
+            else
+                funcNode = cur->last;
+            xmlNodePtr temp_cur = funcNode->children;
+            while(temp_cur != NULL)
+            {
+                if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
+                {
+                    if(strcasecmp(funcName, (char*)xmlNodeGetContent(temp_cur)) == 0)
+                    {
+                        while(temp_cur != NULL)
+                        {
+                            if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"parameter_list"))
+                            {
+                                //get specific position parameter name
+                                char *paraName = getParaNameByIndex(temp_cur, paraIndex);
+                                ret = getVarDefValue(paraName, funcNode);
+                                if(ret.defValue == -1)
+                                {
+                                    varDirectInflFunc *begin = NULL;
+                                    varDirectInflFunc *current = NULL;
+                                    if(judgeCSrcXmlFile(xmlFilePath))
+                                    {
+                                        begin = current = DirectInflFunc(paraName, funcNode, NULL, true);
+                                    }
+                                    else
+                                    {
+                                        varType *beginVarType = ExtractVarType(funcNode);
+                                        varType *currentVarType = beginVarType;
+                                        begin = current = DirectInflFunc(paraName, funcNode, currentVarType, true);
+                                        while(currentVarType != NULL)
+                                        {
+                                            beginVarType = beginVarType->next;
+                                            free(currentVarType);
+                                            currentVarType = beginVarType;
+                                        }
+                                    }
+                                    
+                                    while(current != NULL)
+                                    {
+                                        ret = ExtractSpeciParaDefValue(current->index, current->funcName, current->xmlFilePath, DirectInflFunc);
+                                        if(ret.defValue != -1)
+                                            break;
+                                        current = current->next;
+                                    }
+                                    current = begin;
+                                    while(current != NULL)
+                                    {
+                                        begin = begin->next;
+                                        free(current);
+                                        current = begin;
+                                    }
+                                }
+                                xmlFreeDoc(doc);
+                                return ret;
+                            }
+                            temp_cur = temp_cur->next;
+                        }
+                    }
+                }
+                temp_cur = temp_cur->next;
+            }
+        }
+        cur = cur->next;
+    }
+      
+    xmlFreeDoc(doc);
+    
+    return ret;
+}
