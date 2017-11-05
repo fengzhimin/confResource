@@ -1010,7 +1010,6 @@ varDirectInflFunc *getCPPDirectInflFuncFromNode(char *varName, xmlNodePtr funcBl
                             if(strcasecmp((char*)xmlNodeGetContent(funcBlockNode->children->last->prev), "::") != 0)
                             {
                                 varType *currentVarType = varTypeBegin;
-<<<<<<< HEAD
                                 char *tempName = (char*)xmlNodeGetContent(funcBlockNode->children->last->prev->prev);
                                 //handle new List<Index_hint>();
                                 if(tempName == NULL)
@@ -1018,15 +1017,6 @@ varDirectInflFunc *getCPPDirectInflFuncFromNode(char *varName, xmlNodePtr funcBl
                                 while(currentVarType != NULL)
                                 {
                                     if(strcasecmp(currentVarType->varName, tempName) == 0)
-=======
-                                char *varName = (char*)xmlNodeGetContent(funcBlockNode->children->last->prev->prev);
-                                //handle new List<Index_hint>();
-                                if(varName == NULL)
-                                    varName = (char*)xmlNodeGetContent(funcBlockNode->children->last->prev);
-                                while(currentVarType != NULL)
-                                {
-                                    if(strcasecmp(currentVarType->varName, varName) == 0)
->>>>>>> 65a04831e26563b7c2393cc25205d4a8b9ea6c85
                                     {
                                         sprintf(calledFuncName, "%s::", currentVarType->type);
                                         break;
@@ -1047,11 +1037,7 @@ varDirectInflFunc *getCPPDirectInflFuncFromNode(char *varName, xmlNodePtr funcBl
                 }
                 else if(!xmlStrcmp(argument_list->name, (const xmlChar*)"argument_list"))
                 {
-<<<<<<< HEAD
                     int paraPosition = getArguPosition(varName, argument_list);
-=======
-                    int paraPosition = getParaPosition(varName, argument_list);
->>>>>>> 65a04831e26563b7c2393cc25205d4a8b9ea6c85
                     if(paraPosition != -1)
                     {
                         //get called function filePath
