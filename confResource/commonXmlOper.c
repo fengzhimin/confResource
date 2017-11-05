@@ -1428,7 +1428,11 @@ char *getParaNameByIndex(xmlNodePtr parameterListNode, int index)
     return NULL;
 }
 
+<<<<<<< HEAD
 int getArguPosition(char *paraName, xmlNodePtr paraListNode)
+=======
+int getParaPosition(char *paraName, xmlNodePtr paraListNode)
+>>>>>>> 65a04831e26563b7c2393cc25205d4a8b9ea6c85
 {
     int ret = 0;
     if(xmlStrcmp(paraListNode->name, (const xmlChar*)"argument_list"))
