@@ -63,16 +63,51 @@ typedef struct configurationScore
     int NET;
 } confScore;
 
+/****************************
+ * func: record function information
+ * @para funcName: function name
+ * @para argumentType: funcName argument type
+ * @para calledLine: funcName called line
+ * @para sourceFile: funcName defined source file
+ * @para type: library function(L) or self-defined function(S)
+****************************/
 typedef struct functionInfo
 {
     char funcName[MAX_FUNCNAME_LENGTH];
     char funcType[7];     //false = extern    true = static
     char argumentType[512];
+    int calledLine;  
     char sourceFile[DIRPATH_MAX];
     char type;
-    int calledLine;  //when type is equal to library, calledLine is called line
-    struct functionInfo *next;
 } funcInfo;
+
+typedef struct functionInfoList
+{
+    funcInfo info;
+    struct functionInfoList *prev;
+    struct functionInfoList *next;
+} funcInfoList;
+
+/************************************
+ * func: record function call graph
+ * @para funcName: function name
+ * @para sourceFile: funcName defined source file
+ * @para defineLine: funcName defined line number
+ * @para calledFuncInfo: funcName call function point
+*************************************/
+typedef struct functionCallInfo
+{
+    char funcName[MAX_FUNCNAME_LENGTH];
+    char sourceFile[DIRPATH_MAX];
+    int defineLine;
+    funcInfoList *calledFuncInfo;
+} funcCallInfo;
+
+typedef struct functionCallInfoList
+{
+    funcCallInfo info;
+    struct functionCallInfoList *next;
+} funcCallInfoList;
 
 typedef struct variableDef
 {
@@ -81,25 +116,6 @@ typedef struct variableDef
     int line;
     struct variableDef *next;
 } varDef;
-
-/****************************
- * func: function call relationship
- * @para funcName: function name
- * @para argumentType: funcName argument type
- * @para calledLine: funcName called line
- * @para sourceFile: funcName defined source file
- * @para type: library function(L) or self-defined function(S)
-****************************/
-typedef struct functionCallList
-{
-    char funcName[MAX_FUNCNAME_LENGTH];
-    char funcType[7];     //false = extern    true = static
-    char argumentType[512];
-    int calledLine;
-    char sourceFile[DIRPATH_MAX];
-    char type;
-    struct functionCallList *next;
-} funcCallList;
 
 typedef struct variableType
 {
@@ -220,6 +236,8 @@ extern convertSrcPthread_arg convSrcPthreadArg[MAX_CONVERT_SRC_PTHREAD_NUM];
 extern analyXmlPthread_arg analyXmlPthreadArg[MAX_ANALYZE_XML_PTHREAD_NUM];
 extern analyConfOptPthread_arg analyConfOptPthreadArg[MAX_ANALYZE_CONFOPT_PTHREAD_NUM];
 extern int funcCallCount[MAX_ANALYZE_CONFOPT_PTHREAD_NUM];
+//record function call path
+extern funcInfoList *funcCallPathInfo[MAX_ANALYZE_CONFOPT_PTHREAD_NUM];
 extern int totalConvertSrcFileNum;
 extern int totalAnalyzeXmlFileNum;
 extern int curConvertSrcFileNum;

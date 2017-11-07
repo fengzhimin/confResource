@@ -146,12 +146,9 @@ confScore buildConfScore(char *confName, char *xmlPath);
 /****************************************
  * func: 配置项在一个函数中的资源分数(递归包含该函数所调用的函数)
  * return: score
- * @para funcName: function name
- * @para funcType: function type   true = static    false = extern
- * @para srcFile: function defined source file path
- * @para curPthreadID: current run pthread ID
+ * @para info: function information struct
 *****************************************/
-confScore getFuncScore(char *funcName, char *funcType, char *argumentType, char *srcFile, int curPthreadID);
+confScore getFuncScore(funcInfo info, int curPthreadID);
 
 /****************************************
  * func: get configuration key influence variable and function info

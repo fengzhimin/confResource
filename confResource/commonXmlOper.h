@@ -110,6 +110,13 @@ char *ExtractFuncArgumentType(xmlNodePtr cur);
 *******************************/
 char *getCalledFuncArgumentType(xmlNodePtr cur, varType *funcDefVarType);
 
+/******************************
+ * func: get function name
+ * return: function name
+ * @para funcNode: function children node
+******************************/
+char *getFuncName(xmlNodePtr funcNode);
+
 /********************************
  * func: get current node min line number
  * return: NULL = no line
@@ -135,7 +142,7 @@ varDef *ScliceInflVarInfo(char *varName, xmlNodePtr cur, char *inflVarName, varD
  * @para xmlFilePath: xml file path
  * @para varScliceFunc: C or C++ variable Sclice function point
 **********************************/
-funcInfo *Sclice(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc)(varDef, xmlNodePtr , varType *, bool));
+funcCallInfoList *Sclice(char *varName, char *xmlFilePath, funcInfoList *(*varScliceFunc)(varDef, xmlNodePtr , varType *, bool));
 
 /**********************************
  * func: variable sclice
@@ -144,7 +151,7 @@ funcInfo *Sclice(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc
  * @para xmlFilePath: xml file path
  * @para varScliceFunc: C or C++ variable Sclice function point
 **********************************/
-funcInfo *ScliceDebug(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc)(varDef, xmlNodePtr , varType *, bool));
+funcCallInfoList *ScliceDebug(char *varName, char *xmlFilePath, funcInfoList *(*varScliceFunc)(varDef, xmlNodePtr , varType *, bool));
 
 /***********************************
  * func: judge expr node whether is varName default value templet or not
@@ -178,7 +185,6 @@ char *getParaNameByIndex(xmlNodePtr parameterListNode, int index);
 ***************************************/
 int getArguPosition(char *paraName, xmlNodePtr paraListNode);
 
-
 /**********************************
  * func: extract specific parameter default value
  * return: confVarDefValue.defValue = -1 : no default value
@@ -188,5 +194,6 @@ int getArguPosition(char *paraName, xmlNodePtr paraListNode);
 ***********************************/
 confVarDefValue ExtractSpeciParaDefValue(int paraIndex, char *funcName, char *xmlFilePath, \
     varDirectInflFunc *(*DirectInflFunc)(char *, xmlNodePtr, varType *, bool));
+    
 
 #endif

@@ -37,14 +37,14 @@ bool ExtractFuncFromCXML(char *docName, char *tempFuncScoreTableName, char *temp
  * return: call function list header point
  * @para cur: current  Node
 ********************************/
-funcCallList *scanCCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, bool flag);
+funcInfoList *scanCCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, bool flag);
 
 /*******************************
  * func: scan called function from current node back node
  * return: call function list header point
  * @para cur: current Node
 *******************************/
-funcCallList *scanBackCCallFunc(xmlNodePtr cur, varType *varTypeBegin);
+funcInfoList *scanBackCCallFunc(xmlNodePtr cur, varType *varTypeBegin);
 
 /*********************************
  * func: sclice variable influence function call
@@ -52,7 +52,7 @@ funcCallList *scanBackCCallFunc(xmlNodePtr cur, varType *varTypeBegin);
  * @para varInfo: analyse variable info
  * @para cur: current node
 **********************************/
-funcCallList *varCScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *varTypeBegin, bool flag);
+funcInfoList *varCScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *varTypeBegin, bool flag);
 
 /**********************************
  * func: C language variable sclice
@@ -60,7 +60,7 @@ funcCallList *varCScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *va
  * @para varName: variable name
  * @para xmlFilePath: xml file path
 **********************************/
-funcInfo *CSclice(char *varName, char *xmlFilePath);
+funcCallInfoList *CSclice(char *varName, char *xmlFilePath);
 
 /************************************
  * func: get C language variable direct influence function information

@@ -168,10 +168,10 @@ static void scanCallFunctionFromNode(char *tempFuncCallTableName, xmlNodePtr cur
     }
 }
 
-funcCallList *scanCCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, bool flag)
+funcInfoList *scanCCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, bool flag)
 {
-    funcCallList *begin = NULL;
-    funcCallList *end = NULL;
+    funcInfoList *begin = NULL;
+    funcInfoList *end = NULL;
     while(cur != NULL)
     {
         if(!xmlStrcmp(cur->name, (const xmlChar*)"call"))
@@ -188,14 +188,22 @@ funcCallList *scanCCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, bool 
                 {
                     calledFuncName = (char*)xmlNodeGetContent(cur->children);
                 }
-
+                
                 if(begin == NULL)
-                    begin = end = malloc(sizeof(funcCallList));
+                {
+                    begin = end = malloc(sizeof(funcInfoList));
+                    memset(end, 0, sizeof(funcInfoList));
+                }
                 else
-                    end = end->next = malloc(sizeof(funcCallList));
-                memset(end, 0, sizeof(funcCallList));
-                strcpy(end->funcName, calledFuncName);
-                end->calledLine = StrToInt((char *)attr_value);
+                {
+                    end->next = malloc(sizeof(funcInfoList));
+                    memset(end->next, 0, sizeof(funcInfoList));
+                    end->next->prev = end;
+                    end = end->next;
+                }
+
+                strcpy(end->info.funcName, calledFuncName);
+                end->info.calledLine = StrToInt((char *)attr_value);
                 //get called function argument type and filePath
                 char tempSqlCommand[LINE_CHAR_MAX_NUM] = "";
                 int rownum = 0;
@@ -237,10 +245,10 @@ funcCallList *scanCCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, bool 
                         //self-defined function
                         while((sqlrow = mysql_fetch_row(res_ptr)) != NULL)
                         {
-                            strcpy(end->funcType, sqlrow[0]);
-                            strcpy(end->argumentType, sqlrow[1]);
-                            strcpy(end->sourceFile, sqlrow[2]);
-                            end->type = 'S';
+                            strcpy(end->info.funcType, sqlrow[0]);
+                            strcpy(end->info.argumentType, sqlrow[1]);
+                            strcpy(end->info.sourceFile, sqlrow[2]);
+                            end->info.type = 'S';
                             mysql_free_result(res_ptr);
                             break;
                         }
@@ -251,7 +259,7 @@ funcCallList *scanCCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, bool 
                     else
                     {
                         //library function
-                        end->type = 'L';
+                        end->info.type = 'L';
 #if DEBUG == 1         
                         printf("%s(%s)\n", calledFuncName, attr_value);
 #endif
@@ -261,11 +269,19 @@ funcCallList *scanCCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, bool 
             }
         }
         
-        funcCallList *current = scanCCallFuncFromNode(cur->children, varTypeBegin, false);
-        if(begin == NULL)
-            begin = end = current;
-        else
-            end->next = current;
+        funcInfoList *current = scanCCallFuncFromNode(cur->children, varTypeBegin, false);
+        if(current != NULL)
+        {
+            if(begin == NULL)
+            {
+                begin = end = current;
+            }
+            else
+            {
+                end->next = current;
+                current->prev = end;
+            }
+        }
         //update end value
         while(current != NULL)
         {
@@ -280,11 +296,11 @@ funcCallList *scanCCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, bool 
     return begin;
 }
 
-funcCallList *scanBackCCallFunc(xmlNodePtr cur, varType *varTypeBegin)
+funcInfoList *scanBackCCallFunc(xmlNodePtr cur, varType *varTypeBegin)
 {
-    funcCallList *begin = NULL;
-    funcCallList *end = NULL;
-    funcCallList *current = NULL;
+    funcInfoList *begin = NULL;
+    funcInfoList *end = NULL;
+    funcInfoList *current = NULL;
     if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
     {
         return NULL;
@@ -294,10 +310,18 @@ funcCallList *scanBackCCallFunc(xmlNodePtr cur, varType *varTypeBegin)
     while(cur != NULL)
     {
         current = scanCCallFunc(cur, varTypeBegin);
-        if(begin == NULL)
-            begin = end = current;
-        else
-            end->next = current;
+        if(current != NULL)
+        {
+            if(begin == NULL)
+            {
+                begin = end = current;
+            }
+            else
+            {
+                end->next = current;
+                current->prev = end;
+            }
+        }
         //update end value
         while(current != NULL)
         {
@@ -308,10 +332,18 @@ funcCallList *scanBackCCallFunc(xmlNodePtr cur, varType *varTypeBegin)
     }
     
     current = scanBackCCallFunc(temp_cur->parent, varTypeBegin);
-    if(begin == NULL)
-        begin = end = current;
-    else
-        end->next = current;
+    if(current != NULL)
+    {
+        if(begin == NULL)
+        {
+            begin = end = current;
+        }
+        else
+        {
+            end->next = current;
+            current->prev = end;
+        }
+    }
     //update end value
     while(current != NULL)
     {
@@ -322,11 +354,11 @@ funcCallList *scanBackCCallFunc(xmlNodePtr cur, varType *varTypeBegin)
     return begin;
 }
 
-funcCallList *varCScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *varTypeBegin, bool flag)
+funcInfoList *varCScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *varTypeBegin, bool flag)
 {
-    funcCallList *begin = NULL;
-    funcCallList *end = NULL;
-    funcCallList *current = NULL;
+    funcInfoList *begin = NULL;
+    funcInfoList *end = NULL;
+    funcInfoList *current = NULL;
     int currentLine = 0;
     while(cur != NULL)
     {
@@ -345,15 +377,21 @@ funcCallList *varCScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *va
                         if(JudgeVarUsed(condition, varInfo.varName))
                         {
                             //打印整个if-else结构块                   
-                            current = scanCCallFunc(cur, varTypeBegin);                       
+                            current = scanCCallFunc(cur, varTypeBegin);
                             if(begin == NULL)
+                            {
                                 begin = end = current;
+                            }
                             else if(current != NULL)
-                                end = end->next = current;
+                            {
+                                end->next = current;
+                                current->prev = end;
+                                end = end->next;
+                            }                    
                             bool isExit = false;
                             while(current != NULL)
                             {
-                                if(strcasecmp(current->funcName, "exit") == 0)
+                                if(strcasecmp(current->info.funcName, "exit") == 0)
                                     isExit = true;
                                 end = current;
                                 current = current->next;
@@ -363,9 +401,15 @@ funcCallList *varCScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *va
                             {
                                 current = scanBackCCallFunc(cur, varTypeBegin);
                                 if(begin == NULL)
+                                {
                                     begin = end = current;
+                                }
                                 else if(current != NULL)
-                                    end = end->next = current;
+                                {
+                                    end->next = current;
+                                    current->prev = end;
+                                    end = end->next;
+                                } 
                                 while(current != NULL)
                                 {
                                     end = current;
@@ -381,9 +425,15 @@ funcCallList *varCScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *va
                                     {                              
                                         current = scanBackCCallFunc(cur, varTypeBegin);
                                         if(begin == NULL)
+                                        {
                                             begin = end = current;
+                                        }
                                         else if(current != NULL)
-                                            end = end->next = current;
+                                        {
+                                            end->next = current;
+                                            current->prev = end;
+                                            end = end->next;
+                                        } 
                                         while(current != NULL)
                                         {
                                             end = current;
@@ -420,13 +470,19 @@ funcCallList *varCScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *va
                             //打印整个while结构块                       
                             current = scanCCallFunc(cur, varTypeBegin);                       
                             if(begin == NULL)
+                            {
                                 begin = end = current;
+                            }
                             else if(current != NULL)
-                                end = end->next = current;
+                            {
+                                end->next = current;
+                                current->prev = end;
+                                end = end->next;
+                            } 
                             bool isExit = false;
                             while(current != NULL)
                             {
-                                if(strcasecmp(current->funcName, "exit") == 0)
+                                if(strcasecmp(current->info.funcName, "exit") == 0)
                                     isExit = true;
                                 end = current;
                                 current = current->next;
@@ -436,9 +492,15 @@ funcCallList *varCScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *va
                             {
                                 current = scanBackCCallFunc(cur, varTypeBegin);
                                 if(begin == NULL)
+                                {
                                     begin = end = current;
+                                }
                                 else if(current != NULL)
-                                    end = end->next = current;
+                                {
+                                    end->next = current;
+                                    current->prev = end;
+                                    end = end->next;
+                                } 
                                 while(current != NULL)
                                 {
                                     end = current;
@@ -454,9 +516,15 @@ funcCallList *varCScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *va
                                     {                               
                                         current = scanBackCCallFunc(cur, varTypeBegin);
                                         if(begin == NULL)
+                                        {
                                             begin = end = current;
+                                        }
                                         else if(current != NULL)
-                                            end = end->next = current;
+                                        {
+                                            end->next = current;
+                                            current->prev = end;
+                                            end = end->next;
+                                        } 
                                         while(current != NULL)
                                         {
                                             end = current;
@@ -493,13 +561,19 @@ funcCallList *varCScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *va
                             //打印整个do-while结构块
                             current = scanCCallFunc(cur, varTypeBegin);                       
                             if(begin == NULL)
+                            {
                                 begin = end = current;
+                            }
                             else if(current != NULL)
-                                end = end->next = current;
+                            {
+                                end->next = current;
+                                current->prev = end;
+                                end = end->next;
+                            } 
                             bool isExit = false;
                             while(current != NULL)
                             {
-                                if(strcasecmp(current->funcName, "exit") == 0)
+                                if(strcasecmp(current->info.funcName, "exit") == 0)
                                     isExit = true;
                                 end = current;
                                 current = current->next;
@@ -509,9 +583,15 @@ funcCallList *varCScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *va
                             {
                                 current = scanBackCCallFunc(cur, varTypeBegin);
                                 if(begin == NULL)
+                                {
                                     begin = end = current;
+                                }
                                 else if(current != NULL)
-                                    end = end->next = current;
+                                {
+                                    end->next = current;
+                                    current->prev = end;
+                                    end = end->next;
+                                } 
                                 while(current != NULL)
                                 {
                                     end = current;
@@ -527,9 +607,15 @@ funcCallList *varCScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *va
                                     {
                                         current = scanBackCCallFunc(cur, varTypeBegin);
                                         if(begin == NULL)
+                                        {
                                             begin = end = current;
+                                        }
                                         else if(current != NULL)
-                                            end = end->next = current;
+                                        {
+                                            end->next = current;
+                                            current->prev = end;
+                                            end = end->next;
+                                        } 
                                         while(current != NULL)
                                         {
                                             end = current;
@@ -571,13 +657,19 @@ funcCallList *varCScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *va
                                     //打印整个for结构块
                                     current = scanCCallFunc(cur, varTypeBegin);                       
                                     if(begin == NULL)
+                                    {
                                         begin = end = current;
+                                    }
                                     else if(current != NULL)
-                                        end = end->next = current;
+                                    {
+                                        end->next = current;
+                                        current->prev = end;
+                                        end = end->next;
+                                    } 
                                     bool isExit = false;
                                     while(current != NULL)
                                     {
-                                        if(strcasecmp(current->funcName, "exit") == 0)
+                                        if(strcasecmp(current->info.funcName, "exit") == 0)
                                             isExit = true;
                                         end = current;
                                         current = current->next;
@@ -587,9 +679,15 @@ funcCallList *varCScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *va
                                     {
                                         current = scanBackCCallFunc(cur, varTypeBegin);
                                         if(begin == NULL)
+                                        {
                                             begin = end = current;
+                                        }
                                         else if(current != NULL)
-                                            end = end->next = current;
+                                        {
+                                            end->next = current;
+                                            current->prev = end;
+                                            end = end->next;
+                                        } 
                                         while(current != NULL)
                                         {
                                             end = current;
@@ -605,9 +703,15 @@ funcCallList *varCScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *va
                                             {
                                                 current = scanBackCCallFunc(cur, varTypeBegin);
                                                 if(begin == NULL)
+                                                {
                                                     begin = end = current;
+                                                }
                                                 else if(current != NULL)
-                                                    end = end->next = current;
+                                                {
+                                                    end->next = current;
+                                                    current->prev = end;
+                                                    end = end->next;
+                                                } 
                                                 while(current != NULL)
                                                 {
                                                     end = current;
@@ -653,12 +757,20 @@ funcCallList *varCScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *va
                     if(JudgeVarUsed(argument_list, varInfo.varName))
                     {
                         if(begin == NULL)
-                            begin = end = malloc(sizeof(funcCallList));
+                        {
+                            begin = end = malloc(sizeof(funcInfoList));
+                            memset(end, 0, sizeof(funcInfoList));
+                        }
                         else
-                            end = end->next = malloc(sizeof(funcCallList));
-                        memset(end, 0, sizeof(funcCallList));
-                        strcpy(end->funcName, calledFuncName);
-                        end->calledLine = StrToInt((char *)attr_value);
+                        {
+                            end->next = malloc(sizeof(funcInfoList));
+                            memset(end->next, 0, sizeof(funcInfoList));
+                            end->next->prev = end;
+                            end = end->next;
+                        }
+                        
+                        strcpy(end->info.funcName, calledFuncName);
+                        end->info.calledLine = StrToInt((char *)attr_value);
                         //get called function argument type and filePath
                         char tempSqlCommand[LINE_CHAR_MAX_NUM] = "";
                         sprintf(tempSqlCommand, "select calledFuncType, calledFuncArgumentType, CalledSrcFile from %s where calledFunc='%s' and line=%s",\
@@ -698,10 +810,10 @@ funcCallList *varCScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *va
                             {
                                 while((sqlrow = mysql_fetch_row(res_ptr)) != NULL)
                                 {
-                                    strcpy(end->funcType, sqlrow[0]);
-                                    strcpy(end->argumentType, sqlrow[1]);
-                                    strcpy(end->sourceFile, sqlrow[2]);
-                                    end->type = 'S';
+                                    strcpy(end->info.funcType, sqlrow[0]);
+                                    strcpy(end->info.argumentType, sqlrow[1]);
+                                    strcpy(end->info.sourceFile, sqlrow[2]);
+                                    end->info.type = 'S';
                                     mysql_free_result(res_ptr);
                                     break;
                                 }
@@ -712,7 +824,7 @@ funcCallList *varCScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *va
                             else
                             {
                                 //library function
-                                end->type = 'L';
+                                end->info.type = 'L';
 #if DEBUG == 1
                                 printf("%s(%s)\n", calledFuncName, attr_value);
 #endif
@@ -729,9 +841,15 @@ funcCallList *varCScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *va
                         {
                             current = varCScliceFuncFromNode(varInfo, argument->children, varTypeBegin, false);
                             if(begin == NULL)
+                            {
                                 begin = end = current;
+                            }
                             else if(current != NULL)
-                                end = end->next = current;
+                            {
+                                end->next = current;
+                                current->prev = end;
+                                end = end->next;
+                            }
                             while(current != NULL)
                             {
                                 end = current;
@@ -749,9 +867,15 @@ funcCallList *varCScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *va
         {
             current = varCScliceFuncFromNode(varInfo, cur->children, varTypeBegin, false);
             if(begin == NULL)
+            {
                 begin = end = current;
+            }
             else if(current != NULL)
-                end = end->next = current;
+            {
+                end->next = current;
+                current->prev = end;
+                end = end->next;
+            }
             while(current != NULL)
             {
                 end = current;
@@ -767,7 +891,7 @@ funcCallList *varCScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *va
     return begin;
 }
 
-funcInfo *CSclice(char *varName, char *xmlFilePath)
+funcCallInfoList *CSclice(char *varName, char *xmlFilePath)
 {
 #if DEBUG == 1
     return ScliceDebug(varName, xmlFilePath, varCScliceFuncFromNode);

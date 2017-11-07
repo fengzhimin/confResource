@@ -47,14 +47,14 @@ bool ExtractCPPFunc(char *docName, xmlNodePtr cur, char *tempFuncScoreTableName,
  * return: call function list header point
  * @para cur: current  Node
 ********************************/
-funcCallList *scanCPPCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, bool flag);
+funcInfoList *scanCPPCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, bool flag);
 
 /*******************************
  * func: scan called function from current node back node
  * return: call function list header point
  * @para cur: current Node
 *******************************/
-funcCallList *scanBackCPPCallFunc(xmlNodePtr cur, varType *varTypeBegin);
+funcInfoList *scanBackCPPCallFunc(xmlNodePtr cur, varType *varTypeBegin);
 
 /*******************************
  * func: Extract class inherit from C Plus Plus language XML file
@@ -69,7 +69,7 @@ bool ExtractClassInheritFromCPPXML(char *docName);
  * @para varInfo: analyse variable info
  * @para cur: current node
 **********************************/
-funcCallList *varCPPScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *varTypeBegin, bool flag);
+funcInfoList *varCPPScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *varTypeBegin, bool flag);
 
 /**********************************
  * func: C++ language variable sclice
@@ -77,7 +77,7 @@ funcCallList *varCPPScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *
  * @para varName: variable name
  * @para xmlFilePath: xml file path
 **********************************/
-funcInfo *CPPSclice(char *varName, char *xmlFilePath);
+funcCallInfoList *CPPSclice(char *varName, char *xmlFilePath);
 
 /************************************
  * func: get C++ language variable direct influence function information

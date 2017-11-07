@@ -85,6 +85,7 @@ convertSrcPthread_arg convSrcPthreadArg[MAX_CONVERT_SRC_PTHREAD_NUM];
 analyXmlPthread_arg analyXmlPthreadArg[MAX_ANALYZE_XML_PTHREAD_NUM];
 analyConfOptPthread_arg analyConfOptPthreadArg[MAX_ANALYZE_CONFOPT_PTHREAD_NUM];
 int funcCallCount[MAX_ANALYZE_CONFOPT_PTHREAD_NUM];
+funcInfoList *funcCallPathInfo[MAX_ANALYZE_CONFOPT_PTHREAD_NUM] = { NULL };
 int totalConvertSrcFileNum = 0;
 int totalAnalyzeXmlFileNum = 0;
 int curConvertSrcFileNum = 0;

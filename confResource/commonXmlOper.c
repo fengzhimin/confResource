@@ -888,6 +888,24 @@ char *getCalledFuncArgumentType(xmlNodePtr cur, varType *funcDefVarType)
     return retTypeString;
 }
 
+char *getFuncName(xmlNodePtr funcNode)
+{
+    char *funcName = NULL;
+    while(funcNode != NULL)
+    {
+        if(!xmlStrcmp(funcNode->name, (const xmlChar*)"name"))
+        {
+            if(strcasecmp("__attribute__", (char*)xmlNodeGetContent(funcNode)) == 0)
+                break;
+            funcName = (char*)xmlNodeGetContent(funcNode);
+            break;
+        }
+        funcNode = funcNode->next;
+    }
+    
+    return funcName;
+}
+
 xmlChar *getLine(xmlNodePtr cur)
 {
     if(cur == NULL)
@@ -1019,13 +1037,10 @@ varDef *ScliceInflVarInfo(char *varName, xmlNodePtr cur, char *inflVarName, varD
     return begin;
 }
 
-funcInfo *Sclice(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc)(varDef, xmlNodePtr , varType *, bool ))
+funcCallInfoList *Sclice(char *varName, char *xmlFilePath, funcInfoList *(*varScliceFunc)(varDef, xmlNodePtr , varType *, bool ))
 {
-    funcCallList *begin = NULL;
-    funcCallList *end = NULL;
-    funcCallList *current = NULL;
-    funcInfo *ret = NULL;
-    funcInfo *curFuncList = NULL;
+    funcCallInfoList *ret = NULL;
+    funcCallInfoList *endFuncList = NULL;
     xmlDocPtr doc;
     xmlNodePtr cur;
     xmlKeepBlanksDefault(0);
@@ -1058,18 +1073,18 @@ funcInfo *Sclice(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc
             if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
                 funcNode = cur;
             else
-                funcNode = cur->children;
+                funcNode = cur->last;
+            
             varType *beginVarType = ExtractVarType(funcNode);
             varType *currentVarType = beginVarType;
             varDef varInfo;
             memset(&varInfo, 0, sizeof(varDef));
             strcpy(varInfo.varName, varName);
             varInfo.line = 0;
-            current = varScliceFunc(varInfo, funcNode, currentVarType, true);
-            if(begin == NULL)
-                begin = end = current;
-            else if(current != NULL)
-                end = end->next = current;
+            funcInfoList *begin = NULL;
+            funcInfoList *end = NULL;
+            funcInfoList *current = NULL;
+            begin = end = current = varScliceFunc(varInfo, funcNode, currentVarType, true);
             while(current != NULL)
             {
                 end = current;
@@ -1084,9 +1099,15 @@ funcInfo *Sclice(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc
                 {
                     current = varScliceFunc(*varInfluCur, funcNode, currentVarType, true);
                     if(begin == NULL)
+                    {
                         begin = end = current;
+                    }
                     else if(current != NULL)
-                        end = end->next = current;
+                    {
+                        end->next = current;
+                        current->prev = end;
+                        end = end->next;
+                    }
                     while(current != NULL)
                     {
                         end = current;
@@ -1104,44 +1125,42 @@ funcInfo *Sclice(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc
                 free(currentVarType);
                 currentVarType = beginVarType;
             }
+            if(begin != NULL)
+            {
+                xmlChar* funcLine = getLine(funcNode->children);
+                char *funcName = getFuncName(funcNode->children);
+                if(funcLine != NULL && funcName != NULL)
+                {
+                    if(ret == NULL)
+                        ret = endFuncList = malloc(sizeof(funcCallInfoList));
+                    else
+                        endFuncList = endFuncList->next = malloc(sizeof(funcCallInfoList));
+                    memset(endFuncList, 0, sizeof(funcCallInfoList));
+                    strcpy(endFuncList->info.funcName, funcName);
+                    strcpy(endFuncList->info.sourceFile, xmlFilePath);
+                    endFuncList->info.defineLine = StrToInt((char *)funcLine);
+                    endFuncList->info.calledFuncInfo = begin;
+                }
+                else
+                {
+                    RecordLog("get function name or line error!\n");
+                    
+                    return NULL;
+                }
+            }
         }
         cur = cur->next;
     }
       
     xmlFreeDoc(doc);
     
-    current = begin;
-    while(current != NULL)
-    {
-        
-        if(ret == NULL)
-            ret = curFuncList = malloc(sizeof(funcInfo));
-        else
-            curFuncList = curFuncList->next = malloc(sizeof(funcInfo));
-        memset(curFuncList, 0, sizeof(funcInfo));
-        strcpy(curFuncList->funcName, current->funcName);
-        curFuncList->type = current->type;
-        if(curFuncList->type == 'S')
-        {
-            strcpy(curFuncList->sourceFile, current->sourceFile);
-            strcpy(curFuncList->argumentType, current->argumentType);
-            strcpy(curFuncList->funcType, current->funcType);
-        }
-        
-        begin = begin->next;
-        free(current);
-        current = begin;
-    }
     return ret;
 }
 
-funcInfo *ScliceDebug(char *varName, char *xmlFilePath, funcCallList *(*varScliceFunc)(varDef, xmlNodePtr , varType *, bool ))
+funcCallInfoList *ScliceDebug(char *varName, char *xmlFilePath, funcInfoList *(*varScliceFunc)(varDef, xmlNodePtr , varType *, bool ))
 {
-    funcCallList *begin = NULL;
-    funcCallList *end = NULL;
-    funcCallList *current = NULL;
-    funcInfo *ret = NULL;
-    funcInfo *curFuncList = NULL;
+    funcCallInfoList *ret = NULL;
+    funcCallInfoList *endFuncList = NULL;
     xmlDocPtr doc;
     xmlNodePtr cur;
     xmlKeepBlanksDefault(0);
@@ -1175,17 +1194,6 @@ funcInfo *ScliceDebug(char *varName, char *xmlFilePath, funcCallList *(*varSclic
                 funcNode = cur;
             else
                 funcNode = cur->last;
-            xmlNodePtr temp_cur = funcNode->children;
-            xmlChar* attr_value = NULL;
-            while(temp_cur != NULL)
-            {
-                if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
-                {
-                    attr_value = getLine(temp_cur);
-                    break;
-                }
-                temp_cur = temp_cur->next;
-            }
             
             varType *beginVarType = ExtractVarType(funcNode);
             varType *currentVarType = beginVarType;
@@ -1195,11 +1203,10 @@ funcInfo *ScliceDebug(char *varName, char *xmlFilePath, funcCallList *(*varSclic
             memset(&varInfo, 0, sizeof(varDef));
             strcpy(varInfo.varName, varName);
             varInfo.line = 0;
-            current = varScliceFunc(varInfo, funcNode, currentVarType, true);
-            if(begin == NULL)
-                begin = end = current;
-            else if(current != NULL)
-                end = end->next = current;
+            funcInfoList *begin = NULL;
+            funcInfoList *end = NULL;
+            funcInfoList *current = NULL;
+            begin = end = current = varScliceFunc(varInfo, funcNode, currentVarType, true);
             while(current != NULL)
             {
                 isInfluence = true;
@@ -1216,9 +1223,15 @@ funcInfo *ScliceDebug(char *varName, char *xmlFilePath, funcCallList *(*varSclic
                     printf("\033[40;34m%s influence %s(%d)\033[0m\n", varName, varInfluCur->varName, varInfluCur->line);
                     current = varScliceFunc(*varInfluCur, funcNode, currentVarType, true);
                     if(begin == NULL)
+                    {
                         begin = end = current;
+                    }
                     else if(current != NULL)
-                        end = end->next = current;
+                    {
+                        end->next = current;
+                        current->prev = end;
+                        end = end->next;
+                    }
                     while(current != NULL)
                     {
                         end = current;
@@ -1240,34 +1253,34 @@ funcInfo *ScliceDebug(char *varName, char *xmlFilePath, funcCallList *(*varSclic
                 memset(src_dir, 0, DIRPATH_MAX);
                 //删除开头的temp_和结尾的.xml
                 strncpy(src_dir, (char *)&(xmlFilePath[5]), strlen(xmlFilePath)-9);
-                printf("\033[40;36msource Path: %s\tfunction: %s(%s)\033[0m\n", src_dir, (char*)xmlNodeGetContent(temp_cur), attr_value);
+                char *funcName = getFuncName(funcNode->children);
+                xmlChar* funcLine = getLine(funcNode->children);
+                printf("\033[40;36msource Path: %s\tfunction: %s(%s)\033[0m\n", src_dir, funcName, (char *)funcLine);
+                if(funcLine != NULL && funcName != NULL)
+                {
+                    if(ret == NULL)
+                        ret = endFuncList = malloc(sizeof(funcCallInfoList));
+                    else
+                        endFuncList = endFuncList->next = malloc(sizeof(funcCallInfoList));
+                    memset(endFuncList, 0, sizeof(funcCallInfoList));
+                    strcpy(endFuncList->info.funcName, funcName);
+                    strcpy(endFuncList->info.sourceFile, xmlFilePath);
+                    endFuncList->info.defineLine = StrToInt((char *)funcLine);
+                    endFuncList->info.calledFuncInfo = begin;
+                }
+                else
+                {
+                    RecordLog("get function name or line error!\n");
+                    
+                    return NULL;
+                }
             }
         }
         cur = cur->next;
     }
       
     xmlFreeDoc(doc);
-    current = begin;
-    while(current != NULL)
-    {
-        if(ret == NULL)
-            ret = curFuncList = malloc(sizeof(funcInfo));
-        else
-            curFuncList = curFuncList->next = malloc(sizeof(funcInfo));
-        memset(curFuncList, 0, sizeof(funcInfo));
-        strcpy(curFuncList->funcName, current->funcName);
-        curFuncList->type = current->type;
-        curFuncList->calledLine = current->calledLine;
-        if(curFuncList->type == 'S')
-        {
-            strcpy(curFuncList->sourceFile, current->sourceFile);
-            strcpy(curFuncList->argumentType, current->argumentType);
-            strcpy(curFuncList->funcType, current->funcType);
-        }
-        begin = begin->next;
-        free(current);
-        current = begin;
-    }
+    
     return ret;
 }
 
