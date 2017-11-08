@@ -28,9 +28,11 @@
 /*******************************
  * func: Extract function Name from C language XML file
  * return: true = success    false = failure
- * @para docName: xml path
+ * @para xmlFilePath: xml path
+ * @para tempFuncScoreTableName: temporary funcScore table name
+ * @para tempFuncCallTableName: temporary funcCall table name
 ********************************/
-bool ExtractFuncFromCXML(char *docName, char *tempFuncScoreTableName, char *tempFuncCallTableName);
+bool ExtractFuncFromCXML(char *xmlFilePath, char *tempFuncScoreTableName, char *tempFuncCallTableName);
 
 /*******************************
  * func: scan call function from current node

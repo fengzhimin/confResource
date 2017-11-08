@@ -63,6 +63,9 @@ bool getSoftWareConfInfo()
                 cutStrByLabel(lineData, ':', subStr2, 2);
                 strcpy(endConfOpt->confName, subStr2[0]);
                 cutStrByLabel(subStr2[1], ':', endConfOpt->confVarName, specificCharNum);
+                cutStrByLabel(endConfOpt->confVarName[specificCharNum-1], '#', subStr2, 2);
+                endConfOpt->defValue = StrToInt(subStr2[1]);
+                replaceChar(endConfOpt->confVarName[specificCharNum-1], '#', '\0');
                 endConfOpt->mapVariableNum = specificCharNum;
                 confOptNum++;
             }
@@ -237,19 +240,11 @@ static void *pthread_handle_Convert(void *arg)
     pthread_exit((void *)ret);
 }
 
-static void *pthread_handle_Analyze_C(void *arg)
+static void *pthread_handle_Analyze_XML(void *arg)
 {
     int *ret = malloc(sizeof(int));
     analyXmlPthread_arg *argument = (analyXmlPthread_arg *)arg;
-    *ret = ExtractFuncFromCXML(argument->src_dir, tempFuncScoreTableName[argument->pthreadID], tempFuncCallTableName[argument->pthreadID]);
-    pthread_exit((void *)ret);
-}
-
-static void *pthread_handle_Analyze_CPP(void *arg)
-{
-    int *ret = malloc(sizeof(int));
-    analyXmlPthread_arg *argument = (analyXmlPthread_arg *)arg;
-    *ret = ExtractFuncFromCPPXML(argument->src_dir, tempFuncScoreTableName[argument->pthreadID], tempFuncCallTableName[argument->pthreadID]);
+    *ret = ExtractFuncFromXML(argument->src_dir, tempFuncScoreTableName[argument->pthreadID], tempFuncCallTableName[argument->pthreadID]);
     pthread_exit((void *)ret);
 }
 
@@ -402,61 +397,29 @@ bool analyzeProgram(char *dirPath)
             }
             else if(S_ISREG(statbuf.st_mode))
             {
-                if(judgeCSrcXmlFile(child_dir))
+                curAnalyzeXmlFileNum++;
+                printf("analysing file %s(%d/%d)\n", child_dir, curAnalyzeXmlFileNum, totalAnalyzeXmlFileNum);
+                
+                void *pthread_ret = NULL;
+                if(analyzeXMLPthreadRet[currentAnalyzeXmlPthreadID] == 0)
+                    pthread_join(analyzeXMLPthreadID[currentAnalyzeXmlPthreadID], &pthread_ret);
+                memset(&analyXmlPthreadArg[currentAnalyzeXmlPthreadID], 0, sizeof(analyXmlPthread_arg));
+                strcpy(analyXmlPthreadArg[currentAnalyzeXmlPthreadID].src_dir, child_dir);
+                analyXmlPthreadArg[currentAnalyzeXmlPthreadID].pthreadID = currentAnalyzeXmlPthreadID;
+                analyzeXMLPthreadRet[currentAnalyzeXmlPthreadID] = pthread_create(&analyzeXMLPthreadID[currentAnalyzeXmlPthreadID],\
+                NULL, pthread_handle_Analyze_XML, (void *)&analyXmlPthreadArg[currentAnalyzeXmlPthreadID]);
+               
+                currentAnalyzeXmlPthreadID++;
+                currentAnalyzeXmlPthreadID = currentAnalyzeXmlPthreadID%MAX_ANALYZE_XML_PTHREAD_NUM;
+                
+                if(pthread_ret != NULL)
                 {
-                    curAnalyzeXmlFileNum++;
-                    printf("analysing file %s(%d/%d)\n", child_dir, curAnalyzeXmlFileNum, totalAnalyzeXmlFileNum);
-                    
-                    void *pthread_ret = NULL;
-                    if(analyzeXMLPthreadRet[currentAnalyzeXmlPthreadID] == 0)
-                        pthread_join(analyzeXMLPthreadID[currentAnalyzeXmlPthreadID], &pthread_ret);
-                    memset(&analyXmlPthreadArg[currentAnalyzeXmlPthreadID], 0, sizeof(analyXmlPthread_arg));
-                    strcpy(analyXmlPthreadArg[currentAnalyzeXmlPthreadID].src_dir, child_dir);
-                    analyXmlPthreadArg[currentAnalyzeXmlPthreadID].pthreadID = currentAnalyzeXmlPthreadID;
-                    analyzeXMLPthreadRet[currentAnalyzeXmlPthreadID] = pthread_create(&analyzeXMLPthreadID[currentAnalyzeXmlPthreadID],\
-                    NULL, pthread_handle_Analyze_C, (void *)&analyXmlPthreadArg[currentAnalyzeXmlPthreadID]);
-                   
-                    currentAnalyzeXmlPthreadID++;
-                    currentAnalyzeXmlPthreadID = currentAnalyzeXmlPthreadID%MAX_ANALYZE_XML_PTHREAD_NUM;
-                    
-                    if(pthread_ret != NULL)
+                    ret = *(int *)pthread_ret;
+                    free(pthread_ret);
+                    if(!ret)
                     {
-                        ret = *(int *)pthread_ret;
-                        free(pthread_ret);
-                        if(!ret)
-                        {
-                            closedir(pdir);
-                            return ret;
-                        }
-                    }
-                }
-                else if(judgeCPPSrcXmlFile(child_dir))
-                {
-                    //handle C++ language preprocess file
-                    curAnalyzeXmlFileNum++;
-                    printf("analysing file %s(%d/%d)\n", child_dir, curAnalyzeXmlFileNum, totalAnalyzeXmlFileNum);
-                    
-                    void *pthread_ret = NULL;
-                    if(analyzeXMLPthreadRet[currentAnalyzeXmlPthreadID] == 0)
-                        pthread_join(analyzeXMLPthreadID[currentAnalyzeXmlPthreadID], &pthread_ret);
-                    memset(&analyXmlPthreadArg[currentAnalyzeXmlPthreadID], 0, sizeof(analyXmlPthread_arg));
-                    strcpy(analyXmlPthreadArg[currentAnalyzeXmlPthreadID].src_dir, child_dir);
-                    analyXmlPthreadArg[currentAnalyzeXmlPthreadID].pthreadID = currentAnalyzeXmlPthreadID;
-                    analyzeXMLPthreadRet[currentAnalyzeXmlPthreadID] = pthread_create(&analyzeXMLPthreadID[currentAnalyzeXmlPthreadID],\
-                    NULL, pthread_handle_Analyze_CPP, (void *)&analyXmlPthreadArg[currentAnalyzeXmlPthreadID]);
-                   
-                    currentAnalyzeXmlPthreadID++;
-                    currentAnalyzeXmlPthreadID = currentAnalyzeXmlPthreadID%MAX_ANALYZE_XML_PTHREAD_NUM;
-                    
-                    if(pthread_ret != NULL)
-                    {
-                        ret = *(int *)pthread_ret;
-                        free(pthread_ret);
-                        if(!ret)
-                        {
-                            closedir(pdir);
-                            return ret;
-                        }
+                        closedir(pdir);
+                        return ret;
                     }
                 }
             }
@@ -1171,30 +1134,36 @@ confScore getFuncScore(funcInfo info, int curPthreadID)
             {
                 while((sqlrow2 = mysql_fetch_row(res_ptr2)) != NULL)
                 {
-#if PRINT_INFLUENCE_FUNCTION == 1
-                    int temp = StrToInt(sqlrow2[0]);
-                    temp += StrToInt(sqlrow2[1]);
-                    temp += StrToInt(sqlrow2[2]);
-                    temp += StrToInt(sqlrow2[3]);
-                    if(temp > 0)
+                    int temp_CPU = StrToInt(sqlrow2[0]);
+                    int temp_MEM = StrToInt(sqlrow2[1]);
+                    int temp_IO = StrToInt(sqlrow2[2]);
+                    int temp_NET = StrToInt(sqlrow2[3]);
+                    if((temp_CPU + temp_MEM + temp_IO + temp_NET) > 0)
                     {
+#if PRINT_INFLUENCE_FUNCTION == 1
                         printf("\033[31m***func: %s(%s) influence resource!***\033[0m\n", info.funcName, info.sourceFile);
+#endif
                         funcInfoList *tempFuncCallInfo = funcCallPathInfo[curPthreadID];
                         if(JudgeVarInflFuncCallPath("key_cache->param_buff_size", tempFuncCallInfo))
                         {
+#if PRINT_INFLUENCE_FUNCTION == 1
                             while(tempFuncCallInfo != NULL)
                             {
                                 printf("%s->", tempFuncCallInfo->info.funcName);
                                 tempFuncCallInfo = tempFuncCallInfo->next;
                             }
                             printf("\n");
+#endif
+                            ret.CPU += (currentConfOpt->defValue == 0 ? 1 : currentConfOpt->defValue)*temp_CPU;
+                            ret.MEM += (currentConfOpt->defValue == 0 ? 1 : currentConfOpt->defValue)*temp_MEM;
+                            ret.IO += (currentConfOpt->defValue == 0 ? 1 : currentConfOpt->defValue)*temp_IO;
+                            ret.NET += (currentConfOpt->defValue == 0 ? 1 : currentConfOpt->defValue)*temp_NET;
                         }
                     }
-#endif
-                    ret.CPU += StrToInt(sqlrow2[0]);
-                    ret.MEM += StrToInt(sqlrow2[1]);
-                    ret.IO += StrToInt(sqlrow2[2]);
-                    ret.NET += StrToInt(sqlrow2[3]);
+                    ret.CPU += temp_CPU;
+                    ret.MEM += temp_MEM;
+                    ret.IO += temp_IO;
+                    ret.NET += temp_NET;
                 }
                 mysql_free_result(res_ptr2);
             }
@@ -1219,26 +1188,13 @@ static void *getScore(void *arg)
     analyConfOptPthread_arg *argument = (analyConfOptPthread_arg *)arg;
     funcCallInfoList * funcCallInfoBegin = NULL;
     funcCallInfoList * funcCallInfoCur = NULL;
-    if(judgeCSrcXmlFile(argument->xmlFilePath))
-    {
-        funcCallInfoBegin = funcCallInfoCur = CSclice(argument->confOptName, argument->xmlFilePath);
-    }
-    else if(judgeCPPSrcXmlFile(argument->xmlFilePath))
-    {
-        funcCallInfoBegin = funcCallInfoCur = CPPSclice(argument->confOptName, argument->xmlFilePath);
-    }
+    
+    funcCallInfoBegin = funcCallInfoCur = VarSclice(argument->confOptName, argument->xmlFilePath);
     
     confVarDefValue defaultValue;
     if(funcCallInfoCur != NULL)
     {
-        if(judgeCSrcXmlFile(argument->xmlFilePath))
-        {
-            defaultValue = getCVarDefaultValue(argument->confOptName, argument->xmlFilePath);
-        }
-        else if(judgeCPPSrcXmlFile(argument->xmlFilePath))
-        {
-            defaultValue = getCPPVarDefaultValue(argument->confOptName, argument->xmlFilePath);
-        }
+        defaultValue = getVarDefaultValue(argument->confOptName, argument->xmlFilePath);
     }
     while(funcCallInfoCur != NULL)
     {

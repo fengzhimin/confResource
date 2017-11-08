@@ -16,16 +16,16 @@ static char error_info[LOGINFO_LENGTH];
 static void scanCallFunctionFromNode(char *tempFuncCallTableName, xmlNodePtr cur, char *funcName, char *funcType, char *funcArgumentType, \
     char *srcPath, varType *varTypeBegin, bool flag);
 
-bool ExtractFuncFromCXML(char *docName, char *tempFuncScoreTableName, char *tempFuncCallTableName)
+bool ExtractFuncFromCXML(char *xmlFilePath, char *tempFuncScoreTableName, char *tempFuncCallTableName)
 {
     xmlDocPtr doc;
     xmlNodePtr cur;
     xmlKeepBlanksDefault(0);
-    doc = xmlParseFile(docName);
+    doc = xmlParseFile(xmlFilePath);
     if(doc == NULL )
     {
         memset(error_info, 0, LOGINFO_LENGTH);
-        sprintf(error_info, "Document(%s) not parsed successfully. \n", docName);
+        sprintf(error_info, "Document(%s) not parsed successfully. \n", xmlFilePath);
 		RecordLog(error_info);
         return false;
     }
@@ -33,7 +33,7 @@ bool ExtractFuncFromCXML(char *docName, char *tempFuncScoreTableName, char *temp
     if (cur == NULL)
     {
         memset(error_info, 0, LOGINFO_LENGTH);
-        sprintf(error_info, "empty document(%s). \n", docName);
+        sprintf(error_info, "empty document(%s). \n", xmlFilePath);
 		RecordLog(error_info);  
         xmlFreeDoc(doc);
         return false;
@@ -66,7 +66,7 @@ bool ExtractFuncFromCXML(char *docName, char *tempFuncScoreTableName, char *temp
                         break;
                     char src_dir[DIRPATH_MAX] = "";
                     //删除开头的temp_和结尾的.xml
-                    strncpy(src_dir, (char *)&(docName[5]), strlen(docName)-9);
+                    strncpy(src_dir, (char *)&(xmlFilePath[5]), strlen(xmlFilePath)-9);
                     xmlChar* attr_value = getLine(temp_cur);
                     char tempSqlCommand[LINE_CHAR_MAX_NUM] = "";
                     //get function argument type string

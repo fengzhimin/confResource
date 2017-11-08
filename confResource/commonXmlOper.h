@@ -226,12 +226,4 @@ confVarDefValue ExtractSpeciParaDefValue(int paraIndex, char *funcName, char *xm
 varDirectInflFuncList *getVarInfluFunc(char *varName, char *funcName, char *xmlFilePath, char *funcArgumentType, \
     varDirectInflFuncList *(*DirectInflFunc)(char *, xmlNodePtr, varType *, bool));
 
-/**********************************
- * func: 判断一个变量是否通过数据传播影响给定的一条函数调用路径
- * return: true = 影响   false = 不影响
- * @para varName: 分析的变量
- * @para funcCallPath: 函数调用路径
-***********************************/
-bool JudgeVarInflFuncCallPath(char *varName, funcInfoList *funcCallPath);
-
 #endif

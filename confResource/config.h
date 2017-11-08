@@ -130,12 +130,14 @@ typedef struct variableType
  * @para confName: config option name
  * @para confVarName: config option map variable name
  * @para mapVariableNum: the number of maped config variable
+ * @para defValue: the default value of config option
 *********************************/
 typedef struct configOptionMap
 {
     char confName[MAX_VARIABLE_LENGTH];
     char (*confVarName)[MAX_SUBSTR];
     int mapVariableNum;
+    int defValue;
     struct configOptionMap *next;
 } confOptMap;
 
