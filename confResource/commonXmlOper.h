@@ -44,6 +44,15 @@ bool JudgeVarUsedFromNode(xmlNodePtr cur, char *var, bool flag);
 ********************************/
 bool JudgeExistChildNodeFromNode(xmlNodePtr cur, char *nodeName, bool flag);
 
+/**********************************
+ * func: compare function argument format whether similar or not
+ * return: true = similar
+ * @para funcName: function name
+ * @para arg1: first argument type string
+ * @para arg2: second argument type string
+***********************************/
+bool JudgeArgumentSimilar(char *funcName, char *arg1, char *arg2);
+
 /*********************************
  * func: Extract variable define info
  * return: varType list
@@ -96,7 +105,7 @@ void scanBackAssignVar(xmlNodePtr cur);
  * return: argument type string
  * @para cur: current function node
  * @example: void fun(void) ---> void
- * @example: void fun(int a, const char *str)   ---> int/char
+ * @example: void fun(int a, const char *str)   ---> (int/char#2)
 *******************************/
 char *ExtractFuncArgumentType(xmlNodePtr cur);
 
@@ -106,7 +115,7 @@ char *ExtractFuncArgumentType(xmlNodePtr cur);
  * @para cur: called function node
  * @para funcDefVarType: current function all define variable type list
  * @example: int a
- *           func(a)  ---> int
+ *           func(a)  ---> (int#1)
 *******************************/
 char *getCalledFuncArgumentType(xmlNodePtr cur, varType *funcDefVarType);
 
@@ -175,7 +184,17 @@ confVarDefValue getVarDefValueFromNode(char *varName, xmlNodePtr funcNode, bool 
  * @para parameterListNode: parameter list node 
  * @para index: parameter position
 ***********************************/
-char *getParaNameByIndex(xmlNodePtr parameterListNode, int index);
+char *getParaNameByIndexFromNode(xmlNodePtr parameterListNode, int index);
+
+/************************************
+ * func: get function parameter name by parameter position
+ * return: parameter name    NULL = get failure
+ * @para index: parameter position
+ * @para funcName: function name
+ * @para xmlFilePath: the file path in which the function is located
+ * @para funcArgumentType: the argument type of the funcName
+*************************************/
+char *getParaNameByIndex(int index, char *funcName, char *xmlFilePath, char *funcArgumentType);
 
 /**************************************
  * func: get the position of specific argument position
@@ -191,9 +210,28 @@ int getArguPosition(char *paraName, xmlNodePtr paraListNode);
  * @para paraIndex: parameter position
  * @para funcName: the function name in which the variable used
  * @para xmlFilePath: the file path in which the function is located
+ * @para funcArgumentType: the argument type of the funcName
 ***********************************/
-confVarDefValue ExtractSpeciParaDefValue(int paraIndex, char *funcName, char *xmlFilePath, \
-    varDirectInflFunc *(*DirectInflFunc)(char *, xmlNodePtr, varType *, bool));
-    
+confVarDefValue ExtractSpeciParaDefValue(int paraIndex, char *funcName, char *xmlFilePath, char *funcArgumentType, \
+    varDirectInflFuncList *(*DirectInflFunc)(char *, xmlNodePtr, varType *, bool));
+
+/***********************************
+ * func: 获取变量varName在函数funcName中通过数据传播所影响的被调用的函数信息
+ * return: 影响函数的列表
+ * @para varName: 要分析的变量
+ * @para funcName: 要分析的函数名
+ * @para xmlFilePath: funcName函数所在的xml文件路径
+ * @para funcArgumentType: funcName函数的参数格式
+***********************************/
+varDirectInflFuncList *getVarInfluFunc(char *varName, char *funcName, char *xmlFilePath, char *funcArgumentType, \
+    varDirectInflFuncList *(*DirectInflFunc)(char *, xmlNodePtr, varType *, bool));
+
+/**********************************
+ * func: 判断一个变量是否通过数据传播影响给定的一条函数调用路径
+ * return: true = 影响   false = 不影响
+ * @para varName: 分析的变量
+ * @para funcCallPath: 函数调用路径
+***********************************/
+bool JudgeVarInflFuncCallPath(char *varName, funcInfoList *funcCallPath);
 
 #endif

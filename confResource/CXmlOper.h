@@ -5,8 +5,8 @@
 * Descripe     : parse C language xml file
 ******************************************************/
 
-#ifndef __XMLOPER_H__
-#define __XMLOPER_H__
+#ifndef __CXMLOPER_H__
+#define __CXMLOPER_H__
 
 #include <stdio.h> 
 #include <string.h>  
@@ -69,7 +69,7 @@ funcCallInfoList *CSclice(char *varName, char *xmlFilePath);
  * @para funcBlockNode: analysed function block node
  * @para varTypeBegin: 为了兼容C++处理函数， 此处值为NULL
 *************************************/
-varDirectInflFunc *getCDirectInflFuncFromNode(char *varName, xmlNodePtr funcBlockNode, varType *varTypeBegin, bool flag);
+varDirectInflFuncList *getCDirectInflFuncFromNode(char *varName, xmlNodePtr funcBlockNode, varType *varTypeBegin, bool flag);
 
 /*************************************
  * func: get C language variable default value
@@ -79,6 +79,16 @@ varDirectInflFunc *getCDirectInflFuncFromNode(char *varName, xmlNodePtr funcBloc
 **************************************/
 confVarDefValue getCVarDefaultValue(char *varName, char *xmlFilePath);
 
+/***********************************
+ * func: 获取变量varName在C函数funcName中通过数据传播所影响的被调用的函数信息
+ * return: 影响函数的列表
+ * @para varName: 要分析的变量
+ * @para funcName: 要分析的函数名
+ * @para xmlFilePath: funcName函数所在的xml文件路径
+ * @para funcArgumentType: funcName函数的参数格式
+***********************************/
+varDirectInflFuncList *getCVarInfluFunc(char *varName, char *funcName, char *xmlFilePath, char *funcArgumentType);
+    
 /**********************************
  * func: extract configuration key used info in current node
  * return: true = used    false = not used

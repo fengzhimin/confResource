@@ -13,7 +13,7 @@ CurrentFileName        :=
 CurrentFilePath        :=
 CurrentFileFullPath    :=
 User                   :=fzm
-Date                   :=07/11/17
+Date                   :=08/11/17
 CodeLitePath           :=/home/fzm/.codelite
 LinkerName             :=/usr/bin/g++
 SharedObjectLinkerName :=/usr/bin/g++ -shared -fPIC
@@ -60,8 +60,8 @@ AS       := /usr/bin/as
 ## User defined environment variables
 ##
 CodeLiteDir:=/usr/share/codelite
-Objects0=$(IntermediateDirectory)/main.c$(ObjectSuffix) $(IntermediateDirectory)/CXmlOper.c$(ObjectSuffix) $(IntermediateDirectory)/CPPXmlOper.c$(ObjectSuffix) $(IntermediateDirectory)/commonXmlOper.c$(ObjectSuffix) $(IntermediateDirectory)/mysqlOper.c$(ObjectSuffix) $(IntermediateDirectory)/buildFuncLibrary.c$(ObjectSuffix) $(IntermediateDirectory)/buildTempTable.c$(ObjectSuffix) $(IntermediateDirectory)/confOper.c$(ObjectSuffix) $(IntermediateDirectory)/fileOper.c$(ObjectSuffix) $(IntermediateDirectory)/strOper.c$(ObjectSuffix) \
-	$(IntermediateDirectory)/dirOper.c$(ObjectSuffix) $(IntermediateDirectory)/dateOper.c$(ObjectSuffix) $(IntermediateDirectory)/config.c$(ObjectSuffix) $(IntermediateDirectory)/sourceOper.c$(ObjectSuffix) $(IntermediateDirectory)/logOper.c$(ObjectSuffix) 
+Objects0=$(IntermediateDirectory)/main.c$(ObjectSuffix) $(IntermediateDirectory)/CXmlOper.c$(ObjectSuffix) $(IntermediateDirectory)/CPPXmlOper.c$(ObjectSuffix) $(IntermediateDirectory)/commonXmlOper.c$(ObjectSuffix) $(IntermediateDirectory)/xmlOper.c$(ObjectSuffix) $(IntermediateDirectory)/mysqlOper.c$(ObjectSuffix) $(IntermediateDirectory)/buildFuncLibrary.c$(ObjectSuffix) $(IntermediateDirectory)/buildTempTable.c$(ObjectSuffix) $(IntermediateDirectory)/confOper.c$(ObjectSuffix) $(IntermediateDirectory)/fileOper.c$(ObjectSuffix) \
+	$(IntermediateDirectory)/strOper.c$(ObjectSuffix) $(IntermediateDirectory)/dirOper.c$(ObjectSuffix) $(IntermediateDirectory)/dateOper.c$(ObjectSuffix) $(IntermediateDirectory)/config.c$(ObjectSuffix) $(IntermediateDirectory)/sourceOper.c$(ObjectSuffix) $(IntermediateDirectory)/logOper.c$(ObjectSuffix) 
 
 
 
@@ -123,6 +123,14 @@ $(IntermediateDirectory)/commonXmlOper.c$(DependSuffix): commonXmlOper.c
 
 $(IntermediateDirectory)/commonXmlOper.c$(PreprocessSuffix): commonXmlOper.c
 	$(CC) $(CFLAGS) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/commonXmlOper.c$(PreprocessSuffix) commonXmlOper.c
+
+$(IntermediateDirectory)/xmlOper.c$(ObjectSuffix): xmlOper.c $(IntermediateDirectory)/xmlOper.c$(DependSuffix)
+	$(CC) $(SourceSwitch) "/home/fzm/confResource/confResource/xmlOper.c" $(CFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/xmlOper.c$(ObjectSuffix) $(IncludePath)
+$(IntermediateDirectory)/xmlOper.c$(DependSuffix): xmlOper.c
+	@$(CC) $(CFLAGS) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/xmlOper.c$(ObjectSuffix) -MF$(IntermediateDirectory)/xmlOper.c$(DependSuffix) -MM xmlOper.c
+
+$(IntermediateDirectory)/xmlOper.c$(PreprocessSuffix): xmlOper.c
+	$(CC) $(CFLAGS) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/xmlOper.c$(PreprocessSuffix) xmlOper.c
 
 $(IntermediateDirectory)/mysqlOper.c$(ObjectSuffix): mysqlOper.c $(IntermediateDirectory)/mysqlOper.c$(DependSuffix)
 	$(CC) $(SourceSwitch) "/home/fzm/confResource/confResource/mysqlOper.c" $(CFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/mysqlOper.c$(ObjectSuffix) $(IncludePath)

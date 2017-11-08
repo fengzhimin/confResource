@@ -60,6 +60,120 @@ bool JudgeExistChildNodeFromNode(xmlNodePtr cur, char *nodeName, bool flag)
     return false;
 }
 
+bool JudgeArgumentSimilar(char *funcName, char *arg1, char *arg2)
+{
+    int argNum1 = arg1[strlen(arg1)-2] - '0';
+    int argNum2 = arg2[strlen(arg2)-2] - '0';
+    if(argNum1 == argNum2)
+    {
+        //argument number is equal
+        if(argNum1 == 0)
+            return true;
+        //判断是否有重名的函数存在
+        char tempSqlCommand[LINE_CHAR_MAX_NUM] = "";
+        sprintf(tempSqlCommand, "select funcName from %s where funcName='%s'", funcScoreTableName, funcName);
+        MYSQL temp_db;
+        MYSQL *tempMysqlConnect = NULL;
+        tempMysqlConnect = mysql_init(&temp_db);
+        if(tempMysqlConnect == NULL)
+        {
+            RecordLog("init mysql failure\n");
+            return NULL;
+        }
+        if(NULL == mysql_real_connect((MYSQL *)tempMysqlConnect, bind_address, user, pass, database, port, NULL, 0))
+        {
+            memset(error_info, 0, LOGINFO_LENGTH);
+            sprintf(error_info, "connect failed: %s\n", mysql_error(tempMysqlConnect));
+            RecordLog(error_info);
+            mysql_close(tempMysqlConnect);
+            return NULL;
+        }
+        if(mysql_real_query(tempMysqlConnect, tempSqlCommand, strlen(tempSqlCommand)) != 0)
+        {
+            memset(error_info, 0, LOGINFO_LENGTH);
+            sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
+            RecordLog(error_info);
+            mysql_close(tempMysqlConnect);
+            return NULL;
+        }
+        else
+        {
+            MYSQL_RES *res_ptr;
+            res_ptr = mysql_store_result(tempMysqlConnect);
+            int rownum = mysql_num_rows(res_ptr);
+            mysql_free_result(res_ptr);
+            //count 为递归的最大深度
+            if(rownum == 1)
+            {
+                mysql_close(tempMysqlConnect);
+                return true;
+            }
+        }
+        mysql_close(tempMysqlConnect);
+        
+        char arg1Cpy[512];
+        char arg2Cpy[512];
+        memset(arg1Cpy, 0, 512*sizeof(char));
+        memset(arg2Cpy, 0, 512*sizeof(char));
+        strcpy(arg1Cpy, arg1);
+        strcpy(arg2Cpy, arg2);
+        int len = strlen(arg1);
+        int index = 0;
+        //remove (、)、# and number char 
+        for(int i = 1; i < len; i++)
+        {
+            if(arg1Cpy[i] == '#')
+            {
+                arg1Cpy[index] = '\0';
+                break;
+            }
+            arg1Cpy[index++] = arg1Cpy[i];
+        }
+        len = strlen(arg2);
+        index = 0;
+        //remove (、)、# and number char 
+        for(int i = 1; i < len; i++)
+        {
+            if(arg2Cpy[i] == '#')
+            {
+                arg2Cpy[index] = '\0';
+                break;
+            }
+            arg2Cpy[index++] = arg2Cpy[i];
+        }
+        if(argNum1 == 1)
+        {
+            //only one argument
+            if(strcasecmp(arg1Cpy, "non") == 0 || strcasecmp(arg2Cpy, "non") == 0 || strcasecmp(arg1Cpy, arg2Cpy) == 0)
+                return true;
+            else
+                return false;
+        }
+        else
+        {
+            //more than on argument
+            char (*arguType1)[MAX_SUBSTR] = (char (*)[MAX_SUBSTR])malloc(argNum1*MAX_SUBSTR);
+            char (*arguType2)[MAX_SUBSTR] = (char (*)[MAX_SUBSTR])malloc(argNum2*MAX_SUBSTR);
+            cutStrByLabel(arg1Cpy, '/', arguType1, argNum1);
+            cutStrByLabel(arg2Cpy, '/', arguType2, argNum2);
+            for(int i = 0; i < argNum1; i++)
+            {
+                if(strcasecmp(arguType1[i], "non") != 0 && strcasecmp(arguType2[i], "non") != 0 && strcasecmp(arguType1[i], arguType2[i]) != 0)
+                {
+                    free(arguType1);
+                    free(arguType2);
+                    return false;
+                }
+            }
+            free(arguType1);
+            free(arguType2);
+            return true;
+        }
+    }
+    
+    return false;
+}
+
 //example static struct stu *stu1, *stu2, stu3;
 //type = static struct stu
 varType *ExtractVarDefFromNode(xmlNodePtr cur, bool flag)
@@ -949,7 +1063,7 @@ varDef *ScliceInflVarInfo(char *varName, xmlNodePtr cur, char *inflVarName, varD
     {
         current = begin;
         while(current != NULL)
-        {xmlChar *getLine(xmlNodePtr cur);
+        {
             end = current;
             current = current->next;
         }
@@ -1098,20 +1212,23 @@ funcCallInfoList *Sclice(char *varName, char *xmlFilePath, funcInfoList *(*varSc
                 while(varInfluCur != NULL)
                 {
                     current = varScliceFunc(*varInfluCur, funcNode, currentVarType, true);
-                    if(begin == NULL)
+                    if(current != NULL)
                     {
-                        begin = end = current;
-                    }
-                    else if(current != NULL)
-                    {
-                        end->next = current;
-                        current->prev = end;
-                        end = end->next;
-                    }
-                    while(current != NULL)
-                    {
-                        end = current;
-                        current = current->next;
+                        if(begin == NULL)
+                        {
+                            begin = end = current;
+                        }
+                        else if(current != NULL)
+                        {
+                            end->next = current;
+                            current->prev = end;
+                            end = end->next;
+                        }
+                        while(current != NULL)
+                        {
+                            end = current;
+                            current = current->next;
+                        }
                     }
                     varInfluence = varInfluence->next;
                     free(varInfluCur);
@@ -1127,9 +1244,9 @@ funcCallInfoList *Sclice(char *varName, char *xmlFilePath, funcInfoList *(*varSc
             }
             if(begin != NULL)
             {
-                xmlChar* funcLine = getLine(funcNode->children);
+                char *argumentTypeString = ExtractFuncArgumentType(funcNode);
                 char *funcName = getFuncName(funcNode->children);
-                if(funcLine != NULL && funcName != NULL)
+                if(argumentTypeString != NULL && funcName != NULL)
                 {
                     if(ret == NULL)
                         ret = endFuncList = malloc(sizeof(funcCallInfoList));
@@ -1137,16 +1254,18 @@ funcCallInfoList *Sclice(char *varName, char *xmlFilePath, funcInfoList *(*varSc
                         endFuncList = endFuncList->next = malloc(sizeof(funcCallInfoList));
                     memset(endFuncList, 0, sizeof(funcCallInfoList));
                     strcpy(endFuncList->info.funcName, funcName);
-                    strcpy(endFuncList->info.sourceFile, xmlFilePath);
-                    endFuncList->info.defineLine = StrToInt((char *)funcLine);
+                    strncpy(endFuncList->info.sourceFile, &(xmlFilePath[5]), strlen(xmlFilePath)-9);
+                    strcpy(endFuncList->info.funcArgumentType, argumentTypeString);
                     endFuncList->info.calledFuncInfo = begin;
                 }
                 else
                 {
                     RecordLog("get function name or line error!\n");
-                    
+                    free(argumentTypeString);
                     return NULL;
                 }
+                
+                free(argumentTypeString);
             }
         }
         cur = cur->next;
@@ -1222,20 +1341,23 @@ funcCallInfoList *ScliceDebug(char *varName, char *xmlFilePath, funcInfoList *(*
                 {
                     printf("\033[40;34m%s influence %s(%d)\033[0m\n", varName, varInfluCur->varName, varInfluCur->line);
                     current = varScliceFunc(*varInfluCur, funcNode, currentVarType, true);
-                    if(begin == NULL)
+                    if(current != NULL)
                     {
-                        begin = end = current;
-                    }
-                    else if(current != NULL)
-                    {
-                        end->next = current;
-                        current->prev = end;
-                        end = end->next;
-                    }
-                    while(current != NULL)
-                    {
-                        end = current;
-                        current = current->next;
+                        if(begin == NULL)
+                        {
+                            begin = end = current;
+                        }
+                        else if(current != NULL)
+                        {
+                            end->next = current;
+                            current->prev = end;
+                            end = end->next;
+                        }
+                        while(current != NULL)
+                        {
+                            end = current;
+                            current = current->next;
+                        }
                     }
                     varInfluence = varInfluence->next;
                     free(varInfluCur);
@@ -1254,9 +1376,10 @@ funcCallInfoList *ScliceDebug(char *varName, char *xmlFilePath, funcInfoList *(*
                 //删除开头的temp_和结尾的.xml
                 strncpy(src_dir, (char *)&(xmlFilePath[5]), strlen(xmlFilePath)-9);
                 char *funcName = getFuncName(funcNode->children);
+                char *argumentTypeString = ExtractFuncArgumentType(funcNode);
                 xmlChar* funcLine = getLine(funcNode->children);
                 printf("\033[40;36msource Path: %s\tfunction: %s(%s)\033[0m\n", src_dir, funcName, (char *)funcLine);
-                if(funcLine != NULL && funcName != NULL)
+                if(argumentTypeString != NULL && funcName != NULL)
                 {
                     if(ret == NULL)
                         ret = endFuncList = malloc(sizeof(funcCallInfoList));
@@ -1264,16 +1387,17 @@ funcCallInfoList *ScliceDebug(char *varName, char *xmlFilePath, funcInfoList *(*
                         endFuncList = endFuncList->next = malloc(sizeof(funcCallInfoList));
                     memset(endFuncList, 0, sizeof(funcCallInfoList));
                     strcpy(endFuncList->info.funcName, funcName);
-                    strcpy(endFuncList->info.sourceFile, xmlFilePath);
-                    endFuncList->info.defineLine = StrToInt((char *)funcLine);
+                    strcpy(endFuncList->info.sourceFile, src_dir);
+                    strcpy(endFuncList->info.funcArgumentType, argumentTypeString);
                     endFuncList->info.calledFuncInfo = begin;
                 }
                 else
                 {
                     RecordLog("get function name or line error!\n");
-                    
+                    free(argumentTypeString);
                     return NULL;
                 }
+                free(argumentTypeString);
             }
         }
         cur = cur->next;
@@ -1406,7 +1530,7 @@ next:
     return ret;
 }
 
-char *getParaNameByIndex(xmlNodePtr parameterListNode, int index)
+char *getParaNameByIndexFromNode(xmlNodePtr parameterListNode, int index)
 {
     if(xmlStrcmp(parameterListNode->name, (const xmlChar*)"parameter_list"))
         return NULL;
@@ -1441,6 +1565,94 @@ char *getParaNameByIndex(xmlNodePtr parameterListNode, int index)
     return NULL;
 }
 
+char *getParaNameByIndex(int index, char *funcName, char *xmlFilePath, char *funcArgumentType)
+{
+    char *ret = NULL;
+    xmlDocPtr doc;
+    xmlNodePtr cur;
+    xmlKeepBlanksDefault(0);
+    doc = xmlParseFile(xmlFilePath);
+    if(doc == NULL )
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "Document(%s) not parsed successfully. \n", xmlFilePath);
+		RecordLog(error_info);
+        return ret;
+    }
+    cur = xmlDocGetRootElement(doc);
+    if (cur == NULL)
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "empty document(%s). \n", xmlFilePath);
+		RecordLog(error_info);  
+        xmlFreeDoc(doc);
+        return ret;
+    }
+    
+    cur = cur->children;
+    while (cur != NULL)
+    {
+        if(!xmlStrcmp(cur->name, (const xmlChar*)"function") || \
+            (!xmlStrcmp(cur->name, (const xmlChar*)"extern") && cur->children != NULL && !xmlStrcmp(cur->last->name, (const xmlChar*)"function")) || \
+            (!xmlStrcmp(cur->name, (const xmlChar*)"decl_stmt") && cur->children != NULL && !xmlStrcmp(cur->last->name, (const xmlChar*)"decl")))
+        {
+            xmlNodePtr funcNode;
+            if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
+                funcNode = cur;
+            else
+                funcNode = cur->last;
+            xmlNodePtr temp_cur = funcNode->children;
+            while(temp_cur != NULL)
+            {
+                if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
+                { 
+                    if(strcasecmp(funcName, (char*)xmlNodeGetContent(temp_cur)) == 0)
+                    {
+                        //get function argument type string
+                        char *argumentTypeString = ExtractFuncArgumentType(funcNode);
+                        if(JudgeArgumentSimilar(funcName, argumentTypeString, funcArgumentType))
+                        {
+                            //函数名和参数格式都匹配的函数
+                            free(argumentTypeString);
+                            while(temp_cur != NULL)
+                            {
+                                if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"parameter_list"))
+                                {
+                                    //get specific position parameter name
+                                    char *paraName = getParaNameByIndexFromNode(temp_cur, index);
+                                    //handle the (const char* fmt, ...) parameter
+                                    if(paraName != NULL)
+                                    {
+                                        int len = sizeof(char)*(strlen(paraName)+1);
+                                        ret = malloc(len);
+                                        memset(ret, 0, len);
+                                        strcpy(ret, paraName);
+                                    }
+                                    break;
+                                }
+                                temp_cur = temp_cur->next;
+                            }
+                        }
+                        else
+                        {
+                            free(argumentTypeString);
+                            memset(error_info, 0, LOGINFO_LENGTH);
+                            sprintf(error_info, "%s: function: %s has more than one define!\n", xmlFilePath, funcName);
+                            RecordLog(error_info);
+                        }
+                    }
+                }
+                temp_cur = temp_cur->next;
+            }
+        }
+        cur = cur->next;
+    }
+      
+    xmlFreeDoc(doc);
+    
+    return ret;
+}
+
 int getArguPosition(char *paraName, xmlNodePtr paraListNode)
 {
     int ret = 0;
@@ -1463,8 +1675,8 @@ int getArguPosition(char *paraName, xmlNodePtr paraListNode)
     return -1;
 }
 
-confVarDefValue ExtractSpeciParaDefValue(int paraIndex, char *funcName, char *xmlFilePath, \
-    varDirectInflFunc *(*DirectInflFunc)(char *, xmlNodePtr, varType *, bool))
+confVarDefValue ExtractSpeciParaDefValue(int paraIndex, char *funcName, char *xmlFilePath, char *funcArgumentType, \
+    varDirectInflFuncList *(*DirectInflFunc)(char *, xmlNodePtr, varType *, bool))
 {
     confVarDefValue ret;
     ret.defValue = -1;
@@ -1505,65 +1717,80 @@ confVarDefValue ExtractSpeciParaDefValue(int paraIndex, char *funcName, char *xm
             while(temp_cur != NULL)
             {
                 if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
-                {
+                { 
                     if(strcasecmp(funcName, (char*)xmlNodeGetContent(temp_cur)) == 0)
                     {
-                        while(temp_cur != NULL)
+                        //get function argument type string
+                        char *argumentTypeString = ExtractFuncArgumentType(funcNode);
+                        if(JudgeArgumentSimilar(funcName, argumentTypeString, funcArgumentType))
                         {
-                            if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"parameter_list"))
+                            //函数名和参数格式都匹配的函数
+                            free(argumentTypeString);
+                            while(temp_cur != NULL)
                             {
-                                //get specific position parameter name
-                                char *paraName = getParaNameByIndex(temp_cur, paraIndex);
-                                //handle the (const char* fmt, ...) parameter
-                                if(paraName != NULL)
+                                if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"parameter_list"))
                                 {
-                                    ret = getVarDefValue(paraName, funcNode);
-                                    if(ret.defValue == -1)
+                                    //get specific position parameter name
+                                    char *paraName = getParaNameByIndexFromNode(temp_cur, paraIndex);
+                                    //handle the (const char* fmt, ...) parameter
+                                    if(paraName != NULL)
                                     {
-                                        varDirectInflFunc *begin = NULL;
-                                        varDirectInflFunc *current = NULL;
-                                        if(judgeCSrcXmlFile(xmlFilePath))
+                                        ret = getVarDefValue(paraName, funcNode);
+                                        if(ret.defValue == -1)
                                         {
-                                            begin = current = DirectInflFunc(paraName, funcNode, NULL, true);
-                                        }
-                                        else
-                                        {
-                                            varType *beginVarType = ExtractVarType(funcNode);
-                                            varType *currentVarType = beginVarType;
-                                            begin = current = DirectInflFunc(paraName, funcNode, currentVarType, true);
-                                            while(currentVarType != NULL)
+                                            varDirectInflFuncList *begin = NULL;
+                                            varDirectInflFuncList *current = NULL;
+                                            if(judgeCSrcXmlFile(xmlFilePath))
                                             {
-                                                beginVarType = beginVarType->next;
-                                                free(currentVarType);
-                                                currentVarType = beginVarType;
+                                                begin = current = DirectInflFunc(paraName, funcNode, NULL, true);
+                                            }
+                                            else
+                                            {
+                                                varType *beginVarType = ExtractVarType(funcNode);
+                                                varType *currentVarType = beginVarType;
+                                                begin = current = DirectInflFunc(paraName, funcNode, currentVarType, true);
+                                                while(currentVarType != NULL)
+                                                {
+                                                    beginVarType = beginVarType->next;
+                                                    free(currentVarType);
+                                                    currentVarType = beginVarType;
+                                                }
+                                            }
+                                            
+                                            while(current != NULL)
+                                            {
+                                                ret = ExtractSpeciParaDefValue(current->info.index, current->info.info.funcName, current->info.info.sourceFile, \
+                                                    current->info.info.argumentType, DirectInflFunc);
+                                                if(ret.defValue != -1)
+                                                    break;
+                                                current = current->next;
+                                            }
+                                            current = begin;
+                                            while(current != NULL)
+                                            {
+                                                begin = begin->next;
+                                                free(current);
+                                                current = begin;
                                             }
                                         }
-                                        
-                                        while(current != NULL)
-                                        {
-                                            ret = ExtractSpeciParaDefValue(current->index, current->funcName, current->xmlFilePath, DirectInflFunc);
-                                            if(ret.defValue != -1)
-                                                break;
-                                            current = current->next;
-                                        }
-                                        current = begin;
-                                        while(current != NULL)
-                                        {
-                                            begin = begin->next;
-                                            free(current);
-                                            current = begin;
-                                        }
+                                        xmlFreeDoc(doc);
+                                        return ret;
                                     }
-                                    xmlFreeDoc(doc);
-                                    return ret;
+                                    else
+                                    {
+                                        //direct break program
+                                        break;
+                                    }
                                 }
-                                else
-                                {
-                                    //direct break program
-                                    break;
-                                }
+                                temp_cur = temp_cur->next;
                             }
-                            temp_cur = temp_cur->next;
+                        }
+                        else
+                        {
+                            free(argumentTypeString);
+                            memset(error_info, 0, LOGINFO_LENGTH);
+                            sprintf(error_info, "%s: function: %s has more than one define!\n", xmlFilePath, funcName);
+                            RecordLog(error_info);
                         }
                     }
                 }
@@ -1574,6 +1801,207 @@ confVarDefValue ExtractSpeciParaDefValue(int paraIndex, char *funcName, char *xm
     }
       
     xmlFreeDoc(doc);
+    
+    return ret;
+}
+
+varDirectInflFuncList *getVarInfluFunc(char *varName, char *funcName, char *xmlFilePath, char *funcArgumentType, \
+    varDirectInflFuncList *(*DirectInflFunc)(char *, xmlNodePtr, varType *, bool))
+{
+    varDirectInflFuncList *begin = NULL;
+    varDirectInflFuncList *end = NULL;
+    varDirectInflFuncList *current = NULL;
+    xmlDocPtr doc;
+    xmlNodePtr cur;
+    xmlKeepBlanksDefault(0);
+    doc = xmlParseFile(xmlFilePath);
+    if(doc == NULL )
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "Document(%s) not parsed successfully. \n", xmlFilePath);
+		RecordLog(error_info);
+        return begin;
+    }
+    cur = xmlDocGetRootElement(doc);
+    if (cur == NULL)
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "empty document(%s). \n", xmlFilePath);
+		RecordLog(error_info);  
+        xmlFreeDoc(doc);
+        return begin;
+    }
+    
+    cur = cur->children;
+    while (cur != NULL)
+    {
+        if(!xmlStrcmp(cur->name, (const xmlChar*)"function") || \
+            (!xmlStrcmp(cur->name, (const xmlChar*)"extern") && cur->children != NULL && !xmlStrcmp(cur->last->name, (const xmlChar*)"function")) || \
+            (!xmlStrcmp(cur->name, (const xmlChar*)"decl_stmt") && cur->children != NULL && !xmlStrcmp(cur->last->name, (const xmlChar*)"decl")))
+        {
+            xmlNodePtr funcNode;
+            if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
+                funcNode = cur;
+            else
+                funcNode = cur->last;
+            xmlNodePtr temp_cur = funcNode->children;
+            while(temp_cur != NULL)
+            {
+                if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
+                { 
+                    if(strcasecmp(funcName, (char*)xmlNodeGetContent(temp_cur)) == 0)
+                    {
+                        //get function argument type string
+                        char *argumentTypeString = ExtractFuncArgumentType(funcNode);
+                        if(JudgeArgumentSimilar(funcName, argumentTypeString, funcArgumentType))
+                        {
+                            //函数名和参数格式都匹配的函数
+                            free(argumentTypeString);
+                            varType *beginVarType = ExtractVarType(funcNode);
+                            varType *currentVarType = beginVarType;
+                            if(judgeCSrcXmlFile(xmlFilePath))
+                            {
+                                begin = current = DirectInflFunc(varName, funcNode, NULL, true);
+                            }
+                            else
+                            {
+                                begin = current = DirectInflFunc(varName, funcNode, currentVarType, true);
+                            }
+                            while(current != NULL)
+                            {
+                                end = current;
+                                current = current->next;
+                            }
+                            //influence variable
+                            varDef *varInfluence = ScliceInflVar(varName, funcNode, currentVarType);
+                            if(varInfluence != NULL)
+                            {
+                                varDef *varInfluCur = varInfluence;
+                                while(varInfluCur != NULL)
+                                {
+                                    if(judgeCSrcXmlFile(xmlFilePath))
+                                    {
+                                        current = DirectInflFunc(varInfluCur->varName, funcNode, NULL, true);
+                                    }
+                                    else
+                                    {
+                                        current = DirectInflFunc(varInfluCur->varName, funcNode, currentVarType, true);
+                                    }
+                                    if(current != NULL)
+                                    {
+                                        if(begin == NULL)
+                                        {
+                                            begin = end = current;
+                                        }
+                                        else
+                                        {
+                                            end->next = current;
+                                        }
+                                        while(current != NULL)
+                                        {
+                                            end = current;
+                                            current = current->next;
+                                        }
+                                    }
+                                    varInfluence = varInfluence->next;
+                                    free(varInfluCur);
+                                    varInfluCur = varInfluence;
+                                }
+                            }
+                            
+                            while(currentVarType != NULL)
+                            {
+                                beginVarType = beginVarType->next;
+                                free(currentVarType);
+                                currentVarType = beginVarType;
+                            }
+                        }
+                        else
+                        {
+                            free(argumentTypeString);
+                            memset(error_info, 0, LOGINFO_LENGTH);
+                            sprintf(error_info, "%s: function: %s has more than one define!\n", xmlFilePath, funcName);
+                            RecordLog(error_info);
+                        }
+                    }
+                }
+                temp_cur = temp_cur->next;
+            }
+        }
+        cur = cur->next;
+    }
+      
+    xmlFreeDoc(doc);
+    
+    return begin;
+}
+
+bool JudgeVarInflFuncCallPath(char *varName, funcInfoList *funcCallPath)
+{
+    bool ret = false;
+    funcInfoList *currentPath = funcCallPath;
+    char tempVarName[64];
+    memset(tempVarName, 0, 64);
+    strcpy(tempVarName, varName);
+    while(currentPath != NULL)
+    {
+        if(currentPath->next == NULL)
+        {
+           ret = true;
+           break;
+        }
+        varDirectInflFuncList *begin = NULL;
+        varDirectInflFuncList *current = NULL;
+        char xmlFilePath[512];
+        sprintf(xmlFilePath, "temp_%s.xml", currentPath->info.sourceFile);
+        if(judgeCPreprocessFile(currentPath->info.sourceFile))
+            begin = current = getCVarInfluFunc(tempVarName, currentPath->info.funcName, xmlFilePath, currentPath->info.argumentType);
+        else
+            begin = current = getCPPVarInfluFunc(tempVarName, currentPath->info.funcName, xmlFilePath, currentPath->info.argumentType);
+        
+        bool point = false;
+        while(current != NULL)
+        {
+            if(strcasecmp(current->info.info.funcName, currentPath->next->info.funcName) == 0)
+            {
+                memset(xmlFilePath, 0, 512);
+                sprintf(xmlFilePath, "temp_%s.xml", current->info.info.sourceFile);
+                char *temp = getParaNameByIndex(current->info.index, current->info.info.funcName, xmlFilePath, \
+                    current->info.info.argumentType);
+                if(temp != NULL)
+                {
+                    memset(tempVarName, 0, 64);
+                    strcpy(tempVarName, temp);
+                    free(temp);
+                    point = true;
+                    break;
+                }
+                else
+                {
+                    memset(error_info, 0, LOGINFO_LENGTH);
+                    sprintf(error_info, "%s: get function(%s) index = %d parameter failure!\n", current->info.info.sourceFile, \
+                        current->info.info.funcName, current->info.index);
+                    RecordLog(error_info);
+                }
+            }
+                
+            current = current->next;
+        }
+        current = begin;
+        while(current != NULL)
+        {
+            begin = begin->next;
+            free(current);
+            current = begin;
+        }
+        if(!point)
+        {
+            ret = false;
+            break;
+        }
+        
+        currentPath = currentPath->next;
+    }
     
     return ret;
 }

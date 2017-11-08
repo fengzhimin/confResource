@@ -615,6 +615,15 @@ void optDataBaseOper(char *tempFuncScoreTableName, char *tempFuncCallTableName)
         sprintf(error_info, "execute commad %s failure.\n", tempSqlCommand);
         RecordLog(error_info);
     }
+    //删除相同的inline函数定义
+    memset(tempSqlCommand, 0, LINE_CHAR_MAX_NUM);
+    sprintf(tempSqlCommand, "delete from %s where funcName in (select funcName from %s) and type='extern'", tempFuncScoreTableName, funcScoreTableName);
+    if(!executeSQLCommand(tempMysqlConnect, tempSqlCommand))
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "execute commad %s failure.\n", tempSqlCommand);
+        RecordLog(error_info);
+    }
     //merge tempFuncScore into funcScore
     memset(tempSqlCommand, 0, LINE_CHAR_MAX_NUM);
     sprintf(tempSqlCommand, "insert into %s select distinct * from %s", funcScoreTableName, tempFuncScoreTableName);
@@ -626,7 +635,8 @@ void optDataBaseOper(char *tempFuncScoreTableName, char *tempFuncCallTableName)
     }
     // delete library function call record from funcCall
     memset(tempSqlCommand, 0, LINE_CHAR_MAX_NUM);
-    sprintf(tempSqlCommand, "delete from %s where funcName not in (select funcName from %s) and funcCallType='static'", tempFuncCallTableName, tempFuncScoreTableName);
+    //sprintf(tempSqlCommand, "delete from %s where funcName not in (select funcName from %s) and funcCallType='static'", tempFuncCallTableName, tempFuncScoreTableName);
+    sprintf(tempSqlCommand, "delete from %s where funcName not in (select funcName from %s)", tempFuncCallTableName, tempFuncScoreTableName);
     if(!executeSQLCommand(tempMysqlConnect, tempSqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -967,14 +977,34 @@ bool buildFuncScore()
 confScore getFuncScore(funcInfo info, int curPthreadID)
 {
     funcCallCount[curPthreadID]++;
+    //record function call path
+    funcInfoList *endFuncCallInfo = funcCallPathInfo[curPthreadID];
+    if(endFuncCallInfo == NULL)
+    {
+        funcCallPathInfo[curPthreadID] = endFuncCallInfo = malloc(sizeof(funcInfoList));
+        memset(endFuncCallInfo, 0, sizeof(funcInfoList));
+    }
+    else
+    {
+        while(endFuncCallInfo->next != NULL)
+            endFuncCallInfo = endFuncCallInfo->next;
+        
+        endFuncCallInfo->next = malloc(sizeof(funcInfoList));
+        memset(endFuncCallInfo->next, 0, sizeof(funcInfoList));
+        endFuncCallInfo->next->prev = endFuncCallInfo;
+        endFuncCallInfo = endFuncCallInfo->next;
+    }
+    
+    endFuncCallInfo->info = info;
+    
     confScore ret;
     memset(&ret, 0, sizeof(confScore));
     char tempSqlCommand[LINE_CHAR_MAX_NUM] = "";
     int argumentNum = getSpecCharNumFromStr(info.argumentType, '/') + 1;
     char selectArgumentType[512] = "(";
-    if(argumentNum == 0)
+    if(argumentNum == 1)
     {
-        //only one argument
+        //only one argument or only void#0
         if(strstr(info.argumentType, "non") == NULL)
             strcpy(selectArgumentType, info.argumentType);
         else
@@ -1003,26 +1033,6 @@ confScore getFuncScore(funcInfo info, int curPthreadID)
         free(arguType);
         sprintf(selectArgumentType, "%s#%d)", selectArgumentType, argumentNum);
     }
-    
-    //record function call path
-    funcInfoList *endFuncCallInfo = funcCallPathInfo[curPthreadID];
-    if(endFuncCallInfo == NULL)
-    {
-        funcCallPathInfo[curPthreadID] = endFuncCallInfo = malloc(sizeof(funcInfoList));
-        memset(endFuncCallInfo, 0, sizeof(funcInfoList));
-    }
-    else
-    {
-        while(endFuncCallInfo->next != NULL)
-            endFuncCallInfo = endFuncCallInfo->next;
-        
-        endFuncCallInfo->next = malloc(sizeof(funcInfoList));
-        memset(endFuncCallInfo->next, 0, sizeof(funcInfoList));
-        endFuncCallInfo->next->prev = endFuncCallInfo;
-        endFuncCallInfo = endFuncCallInfo->next;
-    }
-    
-    endFuncCallInfo->info = info;
 
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
     //一个程序中只能有一个extern函数
@@ -1170,12 +1180,15 @@ confScore getFuncScore(funcInfo info, int curPthreadID)
                     {
                         printf("\033[31m***func: %s(%s) influence resource!***\033[0m\n", info.funcName, info.sourceFile);
                         funcInfoList *tempFuncCallInfo = funcCallPathInfo[curPthreadID];
-                        while(tempFuncCallInfo != NULL)
+                        if(JudgeVarInflFuncCallPath("key_cache->param_buff_size", tempFuncCallInfo))
                         {
-                            printf("%s->", tempFuncCallInfo->info.funcName);
-                            tempFuncCallInfo = tempFuncCallInfo->next;
+                            while(tempFuncCallInfo != NULL)
+                            {
+                                printf("%s->", tempFuncCallInfo->info.funcName);
+                                tempFuncCallInfo = tempFuncCallInfo->next;
+                            }
+                            printf("\n");
                         }
-                        printf("\n");
                     }
 #endif
                     ret.CPU += StrToInt(sqlrow2[0]);
@@ -1232,24 +1245,31 @@ static void *getScore(void *arg)
         funcInfoList *funcInfoBegin = NULL;
         funcInfoList *funcInfoCur = NULL;
         funcInfoBegin = funcInfoCur = funcCallInfoCur->info.calledFuncInfo;
+        //clear function call path list
+        int tempPthreadID = argument->pthreadID;
+        if(funcCallPathInfo[argument->pthreadID] != NULL)
+        {
+            funcInfoList *tempFuncCallInfo = funcCallPathInfo[tempPthreadID];
+            while(tempFuncCallInfo != NULL)
+            {
+                funcCallPathInfo[tempPthreadID] = funcCallPathInfo[tempPthreadID]->next;
+                free(tempFuncCallInfo);
+                tempFuncCallInfo = funcCallPathInfo[tempPthreadID];
+            }
+        }
+        //set root function information
+        funcCallPathInfo[tempPthreadID] = malloc(sizeof(funcInfoList));
+        memset(funcCallPathInfo[tempPthreadID], 0, sizeof(funcInfoList));
+        strcpy(funcCallPathInfo[tempPthreadID]->info.funcName, funcCallInfoCur->info.funcName);
+        strcpy(funcCallPathInfo[tempPthreadID]->info.argumentType, funcCallInfoCur->info.funcArgumentType);
+        strcpy(funcCallPathInfo[tempPthreadID]->info.sourceFile, funcCallInfoCur->info.sourceFile);
+        
         while(funcInfoCur != NULL)
         {
             if(funcInfoCur->info.type == 'S')
             {
                 //clear funcCallCount value
                 funcCallCount[argument->pthreadID] = 0;
-                //clear function call path list
-                if(funcCallPathInfo[argument->pthreadID] != NULL)
-                {
-                    int tempPthreadID = argument->pthreadID;
-                    funcInfoList *tempFuncCallInfo = funcCallPathInfo[tempPthreadID];
-                    while(tempFuncCallInfo != NULL)
-                    {
-                        funcCallPathInfo[tempPthreadID] = funcCallPathInfo[tempPthreadID]->next;
-                        free(tempFuncCallInfo);
-                        tempFuncCallInfo = funcCallPathInfo[tempPthreadID];
-                    }
-                }
                 //handle self-define function
                 confScore temp_ret = getFuncScore(funcInfoCur->info, argument->pthreadID);
                 ret->CPU += temp_ret.CPU;

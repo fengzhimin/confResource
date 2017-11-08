@@ -358,6 +358,7 @@ funcInfoList *scanCPPCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, boo
                             strcpy(end->info.funcType, sqlrow[0]);
                             strcpy(end->info.argumentType, sqlrow[1]);
                             strcpy(end->info.sourceFile, sqlrow[2]);
+                            //sprintf(end->info.sourceFile, "temp_%s.xml", sqlrow[2]);
                             end->info.type = 'S';
                             mysql_free_result(res_ptr);
                             break;
@@ -1022,6 +1023,7 @@ funcInfoList *varCPPScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *
                                     strcpy(end->info.funcType, sqlrow[0]);
                                     strcpy(end->info.argumentType, sqlrow[1]);
                                     strcpy(end->info.sourceFile, sqlrow[2]);
+                                    //sprintf(end->info.sourceFile, "temp_%s.xml", sqlrow[2]);
                                     end->info.type = 'S';
                                     mysql_free_result(res_ptr);
                                     break;
@@ -1109,11 +1111,11 @@ funcCallInfoList *CPPSclice(char *varName, char *xmlFilePath)
 #endif
 }
 
-varDirectInflFunc *getCPPDirectInflFuncFromNode(char *varName, xmlNodePtr funcBlockNode, varType *varTypeBegin, bool flag)
+varDirectInflFuncList *getCPPDirectInflFuncFromNode(char *varName, xmlNodePtr funcBlockNode, varType *varTypeBegin, bool flag)
 {
-    varDirectInflFunc *begin = NULL;
-    varDirectInflFunc *end = NULL;
-    varDirectInflFunc *current = NULL;
+    varDirectInflFuncList *begin = NULL;
+    varDirectInflFuncList *end = NULL;
+    varDirectInflFuncList *current = NULL;
     while(funcBlockNode != NULL)
     {
         if(!xmlStrcmp(funcBlockNode->name, (const xmlChar*)"call"))
@@ -1166,7 +1168,7 @@ varDirectInflFunc *getCPPDirectInflFuncFromNode(char *varName, xmlNodePtr funcBl
                     {
                         //get called function filePath
                         char tempSqlCommand[LINE_CHAR_MAX_NUM] = "";
-                        sprintf(tempSqlCommand, "select CalledSrcFile from %s where calledFunc='%s' and line=%s",\
+                        sprintf(tempSqlCommand, "select calledFuncType, calledFuncArgumentType, CalledSrcFile, type from %s where calledFunc='%s' and line=%s",\
                             funcCallTableName, calledFuncName, (char *)attr_value);
                         MYSQL temp_db;
                         MYSQL *tempMysqlConnect = NULL;
@@ -1205,13 +1207,18 @@ varDirectInflFunc *getCPPDirectInflFuncFromNode(char *varName, xmlNodePtr funcBl
                                 while((sqlrow = mysql_fetch_row(res_ptr)) != NULL)
                                 {
                                     if(begin == NULL)
-                                        begin = end = malloc(sizeof(varDirectInflFunc));
+                                        begin = end = malloc(sizeof(varDirectInflFuncList));
                                     else
-                                        end = end->next = malloc(sizeof(varDirectInflFunc));
-                                    memset(end, 0, sizeof(varDirectInflFunc));
-                                    strcpy(end->funcName, calledFuncName);
-                                    sprintf(end->xmlFilePath, "temp_%s.xml", sqlrow[0]);
-                                    end->index = paraPosition;
+                                        end = end->next = malloc(sizeof(varDirectInflFuncList));
+                                    memset(end, 0, sizeof(varDirectInflFuncList));
+                                    strcpy(end->info.info.funcName, calledFuncName);
+                                    end->info.info.calledLine = StrToInt((char *)attr_value);
+                                    strcpy(end->info.info.funcType, sqlrow[0]);
+                                    strcpy(end->info.info.argumentType, sqlrow[1]);
+                                    strcpy(end->info.info.sourceFile, sqlrow[2]);
+                                    //sprintf(end->info.info.sourceFile, "temp_%s.xml", sqlrow[2]);
+                                    end->info.info.type = ((char *)sqlrow[3])[0];
+                                    end->info.index = paraPosition;
                                     mysql_free_result(res_ptr);
                                     break;
                                 }
@@ -1284,8 +1291,8 @@ confVarDefValue getCPPVarDefaultValue(char *varName, char *xmlFilePath)
                 ret = getVarDefValue(varName, funcNode);
                 if(ret.defValue == -1)
                 {
-                    varDirectInflFunc *begin = NULL;
-                    varDirectInflFunc *current = NULL;
+                    varDirectInflFuncList *begin = NULL;
+                    varDirectInflFuncList *current = NULL;
 
                     varType *beginVarType = ExtractVarType(funcNode);
                     varType *currentVarType = beginVarType;
@@ -1299,10 +1306,13 @@ confVarDefValue getCPPVarDefaultValue(char *varName, char *xmlFilePath)
                     
                     while(current != NULL)
                     {
-                        if(judgeCSrcXmlFile(current->xmlFilePath))
-                            ret = ExtractSpeciParaDefValue(current->index, current->funcName, current->xmlFilePath, getCDirectInflFuncFromNode);
+                        if(judgeCPreprocessFile(current->info.info.sourceFile))
+                            ret = ExtractSpeciParaDefValue(current->info.index, current->info.info.funcName, current->info.info.sourceFile, \
+                                current->info.info.argumentType, getCDirectInflFuncFromNode);
                         else
-                            ret = ExtractSpeciParaDefValue(current->index, current->funcName, current->xmlFilePath, getCPPDirectInflFuncFromNode);
+                            ret = ExtractSpeciParaDefValue(current->info.index, current->info.info.funcName, current->info.info.sourceFile, \
+                                current->info.info.argumentType, getCPPDirectInflFuncFromNode);
+                        
                         if(ret.defValue != -1)
                             break;
                         current = current->next;
@@ -1325,4 +1335,9 @@ confVarDefValue getCPPVarDefaultValue(char *varName, char *xmlFilePath)
     xmlFreeDoc(doc);
     
     return ret;
+}
+
+varDirectInflFuncList *getCPPVarInfluFunc(char *varName, char *funcName, char *xmlFilePath, char *funcArgumentType)
+{
+    return getVarInfluFunc(varName, funcName, xmlFilePath, funcArgumentType, getCPPDirectInflFuncFromNode);
 }

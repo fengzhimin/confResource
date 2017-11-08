@@ -17,6 +17,8 @@
     <File Name="CPPXmlOper.h"/>
     <File Name="commonXmlOper.h"/>
     <File Name="commonXmlOper.c"/>
+    <File Name="xmlOper.h"/>
+    <File Name="xmlOper.c"/>
   </VirtualDirectory>
   <VirtualDirectory Name="mysql">
     <File Name="mysqlOper.h"/>

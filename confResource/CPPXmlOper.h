@@ -86,7 +86,7 @@ funcCallInfoList *CPPSclice(char *varName, char *xmlFilePath);
  * @para funcBlockNode: analysed function block node
  * @para varTypeBegin: analysed funcBlockNode variable define info
 *************************************/
-varDirectInflFunc *getCPPDirectInflFuncFromNode(char *varName, xmlNodePtr funcBlockNode, varType *varTypeBegin, bool flag);
+varDirectInflFuncList *getCPPDirectInflFuncFromNode(char *varName, xmlNodePtr funcBlockNode, varType *varTypeBegin, bool flag);
 
 /*************************************
  * func: get C++ language variable default value
@@ -95,5 +95,15 @@ varDirectInflFunc *getCPPDirectInflFuncFromNode(char *varName, xmlNodePtr funcBl
  * @para xmlFilePath: xml file path
 **************************************/
 confVarDefValue getCPPVarDefaultValue(char *varName, char *xmlFilePath);
+
+/***********************************
+ * func: 获取变量varName在C++函数funcName中通过数据传播所影响的被调用的函数信息
+ * return: 影响函数的列表
+ * @para varName: 要分析的变量
+ * @para funcName: 要分析的函数名
+ * @para xmlFilePath: funcName函数所在的xml文件路径
+ * @para funcArgumentType: funcName函数的参数格式
+***********************************/
+varDirectInflFuncList *getCPPVarInfluFunc(char *varName, char *funcName, char *xmlFilePath, char *funcArgumentType);
 
 #endif

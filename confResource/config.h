@@ -92,14 +92,14 @@ typedef struct functionInfoList
  * func: record function call graph
  * @para funcName: function name
  * @para sourceFile: funcName defined source file
- * @para defineLine: funcName defined line number
+ * @para funcArgumentType: funcName argument type
  * @para calledFuncInfo: funcName call function point
 *************************************/
 typedef struct functionCallInfo
 {
     char funcName[MAX_FUNCNAME_LENGTH];
     char sourceFile[DIRPATH_MAX];
-    int defineLine;
+    char funcArgumentType[512];
     funcInfoList *calledFuncInfo;
 } funcCallInfo;
 
@@ -171,17 +171,20 @@ typedef struct confVariableDefValue
 
 /********************************
  * func: 标记被影响函数的名称以及xml路径和第几个参数所影响
- * @para index: 参数索引
- * @para funcName: 函数名称
- * @para xmlFilePath: 函数存放位置
+ * @para index: 参数索引位置
+ * @para info: 被影响的函数信息
 *********************************/
 typedef struct variableDirectInflFunc
 {
     int index;
-    char funcName[MAX_FUNCNAME_LENGTH];
-    char xmlFilePath[DIRPATH_MAX];
-    struct variableDirectInflFunc *next;
+    funcInfo info;
 } varDirectInflFunc;
+
+typedef struct variableDirectInflFuncList
+{
+    varDirectInflFunc info;
+    struct variableDirectInflFuncList *next;
+} varDirectInflFuncList;
 
 extern char bind_address[CONFIG_VALUE_MAX_NUM];
 extern int port;
