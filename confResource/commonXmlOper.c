@@ -1759,7 +1759,9 @@ confVarDefValue ExtractSpeciParaDefValue(int paraIndex, char *funcName, char *xm
                                             
                                             while(current != NULL)
                                             {
-                                                ret = ExtractSpeciParaDefValue(current->info.index, current->info.info.funcName, current->info.info.sourceFile, \
+                                                char xmlFilePath[512];
+                                                sprintf(xmlFilePath, "temp_%s.xml", current->info.info.sourceFile);
+                                                ret = ExtractSpeciParaDefValue(current->info.index, current->info.info.funcName, xmlFilePath, \
                                                     current->info.info.argumentType, DirectInflFunc);
                                                 if(ret.defValue != -1)
                                                     break;

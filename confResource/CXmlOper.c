@@ -1056,11 +1056,13 @@ confVarDefValue getCVarDefaultValue(char *varName, char *xmlFilePath)
                     begin = current = getCDirectInflFunc(varName, funcNode);
                     while(current != NULL)
                     {
+                        char xmlFilePath[512];
+                        sprintf(xmlFilePath, "temp_%s.xml", current->info.info.sourceFile);
                         if(judgeCPreprocessFile(current->info.info.sourceFile))
-                            ret = ExtractSpeciParaDefValue(current->info.index, current->info.info.funcName, current->info.info.sourceFile, \
+                            ret = ExtractSpeciParaDefValue(current->info.index, current->info.info.funcName, xmlFilePath, \
                                 current->info.info.argumentType, getCDirectInflFuncFromNode);
                         else
-                            ret = ExtractSpeciParaDefValue(current->info.index, current->info.info.funcName, current->info.info.sourceFile, \
+                            ret = ExtractSpeciParaDefValue(current->info.index, current->info.info.funcName, xmlFilePath, \
                                 current->info.info.argumentType, getCPPDirectInflFuncFromNode);
                         if(ret.defValue != -1)
                             break;
