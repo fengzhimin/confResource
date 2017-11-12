@@ -366,7 +366,7 @@ funcInfoList *varCScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *va
         bool recursive_flag = true;
         if(!xmlStrcmp(cur->name, (const xmlChar*)"if"))
         {
-            currentLine = StrToInt((char *)xmlGetProp(cur, (xmlChar*)"line"));
+            currentLine = StrToInt((char *)getLine(cur));
             if(varInfo.line < currentLine)
             {
                 xmlNodePtr condition = cur->children;
@@ -457,7 +457,7 @@ funcInfoList *varCScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *va
         }
         else if(!xmlStrcmp(cur->name, (const xmlChar*)"while"))
         {
-            currentLine = StrToInt((char *)xmlGetProp(cur, (xmlChar*)"line"));
+            currentLine = StrToInt((char *)getLine(cur));
             if(varInfo.line < currentLine)
             {
                 xmlNodePtr condition = cur->children;
@@ -548,7 +548,7 @@ funcInfoList *varCScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *va
         }
         else if(!xmlStrcmp(cur->name, (const xmlChar*)"do"))
         {
-            currentLine = StrToInt((char *)xmlGetProp(cur, (xmlChar*)"line"));
+            currentLine = StrToInt((char *)getLine(cur));
             if(varInfo.line < currentLine)
             {
                 xmlNodePtr condition = cur->children;
@@ -639,7 +639,7 @@ funcInfoList *varCScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *va
         }
         else if(!xmlStrcmp(cur->name, (const xmlChar*)"for"))
         {
-            currentLine = StrToInt((char *)xmlGetProp(cur, (xmlChar*)"line"));
+            currentLine = StrToInt((char *)getLine(cur));
             if(varInfo.line < currentLine)
             {
                 xmlNodePtr control = cur->children;
@@ -1269,7 +1269,7 @@ bool literalScliceVarFromNode(char *literalName, xmlNodePtr cur, bool flag)
             {
                 if(!xmlStrcmp(argument_list->name, (const xmlChar*)"name"))
                 {
-                    attr_value = xmlGetProp(argument_list, (xmlChar*)"line");
+                    attr_value = getLine(argument_list);
                     calledFuncName = (char*)xmlNodeGetContent(argument_list);
                 }
                 else if(!xmlStrcmp(argument_list->name, (const xmlChar*)"argument_list"))
@@ -1354,7 +1354,7 @@ bool ScliceConfKey(char *confName, char *xmlFilePath)
             {
                 if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
                 {
-                    attr_value = xmlGetProp(temp_cur, (xmlChar*)"line");
+                    attr_value = getLine(temp_cur);
                     break;
                 }
                 temp_cur = temp_cur->next;

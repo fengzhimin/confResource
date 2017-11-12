@@ -48,10 +48,11 @@ bool JudgeExistChildNodeFromNode(xmlNodePtr cur, char *nodeName, bool flag);
  * func: compare function argument format whether similar or not
  * return: true = similar
  * @para funcName: function name
+ * @para xmlFilePath: funcName 所在的xml文件路径
  * @para arg1: first argument type string
  * @para arg2: second argument type string
 ***********************************/
-bool JudgeArgumentSimilar(char *funcName, char *arg1, char *arg2);
+bool JudgeArgumentSimilar(char *funcName, char *xmlFilePath, char *arg1, char *arg2);
 
 /*********************************
  * func: Extract variable define info

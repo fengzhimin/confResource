@@ -543,7 +543,7 @@ funcInfoList *varCPPScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *
         bool recursive_flag = true;
         if(!xmlStrcmp(cur->name, (const xmlChar*)"if"))
         {
-            currentLine = StrToInt((char *)xmlGetProp(cur, (xmlChar*)"line"));
+            currentLine = StrToInt((char *)getLine(cur));
             if(varInfo.line < currentLine)
             {
                 xmlNodePtr condition = cur->children;
@@ -634,7 +634,7 @@ funcInfoList *varCPPScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *
         }
         else if(!xmlStrcmp(cur->name, (const xmlChar*)"while"))
         {
-            currentLine = StrToInt((char *)xmlGetProp(cur, (xmlChar*)"line"));
+            currentLine = StrToInt((char *)getLine(cur));
             if(varInfo.line < currentLine)
             {
                 xmlNodePtr condition = cur->children;
@@ -725,7 +725,7 @@ funcInfoList *varCPPScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *
         }
         else if(!xmlStrcmp(cur->name, (const xmlChar*)"do"))
         {
-            currentLine = StrToInt((char *)xmlGetProp(cur, (xmlChar*)"line"));
+            currentLine = StrToInt((char *)getLine(cur));
             if(varInfo.line < currentLine)
             {
                 xmlNodePtr condition = cur->children;
@@ -816,7 +816,7 @@ funcInfoList *varCPPScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *
         }
         else if(!xmlStrcmp(cur->name, (const xmlChar*)"for"))
         {
-            currentLine = StrToInt((char *)xmlGetProp(cur, (xmlChar*)"line"));
+            currentLine = StrToInt((char *)getLine(cur));
             if(varInfo.line < currentLine)
             {
                 xmlNodePtr control = cur->children;

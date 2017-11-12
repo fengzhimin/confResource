@@ -145,9 +145,10 @@ confScore buildConfScore(char *confName, char *xmlPath);
 /****************************************
  * func: 配置项在一个函数中的资源分数(递归包含该函数所调用的函数)
  * return: score
+ * @para confOptName: config option variable name
  * @para info: function information struct
 *****************************************/
-confScore getFuncScore(funcInfo info, int curPthreadID);
+confScore getFuncScore(char *confOptName, funcInfo info, int curPthreadID);
 
 /****************************************
  * func: get configuration key influence variable and function info

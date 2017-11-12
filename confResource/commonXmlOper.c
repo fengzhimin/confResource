@@ -60,7 +60,7 @@ bool JudgeExistChildNodeFromNode(xmlNodePtr cur, char *nodeName, bool flag)
     return false;
 }
 
-bool JudgeArgumentSimilar(char *funcName, char *arg1, char *arg2)
+bool JudgeArgumentSimilar(char *funcName, char *xmlFilePath, char *arg1, char *arg2)
 {
     int argNum1 = arg1[strlen(arg1)-2] - '0';
     int argNum2 = arg2[strlen(arg2)-2] - '0';
@@ -71,7 +71,7 @@ bool JudgeArgumentSimilar(char *funcName, char *arg1, char *arg2)
             return true;
         //判断是否有重名的函数存在
         char tempSqlCommand[LINE_CHAR_MAX_NUM] = "";
-        sprintf(tempSqlCommand, "select funcName from %s where funcName='%s'", funcScoreTableName, funcName);
+        sprintf(tempSqlCommand, "select funcName from %s where funcName='%s' and sourceFile='%s'", funcScoreTableName, funcName, xmlFilePath);
         MYSQL temp_db;
         MYSQL *tempMysqlConnect = NULL;
         tempMysqlConnect = mysql_init(&temp_db);
@@ -191,7 +191,7 @@ varType *ExtractVarDefFromNode(xmlNodePtr cur, bool flag)
             memset(end, 0, sizeof(varType));
             
             xmlNodePtr temp_cur = cur->children;
-            xmlChar* attr_value = xmlGetProp(cur->last, (xmlChar*)"line");
+            xmlChar* attr_value = getLine(cur->last);
             char type[MAX_VARIABLE_LENGTH];
             memset(type, 0, MAX_VARIABLE_LENGTH);
             while(temp_cur != NULL)
@@ -678,11 +678,7 @@ varDef *ExtractDirectInfluVarFromNode(xmlNodePtr cur, char *varName, varType *va
                                     //remove varName = varName + 1
                                     if(strcasecmp(influVarName, varName) != 0)
                                     {
-                                        xmlChar* attr_value = NULL;
-                                        if(!xmlStrcmp(name->children->name, (const xmlChar*)"name"))
-                                            attr_value = xmlGetProp(name->children, (xmlChar*)"line");
-                                        else
-                                            attr_value = xmlGetProp(name, (xmlChar*)"line");
+                                        xmlChar* attr_value = getLine(name);
                                         current = begin;
                                         //whether has existence or not
                                         while(current != NULL)
@@ -848,6 +844,7 @@ char *ExtractFuncArgumentType(xmlNodePtr cur)
     memset(retTypeString, 0, sizeof(char)*512);
     while(argument_list != NULL)
     {
+        //非正确解析的函数定义中参数列表使用argument_list标签
         if(!xmlStrcmp(argument_list->name, (const xmlChar*)"parameter_list"))
         {
             xmlNodePtr parameter = argument_list->children;
@@ -883,7 +880,7 @@ char *ExtractFuncArgumentType(xmlNodePtr cur)
                                                 sprintf(retTypeString, "%s/%s", retTypeString, (char*)xmlNodeGetContent(name));
                                             }
                                                 
-                                            goto next;
+                                            goto parameterNext;
                                         }
                                         name = name->next;
                                     }
@@ -894,8 +891,52 @@ char *ExtractFuncArgumentType(xmlNodePtr cur)
                         decl = decl->next;
                     }
                 }
-            next:
+            parameterNext:
                 parameter = parameter->next;
+            }
+            
+            break;
+        }
+        else if(!xmlStrcmp(argument_list->name, (const xmlChar*)"argument_list"))
+        {
+            xmlNodePtr argument = argument_list->children;
+            while(argument != NULL)
+            {
+                if(!xmlStrcmp(argument->name, (const xmlChar*)"argument"))
+                {
+                    xmlNodePtr expr = argument->children;
+                    while(expr != NULL)
+                    {
+                        if(!xmlStrcmp(expr->name, (const xmlChar*)"expr"))
+                        {
+                            xmlNodePtr name = expr->children;
+                            while(name != NULL)
+                            {
+                                if(!xmlStrcmp(name->name, (const xmlChar*)"name"))
+                                {
+                                    if(strlen(retTypeString) == 0)
+                                    {
+                                        if(strcasecmp((char*)xmlNodeGetContent(name), "void") == 0)
+                                            sprintf(retTypeString, "(%s", (char*)xmlNodeGetContent(name));
+                                        else
+                                            sprintf(retTypeString, "(%s", (char*)xmlNodeGetContent(name));
+                                        
+                                    }
+                                    else
+                                    {
+                                        sprintf(retTypeString, "%s/%s", retTypeString, (char*)xmlNodeGetContent(name));
+                                    }
+                                        
+                                    goto argumentNext;
+                                }
+                                name = name->next;
+                            }
+                        }
+                        expr = expr->next;
+                    }
+                }
+            argumentNext:
+                argument = argument->next;
             }
             
             break;
@@ -1487,7 +1528,7 @@ confVarDefValue getVarDefValueFromNode(char *varName, xmlNodePtr funcNode, bool 
         if(!xmlStrcmp(funcNode->name, (const xmlChar*)"if"))
         {
 #if DEBUG == 1
-            currentLine = StrToInt((char *)xmlGetProp(funcNode, (xmlChar*)"line"));
+            currentLine = StrToInt((char *)getLine(funcNode));
 #endif
             xmlNodePtr condition = funcNode->children;
             while(condition != NULL)
@@ -1532,7 +1573,8 @@ next:
 
 char *getParaNameByIndexFromNode(xmlNodePtr parameterListNode, int index)
 {
-    if(xmlStrcmp(parameterListNode->name, (const xmlChar*)"parameter_list"))
+    if(xmlStrcmp(parameterListNode->name, (const xmlChar*)"parameter_list") \
+    && xmlStrcmp(parameterListNode->name, (const xmlChar*)"argument_list"))
         return NULL;
     xmlNodePtr parameterNode = parameterListNode->children;
     while(parameterNode != NULL)
@@ -1555,6 +1597,27 @@ char *getParaNameByIndexFromNode(xmlNodePtr parameterListNode, int index)
                         }
                     }
                     decl = decl->next;
+                }
+            }
+        }
+        else if(!xmlStrcmp(parameterNode->name, (const xmlChar*)"argument"))
+        {
+            if(index-- == 0)
+            {
+                xmlNodePtr expr = parameterNode->children;
+                while(expr != NULL)
+                {
+                    if(!xmlStrcmp(expr->name, (const xmlChar*)"expr"))
+                    {
+                        xmlNodePtr name = expr->last;
+                        while(name != NULL)
+                        {
+                            if(!xmlStrcmp(name->name, (const xmlChar*)"name"))
+                                return (char *)xmlNodeGetContent(name);
+                            name = name->prev;
+                        }
+                    }
+                    expr = expr->next;
                 }
             }
         }
@@ -1610,13 +1673,17 @@ char *getParaNameByIndex(int index, char *funcName, char *xmlFilePath, char *fun
                     {
                         //get function argument type string
                         char *argumentTypeString = ExtractFuncArgumentType(funcNode);
-                        if(JudgeArgumentSimilar(funcName, argumentTypeString, funcArgumentType))
+                        char sourcePath[512] = "";
+                        //删除开头的temp_和结尾的.xml
+                        strncpy(sourcePath, (char *)&(xmlFilePath[5]), strlen(xmlFilePath)-9);
+                        if(JudgeArgumentSimilar(funcName, sourcePath, argumentTypeString, funcArgumentType))
                         {
                             //函数名和参数格式都匹配的函数
                             free(argumentTypeString);
                             while(temp_cur != NULL)
                             {
-                                if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"parameter_list"))
+                                if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"parameter_list") ||
+                                    !xmlStrcmp(temp_cur->name, (const xmlChar*)"argument_list"))
                                 {
                                     //get specific position parameter name
                                     char *paraName = getParaNameByIndexFromNode(temp_cur, index);
@@ -1722,7 +1789,10 @@ confVarDefValue ExtractSpeciParaDefValue(int paraIndex, char *funcName, char *xm
                     {
                         //get function argument type string
                         char *argumentTypeString = ExtractFuncArgumentType(funcNode);
-                        if(JudgeArgumentSimilar(funcName, argumentTypeString, funcArgumentType))
+                        char sourcePath[512] = "";
+                        //删除开头的temp_和结尾的.xml
+                        strncpy(sourcePath, (char *)&(xmlFilePath[5]), strlen(xmlFilePath)-9);
+                        if(JudgeArgumentSimilar(funcName, sourcePath, argumentTypeString, funcArgumentType))
                         {
                             //函数名和参数格式都匹配的函数
                             free(argumentTypeString);
@@ -1855,7 +1925,10 @@ varDirectInflFuncList *getVarInfluFunc(char *varName, char *funcName, char *xmlF
                     {
                         //get function argument type string
                         char *argumentTypeString = ExtractFuncArgumentType(funcNode);
-                        if(JudgeArgumentSimilar(funcName, argumentTypeString, funcArgumentType))
+                        char sourcePath[512] = "";
+                        //删除开头的temp_和结尾的.xml
+                        strncpy(sourcePath, (char *)&(xmlFilePath[5]), strlen(xmlFilePath)-9);
+                        if(JudgeArgumentSimilar(funcName, sourcePath, argumentTypeString, funcArgumentType))
                         {
                             //函数名和参数格式都匹配的函数
                             free(argumentTypeString);

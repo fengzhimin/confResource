@@ -937,7 +937,7 @@ bool buildFuncScore()
     return ret;
 }
 
-confScore getFuncScore(funcInfo info, int curPthreadID)
+confScore getFuncScore(char *confOptName, funcInfo info, int curPthreadID)
 {
     funcCallCount[curPthreadID]++;
     //record function call path
@@ -1080,7 +1080,7 @@ confScore getFuncScore(funcInfo info, int curPthreadID)
                 tempArgument.calledLine = StrToInt(sqlrow1[6]);
                 tempArgument.type = 'S';
                 
-                confScore temp_ret = getFuncScore(tempArgument, curPthreadID);
+                confScore temp_ret = getFuncScore(confOptName, tempArgument, curPthreadID);
                 ret.CPU += (temp_ret.CPU*multiple);
                 ret.MEM += (temp_ret.MEM*multiple);
                 ret.IO += (temp_ret.IO*multiple);
@@ -1144,7 +1144,7 @@ confScore getFuncScore(funcInfo info, int curPthreadID)
                         printf("\033[31m***func: %s(%s) influence resource!***\033[0m\n", info.funcName, info.sourceFile);
 #endif
                         funcInfoList *tempFuncCallInfo = funcCallPathInfo[curPthreadID];
-                        if(JudgeVarInflFuncCallPath("key_cache->param_buff_size", tempFuncCallInfo))
+                        if(JudgeVarInflFuncCallPath(confOptName, tempFuncCallInfo))
                         {
 #if PRINT_INFLUENCE_FUNCTION == 1
                             while(tempFuncCallInfo != NULL)
@@ -1227,7 +1227,7 @@ static void *getScore(void *arg)
                 //clear funcCallCount value
                 funcCallCount[argument->pthreadID] = 0;
                 //handle self-define function
-                confScore temp_ret = getFuncScore(funcInfoCur->info, argument->pthreadID);
+                confScore temp_ret = getFuncScore(argument->confOptName, funcInfoCur->info, argument->pthreadID);
                 ret->CPU += temp_ret.CPU;
                 ret->MEM += temp_ret.MEM;
                 ret->IO += temp_ret.IO;
