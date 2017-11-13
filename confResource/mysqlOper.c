@@ -92,6 +92,5 @@ bool executeSQLCommand(MYSQL *mysqlConn, char *command)
         mysql_close(tempMysqlConnect);
     }
     
-    
     return true;
 }

@@ -1191,11 +1191,13 @@ static void *getScore(void *arg)
     
     funcCallInfoBegin = funcCallInfoCur = VarSclice(argument->confOptName, argument->xmlFilePath);
     
+    /*
     confVarDefValue defaultValue;
     if(funcCallInfoCur != NULL)
     {
         defaultValue = getVarDefaultValue(argument->confOptName, argument->xmlFilePath);
     }
+    */
     while(funcCallInfoCur != NULL)
     {
         funcInfoList *funcInfoBegin = NULL;
@@ -1388,11 +1390,12 @@ static void *getScore(void *arg)
     }
     
     //if(defaultValue.defValue != -1)
+    /*
     ret->CPU *= defaultValue.defValue;
     ret->IO *= defaultValue.defValue;
     ret->MEM *= defaultValue.defValue;
     ret->NET *= defaultValue.defValue;
-    
+    */
     pthread_exit((void*)ret);
 }
 

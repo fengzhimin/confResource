@@ -1303,6 +1303,7 @@ funcCallInfoList *Sclice(char *varName, char *xmlFilePath, funcInfoList *(*varSc
                 {
                     RecordLog("get function name or line error!\n");
                     free(argumentTypeString);
+                    xmlFreeDoc(doc);
                     return NULL;
                 }
                 
@@ -1436,6 +1437,7 @@ funcCallInfoList *ScliceDebug(char *varName, char *xmlFilePath, funcInfoList *(*
                 {
                     RecordLog("get function name or line error!\n");
                     free(argumentTypeString);
+                    xmlFreeDoc(doc);
                     return NULL;
                 }
                 free(argumentTypeString);
