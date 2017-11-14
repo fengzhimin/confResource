@@ -695,29 +695,27 @@ varDef *ExtractDirectInfluVarFromNode(xmlNodePtr cur, char *varName, varType *va
                                                 end = end->next = malloc(sizeof(varDef));
                                             memset(end, 0, sizeof(varDef));
                                             strcpy(end->varName, influVarName);
+                                            varType *varTypeCurrent = varTypeBegin;
+                                            //set influVarName type(local or global)
+                                            while(varTypeCurrent != NULL)
+                                            {
+                                                //对结构体或累的成员变量进行分析，判断其是否为全局变量还是局部变量
+                                                if(strstr(influVarName, varTypeCurrent->varName) != NULL)
+                                                    break;
+                                                varTypeCurrent = varTypeCurrent->next;
+                                            }
+                                            if(varTypeCurrent == NULL)
+                                                end->type = true;
+                                            else
+                                                end->type = false;
+                                            end->line = StrToInt((char *)attr_value);
+                                            //printf("%s(%s)\n", influVarName, attr_value);
                                         }
-                                        varType *varTypeCurrent = varTypeBegin;
-                                        //set influVarName type(local or global)
-                                        while(varTypeCurrent != NULL)
-                                        {
-                                            //对结构体或累的成员变量进行分析，判断其是否为全局变量还是局部变量
-                                            if(strstr(influVarName, varTypeCurrent->varName) != NULL)
-                                                break;
-                                            varTypeCurrent = varTypeCurrent->next;
-                                        }
-                                        if(varTypeCurrent == NULL)
-                                            end->type = true;
-                                        else
-                                            end->type = false;
-                                        end->line = StrToInt((char *)attr_value);
-                                        //printf("%s(%s)\n", influVarName, attr_value);
                                     }
                                     goto next;
                                 }
                                 name = name->prev;
                             }
-                            //}
-                            //influName = influName->next;
                         }
                     }
                 }
@@ -737,31 +735,6 @@ next:
                     {
                         if(!xmlStrcmp(init->name, (const xmlChar*)"init"))
                         {
-                            /*xmlNodePtr expr = init->children;
-                            while(expr != NULL)
-                            {
-                                if(!xmlStrcmp(expr->name, (const xmlChar*)"expr"))
-                                {
-                                    xmlNodePtr name = expr->children;
-                                    while(name != NULL)
-                                    {
-                                        
-                                        bool isInfluence = false;
-                                        
-                                        if(!xmlStrcmp(name->name, (const xmlChar*)"name"))
-                                        {
-                                            char *var = (char*)xmlNodeGetContent(name);
-                                            if(strcasecmp(varName, var) == 0)
-                                            {
-                                                isInfluence = true;
-                                            }
-                                            else if(strstr(var, varName) != NULL && var[strlen(varName)] == '[')
-                                                isInfluence = true;
-                                        }
-                                        else if(!xmlStrcmp(name->name, (const xmlChar*)"call") && JudgeVarUsed(name, varName))
-                                        {
-                                            isInfluence = true;
-                                        }*/
                             if(JudgeVarUsed(init, varName))
                             {
                                 char *influVarName = NULL;
@@ -786,12 +759,6 @@ next:
                                 end->line = StrToInt((char *)attr_value);
                                 break;
                             }
-                            /*
-                                        name = name->next;
-                                    }
-                                }
-                                expr = expr->next;
-                            }*/
                         }
                         init = init->next;
                     }
@@ -802,16 +769,19 @@ next:
         
         current = ExtractDirectInfluVarFromNode(cur->children, varName, varTypeBegin, false);
         
-        if(begin == NULL)
-            begin = end = current;
-        else
-            end->next = current;
-        while(current != NULL)
+        if(current != NULL)
         {
-            end = current;
-            current = current->next;
+            if(begin == NULL)
+                begin = end = current;
+            else
+                end->next = current;
+            while(current != NULL)
+            {
+                end = current;
+                current = current->next;
+            }
         }
-        
+
         if(flag)
             break;
         cur = cur->next;
@@ -1095,11 +1065,11 @@ varDef *ScliceInflVarInfo(char *varName, xmlNodePtr cur, char *inflVarName, varD
     
     varDef *end = NULL;
     varDef *current = NULL;
-    if(inflVarName == NULL)
+    if(curInflVar == NULL)
         begin = end = current = ExtractDirectInfluVar(cur, varName, varTypeBegin);
     else
         begin = end = current = ExtractDirectInfluVar(cur, inflVarName, varTypeBegin);
-        
+    
     if(begin != NULL)
     {
         current = begin;
@@ -1283,6 +1253,7 @@ funcCallInfoList *Sclice(char *varName, char *xmlFilePath, funcInfoList *(*varSc
                 free(currentVarType);
                 currentVarType = beginVarType;
             }
+            
             if(begin != NULL)
             {
                 char *argumentTypeString = ExtractFuncArgumentType(funcNode);

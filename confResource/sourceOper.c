@@ -316,7 +316,20 @@ bool convertProgram(char *dirPath)
                     
                     void *pthread_ret = NULL;
                     if(ConvertSRCPthreadRet[currentConvertSrcPthreadID] == 0)
+                    {
                         pthread_join(convertSRCPthreadID[currentConvertSrcPthreadID], &pthread_ret);
+                        if(pthread_ret != NULL)
+                        {
+                            ret = *(int *)pthread_ret;
+                            free(pthread_ret);
+                            if(!ret)
+                            {
+                                RecordLog("pthread_join convert src failure!\n");
+                                closedir(pdir);
+                                return ret;
+                            }
+                        }
+                    }
                     memset(&convSrcPthreadArg[currentConvertSrcPthreadID], 0, sizeof(convertSrcPthread_arg));
                     strcpy(convSrcPthreadArg[currentConvertSrcPthreadID].des_dir, xml_dir);
                     strcpy(convSrcPthreadArg[currentConvertSrcPthreadID].src_dir, child_dir);
@@ -327,16 +340,7 @@ bool convertProgram(char *dirPath)
                     currentConvertSrcPthreadID++;
                     currentConvertSrcPthreadID = currentConvertSrcPthreadID%MAX_CONVERT_SRC_PTHREAD_NUM;
                     
-                    if(pthread_ret != NULL)
-                    {
-                        ret = *(int *)pthread_ret;
-                        free(pthread_ret);
-                        if(!ret)
-                        {
-                            closedir(pdir);
-                            return ret;
-                        }
-                    }
+                    
                 }
             }
         }
@@ -402,7 +406,20 @@ bool analyzeProgram(char *dirPath)
                 
                 void *pthread_ret = NULL;
                 if(analyzeXMLPthreadRet[currentAnalyzeXmlPthreadID] == 0)
+                {
                     pthread_join(analyzeXMLPthreadID[currentAnalyzeXmlPthreadID], &pthread_ret);
+                    if(pthread_ret != NULL)
+                    {
+                        ret = *(int *)pthread_ret;
+                        free(pthread_ret);
+                        if(!ret)
+                        {
+                            RecordLog("pthread_join analyze xml failure!\n");
+                            closedir(pdir);
+                            return ret;
+                        }
+                    }
+                }
                 memset(&analyXmlPthreadArg[currentAnalyzeXmlPthreadID], 0, sizeof(analyXmlPthread_arg));
                 strcpy(analyXmlPthreadArg[currentAnalyzeXmlPthreadID].src_dir, child_dir);
                 analyXmlPthreadArg[currentAnalyzeXmlPthreadID].pthreadID = currentAnalyzeXmlPthreadID;
@@ -411,17 +428,6 @@ bool analyzeProgram(char *dirPath)
                
                 currentAnalyzeXmlPthreadID++;
                 currentAnalyzeXmlPthreadID = currentAnalyzeXmlPthreadID%MAX_ANALYZE_XML_PTHREAD_NUM;
-                
-                if(pthread_ret != NULL)
-                {
-                    ret = *(int *)pthread_ret;
-                    free(pthread_ret);
-                    if(!ret)
-                    {
-                        closedir(pdir);
-                        return ret;
-                    }
-                }
             }
         }
     }
@@ -511,8 +517,20 @@ bool initSoftware(char *srcPath)
     ret = convertProgram(srcPath);
     for(i = 0; i < MAX_CONVERT_SRC_PTHREAD_NUM; i++)
     {
+        void *pthread_ret = NULL;
         if(ConvertSRCPthreadRet[i] == 0)
-            pthread_join(convertSRCPthreadID[i], NULL);
+        {
+            pthread_join(convertSRCPthreadID[i], &pthread_ret);
+            if(pthread_ret != NULL)
+            {
+                ret = *(int *)pthread_ret;
+                free(pthread_ret);
+                if(!ret)
+                {
+                    RecordLog("pthread_join convert src failure!\n");
+                }
+            }
+        }
     }
     
     char temp_dir[DIRPATH_MAX] = "";
@@ -525,7 +543,19 @@ bool initSoftware(char *srcPath)
     for(i = 0; i < MAX_ANALYZE_XML_PTHREAD_NUM; i++)
     {
         if(analyzeXMLPthreadRet[i] == 0)
-            pthread_join(analyzeXMLPthreadID[i], NULL);
+        {
+            void *pthread_ret = NULL;
+            pthread_join(analyzeXMLPthreadID[i], &pthread_ret);
+            if(pthread_ret != NULL)
+            {
+                ret = *(int *)pthread_ret;
+                free(pthread_ret);
+                if(!ret)
+                {
+                    RecordLog("pthread_join analyze xml failure!\n");
+                }
+            }
+        }
     }
     //delete temp funcScore table and temp funcCall table
     for(i = 0; i < MAX_ANALYZE_XML_PTHREAD_NUM; i++)
@@ -580,7 +610,7 @@ void optDataBaseOper(char *tempFuncScoreTableName, char *tempFuncCallTableName)
     }
     //删除相同的inline函数定义
     memset(tempSqlCommand, 0, LINE_CHAR_MAX_NUM);
-    sprintf(tempSqlCommand, "delete from %s where funcName in (select funcName from %s) and type='extern'", tempFuncScoreTableName, funcScoreTableName);
+    sprintf(tempSqlCommand, "delete from %s where funcName in (select funcName from %s where funcName!='main') and type='extern'", tempFuncScoreTableName, funcScoreTableName);
     if(!executeSQLCommand(tempMysqlConnect, tempSqlCommand))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
@@ -959,7 +989,7 @@ confScore getFuncScore(char *confOptName, funcInfo info, int curPthreadID)
     }
     
     endFuncCallInfo->info = info;
-    
+
     confScore ret;
     memset(&ret, 0, sizeof(confScore));
     char tempSqlCommand[LINE_CHAR_MAX_NUM] = "";
@@ -1086,8 +1116,9 @@ confScore getFuncScore(char *confOptName, funcInfo info, int curPthreadID)
                 ret.IO += (temp_ret.IO*multiple);
                 ret.NET += (temp_ret.NET*multiple);
             }
-            mysql_free_result(res_ptr1);
+            
         }
+        mysql_free_result(res_ptr1);
         //get function score from funcScore table
         memset(tempSqlCommand, 0, LINE_CHAR_MAX_NUM);
         sprintf(tempSqlCommand, "select CPU, MEM, IO, NET from %s where funcName='%s' and type='%s'\
@@ -1141,7 +1172,14 @@ confScore getFuncScore(char *confOptName, funcInfo info, int curPthreadID)
                     if((temp_CPU + temp_MEM + temp_IO + temp_NET) > 0)
                     {
 #if PRINT_INFLUENCE_FUNCTION == 1
-                        printf("\033[31m***func: %s(%s) influence resource!***\033[0m\n", info.funcName, info.sourceFile);
+                        if(temp_CPU > 0)
+                            printf("\033[31m***func: %s(%s) influence CPU resource!***\033[0m\n", info.funcName, info.sourceFile);
+                        if(temp_MEM > 0)
+                            printf("\033[31m***func: %s(%s) influence MEM resource!***\033[0m\n", info.funcName, info.sourceFile);
+                        if(temp_IO > 0)
+                            printf("\033[31m***func: %s(%s) influence IO resource!***\033[0m\n", info.funcName, info.sourceFile);
+                        if(temp_NET > 0)
+                            printf("\033[31m***func: %s(%s) influence NET resource!***\033[0m\n", info.funcName, info.sourceFile);
 #endif
                         funcInfoList *tempFuncCallInfo = funcCallPathInfo[curPthreadID];
                         if(JudgeVarInflFuncCallPath(confOptName, tempFuncCallInfo))
@@ -1165,19 +1203,20 @@ confScore getFuncScore(char *confOptName, funcInfo info, int curPthreadID)
                     ret.IO += temp_IO;
                     ret.NET += temp_NET;
                 }
-                mysql_free_result(res_ptr2);
             }
+            mysql_free_result(res_ptr2);
         }
     }
     mysql_close(tempMysqlConnect);
     funcCallCount[curPthreadID]--;
     //删除函数调用回退的最后一个记录
+    /*
     if(endFuncCallInfo->prev != NULL)
         endFuncCallInfo->prev->next = NULL;
     else
         funcCallPathInfo[curPthreadID] = NULL;
     free(endFuncCallInfo);
-    
+    */
     return ret;
 }
 
@@ -1221,7 +1260,6 @@ static void *getScore(void *arg)
         strcpy(funcCallPathInfo[tempPthreadID]->info.funcName, funcCallInfoCur->info.funcName);
         strcpy(funcCallPathInfo[tempPthreadID]->info.argumentType, funcCallInfoCur->info.funcArgumentType);
         strcpy(funcCallPathInfo[tempPthreadID]->info.sourceFile, funcCallInfoCur->info.sourceFile);
-        
         while(funcInfoCur != NULL)
         {
             if(funcInfoCur->info.type == 'S')
@@ -1278,8 +1316,8 @@ static void *getScore(void *arg)
                     {
                         forcount = StrToInt(sqlrow[0]);
                         whilecount = StrToInt(sqlrow[1]);
-                        mysql_free_result(res_ptr);
                     }
+                    mysql_free_result(res_ptr);
                 }
                 int multiple = forcount*FORNUM + whilecount*WHILENUM + 1;
                 //get IO score from funcLibrary table
@@ -1303,9 +1341,10 @@ static void *getScore(void *arg)
                         {
                             ret->IO += StrToInt(sqlrow[0])*multiple;
                         }
-                        mysql_free_result(res_ptr);
                     }
+                    mysql_free_result(res_ptr);
                 }
+                
                 //get NET score from funcLibrary table
                 memset(tempSqlCommand, 0, LINE_CHAR_MAX_NUM);
                 sprintf(tempSqlCommand, "select score from funcLibrary where funcName='%s' and type='NET'", funcInfoCur->info.funcName);
@@ -1327,8 +1366,8 @@ static void *getScore(void *arg)
                         {
                             ret->NET += StrToInt(sqlrow[0])*multiple;
                         }
-                        mysql_free_result(res_ptr);
                     }
+                    mysql_free_result(res_ptr);
                 }
                 //get CPU score from funcLibrary table
                 memset(tempSqlCommand, 0, LINE_CHAR_MAX_NUM);
@@ -1351,8 +1390,8 @@ static void *getScore(void *arg)
                         {
                             ret->CPU += StrToInt(sqlrow[0])*multiple;
                         }
-                        mysql_free_result(res_ptr);
                     }
+                    mysql_free_result(res_ptr);
                 }
                 //get MEM score from funcLibrary table
                 memset(tempSqlCommand, 0, LINE_CHAR_MAX_NUM);
@@ -1375,8 +1414,8 @@ static void *getScore(void *arg)
                         {
                             ret->MEM += StrToInt(sqlrow[0])*multiple;
                         }
-                        mysql_free_result(res_ptr);
                     }
+                    mysql_free_result(res_ptr);
                 }
                 mysql_close(tempMysqlConnect);
             }
@@ -1442,7 +1481,22 @@ confScore buildConfScore(char *confName, char *xmlPath)
             {
                 void *pthread_ret = NULL;
                 if(analyzeConfOptPthreadRet[currentAnalyzeConfOptPthreadID] == 0)
+                {
                     pthread_join(analyzeConfOptPthreadID[currentAnalyzeConfOptPthreadID], &pthread_ret);
+                    if(pthread_ret != NULL)
+                    {
+                        confScore *temp_ret = (confScore *)pthread_ret;
+                        ret.CPU += temp_ret->CPU;
+                        ret.MEM += temp_ret->MEM;
+                        ret.IO += temp_ret->IO;
+                        ret.NET += temp_ret->NET;
+                        free(pthread_ret);
+                    }
+                    else
+                    {
+                        RecordLog("pthread_join analyze configure option failure!\n");
+                    }
+                }
                 
                 memset(&analyConfOptPthreadArg[currentAnalyzeConfOptPthreadID], 0, sizeof(analyConfOptPthread_arg));
                 strcpy(analyConfOptPthreadArg[currentAnalyzeConfOptPthreadID].xmlFilePath, child_dir);
@@ -1454,16 +1508,6 @@ confScore buildConfScore(char *confName, char *xmlPath)
                
                 currentAnalyzeConfOptPthreadID++;
                 currentAnalyzeConfOptPthreadID = currentAnalyzeConfOptPthreadID%MAX_ANALYZE_CONFOPT_PTHREAD_NUM;
-                
-                if(pthread_ret != NULL)
-                {
-                    confScore *temp_ret = (confScore *)pthread_ret;
-                    ret.CPU += temp_ret->CPU;
-                    ret.MEM += temp_ret->MEM;
-                    ret.IO += temp_ret->IO;
-                    ret.NET += temp_ret->NET;
-                    free(pthread_ret);
-                }
             }
         }
     }

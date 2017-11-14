@@ -250,7 +250,7 @@ funcInfoList *scanCCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, bool 
                             strcpy(end->info.sourceFile, sqlrow[2]);
                             //sprintf(end->info.sourceFile, "temp_%s.xml", sqlrow[2]);
                             end->info.type = 'S';
-                            mysql_free_result(res_ptr);
+                            
                             break;
                         }
 #if DEBUG == 1         
@@ -265,6 +265,7 @@ funcInfoList *scanCCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, bool 
                         printf("%s(%s)\n", calledFuncName, attr_value);
 #endif
                     }
+                    mysql_free_result(res_ptr);
                 }
                 mysql_close(tempMysqlConnect);
             }
@@ -816,7 +817,7 @@ funcInfoList *varCScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *va
                                     strcpy(end->info.sourceFile, sqlrow[2]);
                                     //sprintf(end->info.sourceFile, "temp_%s.xml", sqlrow[2]);
                                     end->info.type = 'S';
-                                    mysql_free_result(res_ptr);
+                                    
                                     break;
                                 }
 #if DEBUG == 1
@@ -831,6 +832,7 @@ funcInfoList *varCScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *va
                                 printf("%s(%s)\n", calledFuncName, attr_value);
 #endif
                             }
+                            mysql_free_result(res_ptr);
                         }
                         mysql_close(tempMysqlConnect);
                     }
@@ -978,10 +980,11 @@ varDirectInflFuncList *getCDirectInflFuncFromNode(char *varName, xmlNodePtr func
                                     //sprintf(end->info.info.sourceFile, "temp_%s.xml", sqlrow[2]);
                                     end->info.info.type = ((char *)sqlrow[3])[0];
                                     end->info.index = paraPosition;
-                                    mysql_free_result(res_ptr);
+                                    
                                     break;
                                 }
                             }
+                            mysql_free_result(res_ptr);
                         }
                         mysql_close(tempMysqlConnect);
                     }

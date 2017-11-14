@@ -69,7 +69,7 @@ int main(int argc, char **argv)
         {
             if(analyzeConfOptPthreadRet[i] == 0)
             {
-                pthread_join(analyzeConfOptPthreadID[i], NULL);
+                pthread_join(analyzeConfOptPthreadID[i], &pthread_ret);
                 if(pthread_ret != NULL)
                 {
                     confScore *temp_ret = (confScore *)pthread_ret;
@@ -77,6 +77,7 @@ int main(int argc, char **argv)
                     resultScore.MEM += temp_ret->MEM;
                     resultScore.IO += temp_ret->IO;
                     resultScore.NET += temp_ret->NET;
+                    free(pthread_ret);
                 }
             }
         }

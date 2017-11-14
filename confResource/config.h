@@ -14,7 +14,7 @@
 
 #define OPENLOG  1      //0=不记录日志   1=记录日志
 
-#define DEBUG    0      //0=不打印调试信息    1 = 打印调试信息
+#define DEBUG    1      //0=不打印调试信息    1 = 打印调试信息
 
 #define PRINT_INFLUENCE_FUNCTION  1    //1 = 打印直接影响资源分数的函数  0 = 不打印
 
@@ -53,7 +53,7 @@
 //analyze xml file pthread number
 #define MAX_ANALYZE_XML_PTHREAD_NUM  15
 //analyze config option pthread number
-#define MAX_ANALYZE_CONFOPT_PTHREAD_NUM  4
+#define MAX_ANALYZE_CONFOPT_PTHREAD_NUM  1
 
 typedef struct configurationScore
 {
