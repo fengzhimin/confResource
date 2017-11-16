@@ -46,11 +46,29 @@ funcCallInfoList *VarSclice(char *varName, char *xmlFilePath);
 confVarDefValue getVarDefaultValue(char *varName, char *xmlFilePath);
 
 /**********************************
- * func: 判断一个变量是否通过数据传播影响给定的一条函数调用路径
+ * func: 判断一个变量是否通过数据传播影响给定的一条函数调用路径(目的是为了判断配置项变量是否应该库函数，从而确定库函数的基础分数)
  * return: true = 影响   false = 不影响
  * @para varName: 分析的变量
  * @para funcCallPath: 函数调用路径
+ * @para score: 当前分析的函数中各类资源的分数，如果配置项变量影响了该函数中的库函数，则score返回的值为配置项默认值
 ***********************************/
-bool JudgeVarInflFuncCallPath(char *varName, funcInfoList *funcCallPath);
+bool JudgeVarInflFuncCallPath(char *varName, funcInfoList *funcCallPath, confScore *score);
+
+/**********************************
+ * func: 判断一个变量是否通过数据传播影响给定的一条函数调用路径上最后一个函数中指定的变量(判断配置项变量是否影响指定的变量influedVarName)
+ * return: true = 影响   false = 不影响
+ * @para varName: 分析的变量
+ * @para influedVarName: 判断被影响的变量
+ * @para funcCallPath: 函数调用路径
+***********************************/
+bool JudgeVarInflSpeciVarByFuncCallPath(char *varName, char *influedVarName, funcInfoList *funcCallPath);
+
+/***********************************
+ * func: 提取指定变量通过数据传播影响给定的一条函数调用路径上最后一个函数的变量
+ * return: 影响变量列表
+ * @para varName: 分析的变量
+ * @para funcCallPath: 函数调用路径
+***********************************/
+varDef *ExtractVarInflVarByFuncCallPath(char *varName, funcInfoList *funcCallPath);
 
 #endif

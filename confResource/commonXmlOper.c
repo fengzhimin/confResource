@@ -1983,3 +1983,263 @@ varDirectInflFuncList *getVarInfluFunc(char *varName, char *funcName, char *xmlF
     
     return begin;
 }
+
+varDef *getVarInfluVarInfo(char *varName, char *funcName, char *xmlFilePath, char *funcArgumentType)
+{
+    varDef *begin = NULL;
+    xmlDocPtr doc;
+    xmlNodePtr cur;
+    xmlKeepBlanksDefault(0);
+    doc = xmlParseFile(xmlFilePath);
+    if(doc == NULL )
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "Document(%s) not parsed successfully. \n", xmlFilePath);
+		RecordLog(error_info);
+        return begin;
+    }
+    cur = xmlDocGetRootElement(doc);
+    if (cur == NULL)
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "empty document(%s). \n", xmlFilePath);
+		RecordLog(error_info);  
+        xmlFreeDoc(doc);
+        return begin;
+    }
+    
+    cur = cur->children;
+    while (cur != NULL)
+    {
+        if(!xmlStrcmp(cur->name, (const xmlChar*)"function") || \
+            (!xmlStrcmp(cur->name, (const xmlChar*)"extern") && cur->children != NULL && !xmlStrcmp(cur->last->name, (const xmlChar*)"function")) || \
+            (!xmlStrcmp(cur->name, (const xmlChar*)"decl_stmt") && cur->children != NULL && !xmlStrcmp(cur->last->name, (const xmlChar*)"decl")))
+        {
+            xmlNodePtr funcNode;
+            if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
+                funcNode = cur;
+            else
+                funcNode = cur->last;
+            xmlNodePtr temp_cur = funcNode->children;
+            while(temp_cur != NULL)
+            {
+                if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
+                { 
+                    if(strcasecmp(funcName, (char*)xmlNodeGetContent(temp_cur)) == 0)
+                    {
+                        //get function argument type string
+                        char *argumentTypeString = ExtractFuncArgumentType(funcNode);
+                        char sourcePath[512] = "";
+                        //删除开头的temp_和结尾的.xml
+                        strncpy(sourcePath, (char *)&(xmlFilePath[5]), strlen(xmlFilePath)-9);
+                        if(JudgeArgumentSimilar(funcName, sourcePath, argumentTypeString, funcArgumentType))
+                        {
+                            //函数名和参数格式都匹配的函数
+                            free(argumentTypeString);
+                            varType *beginVarType = ExtractVarType(funcNode);
+                            varType *currentVarType = beginVarType;
+                            //influence variable
+                            begin = ScliceInflVar(varName, funcNode, currentVarType);
+                            
+                            while(currentVarType != NULL)
+                            {
+                                beginVarType = beginVarType->next;
+                                free(currentVarType);
+                                currentVarType = beginVarType;
+                            }
+                        }
+                        else
+                        {
+                            free(argumentTypeString);
+                            memset(error_info, 0, LOGINFO_LENGTH);
+                            sprintf(error_info, "%s: function: %s has more than one define!\n", xmlFilePath, funcName);
+                            RecordLog(error_info);
+                        }
+                    }
+                }
+                temp_cur = temp_cur->next;
+            }
+        }
+        cur = cur->next;
+    }
+      
+    xmlFreeDoc(doc);
+    
+    return begin;
+}
+
+xmlNodePtr getSpeciCalledFuncNode(xmlNodePtr cur, char *calledFuncName, int calledLine)
+{
+    while(cur != NULL)
+    {
+        if(!xmlStrcmp(cur->name, (const xmlChar*)"call"))
+        {
+            if(cur->children->last != NULL)
+            {
+                xmlChar* attr_value = getLine(cur->children);
+                int line = StrToInt((char *)attr_value);
+                char *callFuncName = NULL;
+                if(xmlStrcmp(cur->children->last->name, (const xmlChar*)"position"))
+                {
+                    callFuncName = (char*)xmlNodeGetContent(cur->children->last);
+                }
+                else
+                {
+                    callFuncName = (char*)xmlNodeGetContent(cur->children);
+                }
+                //判断该节点是否为检查节点
+                if(strcasecmp(callFuncName, calledFuncName) == 0 && line == calledLine)
+                {
+                    return cur;
+                }
+            }
+        }
+        
+        xmlNodePtr retNode = getSpeciCalledFuncNode(cur->children, calledFuncName, calledLine);
+        if(retNode != NULL)
+            return retNode;
+
+        cur = cur->next;
+    }
+    
+    return NULL;
+}
+
+loopExprList *getCalledFuncLoopInfo(char *funcName, char *xmlFilePath, char *funcArgumentType, char *calledFuncName, int calledLine)
+{
+    loopExprList *begin = NULL;
+    loopExprList *end = NULL;
+    xmlDocPtr doc;
+    xmlNodePtr cur;
+    xmlKeepBlanksDefault(0);
+    doc = xmlParseFile(xmlFilePath);
+    if(doc == NULL )
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "Document(%s) not parsed successfully. \n", xmlFilePath);
+		RecordLog(error_info);
+        return begin;
+    }
+    cur = xmlDocGetRootElement(doc);
+    if (cur == NULL)
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "empty document(%s). \n", xmlFilePath);
+		RecordLog(error_info);  
+        xmlFreeDoc(doc);
+        return begin;
+    }
+    
+    cur = cur->children;
+    while (cur != NULL)
+    {
+        if(!xmlStrcmp(cur->name, (const xmlChar*)"function") || \
+            (!xmlStrcmp(cur->name, (const xmlChar*)"extern") && cur->children != NULL && !xmlStrcmp(cur->last->name, (const xmlChar*)"function")) || \
+            (!xmlStrcmp(cur->name, (const xmlChar*)"decl_stmt") && cur->children != NULL && !xmlStrcmp(cur->last->name, (const xmlChar*)"decl")))
+        {
+            xmlNodePtr funcNode;
+            if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
+                funcNode = cur;
+            else
+                funcNode = cur->last;
+            xmlNodePtr temp_cur = funcNode->children;
+            while(temp_cur != NULL)
+            {
+                if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
+                { 
+                    if(strcasecmp(funcName, (char*)xmlNodeGetContent(temp_cur)) == 0)
+                    {
+                        //get function argument type string
+                        char *argumentTypeString = ExtractFuncArgumentType(funcNode);
+                        char sourcePath[512] = "";
+                        //删除开头的temp_和结尾的.xml
+                        strncpy(sourcePath, (char *)&(xmlFilePath[5]), strlen(xmlFilePath)-9);
+                        if(JudgeArgumentSimilar(funcName, sourcePath, argumentTypeString, funcArgumentType))
+                        {
+                            //函数名和参数格式都匹配的函数
+                            free(argumentTypeString);
+                            //获取被调用函数的节点
+                            xmlNodePtr tempNode = getSpeciCalledFuncNode(funcNode, calledFuncName, calledLine);
+                            if(tempNode != NULL)
+                            {
+                                xmlNodePtr parentNode = tempNode->parent;
+                                while(parentNode != NULL)
+                                {
+                                    loopExpr tempLoopExpr;
+                                    tempLoopExpr.type = -1;
+                                    if(!xmlStrcmp(parentNode->name, (const xmlChar*)"for"))
+                                    {
+                                        xmlNodePtr childrenNode = parentNode->children;
+                                        while(childrenNode != NULL)
+                                        {
+                                            if(!xmlStrcmp(childrenNode->name, (const xmlChar*)"control"))
+                                            {
+                                                tempLoopExpr.type = 0;
+                                                strcpy(tempLoopExpr.loopExpr, (char*)xmlNodeGetContent(childrenNode));
+                                                break;
+                                            }
+                                            childrenNode = childrenNode->next;
+                                        }
+                                    }
+                                    else if(!xmlStrcmp(parentNode->name, (const xmlChar*)"do"))
+                                    {
+                                        xmlNodePtr childrenNode = parentNode->children;
+                                        while(childrenNode != NULL)
+                                        {
+                                            if(!xmlStrcmp(childrenNode->name, (const xmlChar*)"condition"))
+                                            {
+                                                tempLoopExpr.type = 2;
+                                                strcpy(tempLoopExpr.loopExpr, (char*)xmlNodeGetContent(childrenNode));
+                                                break;
+                                            }
+                                            childrenNode = childrenNode->next;
+                                        }
+                                    }
+                                    else if(!xmlStrcmp(parentNode->name, (const xmlChar*)"while"))
+                                    {
+                                        xmlNodePtr childrenNode = parentNode->children;
+                                        while(childrenNode != NULL)
+                                        {
+                                            if(!xmlStrcmp(childrenNode->name, (const xmlChar*)"condition"))
+                                            {
+                                                tempLoopExpr.type = 1;
+                                                strcpy(tempLoopExpr.loopExpr, (char*)xmlNodeGetContent(childrenNode));
+                                                break;
+                                            }
+                                            childrenNode = childrenNode->next;
+                                        }
+                                    }
+                                    
+                                    if(tempLoopExpr.type != -1)
+                                    {
+                                        if(begin == NULL)
+                                            begin = end = malloc(sizeof(loopExprList));
+                                        else
+                                            end = end->next = malloc(sizeof(loopExprList));
+                                        
+                                        memset(end, 0, sizeof(loopExprList));
+                                        end->expr = tempLoopExpr;
+                                    }
+                                    parentNode = parentNode->parent;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            free(argumentTypeString);
+                            memset(error_info, 0, LOGINFO_LENGTH);
+                            sprintf(error_info, "%s: function: %s has more than one define!\n", xmlFilePath, funcName);
+                            RecordLog(error_info);
+                        }
+                    }
+                }
+                temp_cur = temp_cur->next;
+            }
+        }
+        cur = cur->next;
+    }
+      
+    xmlFreeDoc(doc);
+    
+    return begin;
+}

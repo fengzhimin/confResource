@@ -994,12 +994,14 @@ confScore getFuncScore(char *confOptName, funcInfo info, int curPthreadID)
     memset(&ret, 0, sizeof(confScore));
     char tempSqlCommand[LINE_CHAR_MAX_NUM] = "";
     int argumentNum = getSpecCharNumFromStr(info.argumentType, '/') + 1;
+    char temp_argumentType[512] = "";
+    strcpy(temp_argumentType, info.argumentType);
     char selectArgumentType[512] = "(";
     if(argumentNum == 1)
     {
         //only one argument or only void#0
-        if(strstr(info.argumentType, "non") == NULL)
-            strcpy(selectArgumentType, info.argumentType);
+        if(strstr(temp_argumentType, "non") == NULL)
+            strcpy(selectArgumentType, temp_argumentType);
         else
             strcpy(selectArgumentType, "(%#1)");
     }
@@ -1008,11 +1010,11 @@ confScore getFuncScore(char *confOptName, funcInfo info, int curPthreadID)
         //more than one argument
         char (*arguType)[MAX_SUBSTR] = (char (*)[MAX_SUBSTR])malloc(argumentNum*MAX_SUBSTR);
         int arguNum = 0;
-        removeChar(info.argumentType, '(');
-        removeChar(info.argumentType, ')');
-        removeChar(info.argumentType, '#');
-        removeNum(info.argumentType);
-        cutStrByLabel(info.argumentType, '/', arguType, argumentNum);
+        removeChar(temp_argumentType, '(');
+        removeChar(temp_argumentType, ')');
+        removeChar(temp_argumentType, '#');
+        removeNum(temp_argumentType);
+        cutStrByLabel(temp_argumentType, '/', arguType, argumentNum);
         
         for(arguNum = 0; arguNum < argumentNum; arguNum++)
         {
@@ -1097,7 +1099,7 @@ confScore getFuncScore(char *confOptName, funcInfo info, int curPthreadID)
         {
             while((sqlrow1 = mysql_fetch_row(res_ptr1)) != NULL)
             {
-                int multiple = StrToInt(sqlrow1[3])*FORNUM + StrToInt(sqlrow1[4])*WHILENUM + 1;
+                int multiple = 1;//StrToInt(sqlrow1[3])*FORNUM + StrToInt(sqlrow1[4])*WHILENUM + 1;
 #if DEBUG == 1               
                 printf("(%s->%s)\n", info.funcName, sqlrow1[0]);
 #endif          
@@ -1111,6 +1113,58 @@ confScore getFuncScore(char *confOptName, funcInfo info, int curPthreadID)
                 tempArgument.type = 'S';
                 
                 confScore temp_ret = getFuncScore(confOptName, tempArgument, curPthreadID);
+                if((StrToInt(sqlrow1[3]) + StrToInt(sqlrow1[4])) > 0 && (temp_ret.CPU + temp_ret.IO + temp_ret.MEM + temp_ret.NET) > 0)
+                {
+                    //存在循环
+                    char xmlFilePath[512];
+                    sprintf(xmlFilePath, "temp_%s.xml", info.sourceFile);
+                    loopExprList *loopInfo = getCalledFuncLoopInfo(info.funcName, xmlFilePath, \
+                        info.argumentType, sqlrow1[0], StrToInt(sqlrow1[6]));
+                    
+                    varDef *beginVar = ExtractVarInflVarByFuncCallPath(confOptName, funcCallPathInfo[curPthreadID]);
+                    varDef *currentVar = beginVar;
+                    loopExprList *curLoopInfo = loopInfo;
+                    while(curLoopInfo != NULL)
+                    {
+                        if(strstr(curLoopInfo->expr.loopExpr, confOptName) != NULL)
+                        {
+                            multiple *= (currentConfOpt->defValue == 0 ? 1 : currentConfOpt->defValue);
+                            printf("function: %s(%s) 循环受到了配置项变量的影响!", info.funcName, sqlrow1[0]);
+                        }
+                        else
+                        {
+                            currentVar = beginVar;
+                            while(currentVar != NULL)
+                            {
+                                if(strstr(curLoopInfo->expr.loopExpr, currentVar->varName) != NULL)
+                                {
+                                    //循环变量受到了配置项变量的影响
+                                    multiple *= (currentConfOpt->defValue == 0 ? 1 : currentConfOpt->defValue);
+                                    printf("function: %s(%s) 循环受到了配置项变量的影响!", info.funcName, sqlrow1[0]);
+                                    
+                                    break;
+                                }
+                                currentVar = currentVar->next;
+                            }
+                        }
+                        
+                        curLoopInfo = curLoopInfo->next;
+                    }
+                    curLoopInfo = loopInfo;
+                    while(curLoopInfo != NULL)
+                    {
+                        loopInfo = loopInfo->next;
+                        free(curLoopInfo);
+                        curLoopInfo = loopInfo;
+                    }
+                    currentVar = beginVar;
+                    while(currentVar != NULL)
+                    {
+                        beginVar = beginVar->next;
+                        free(currentVar);
+                        currentVar = beginVar;
+                    }
+                }
                 ret.CPU += (temp_ret.CPU*multiple);
                 ret.MEM += (temp_ret.MEM*multiple);
                 ret.IO += (temp_ret.IO*multiple);
@@ -1182,26 +1236,28 @@ confScore getFuncScore(char *confOptName, funcInfo info, int curPthreadID)
                             printf("\033[31m***func: %s(%s) influence NET resource!***\033[0m\n", info.funcName, info.sourceFile);
 #endif
                         funcInfoList *tempFuncCallInfo = funcCallPathInfo[curPthreadID];
-                        if(JudgeVarInflFuncCallPath(confOptName, tempFuncCallInfo))
+                        confScore tempScore;
+                        tempScore.CPU = temp_CPU;
+                        tempScore.MEM = temp_MEM;
+                        tempScore.IO = temp_IO;
+                        tempScore.NET = temp_NET;
+                        if(JudgeVarInflFuncCallPath(confOptName, tempFuncCallInfo, &tempScore))
                         {
 #if PRINT_INFLUENCE_FUNCTION == 1
                             while(tempFuncCallInfo != NULL)
                             {
-                                printf("%s->", tempFuncCallInfo->info.funcName);
+                                printf("\033[36m%s->\033[0m", tempFuncCallInfo->info.funcName);
                                 tempFuncCallInfo = tempFuncCallInfo->next;
                             }
                             printf("\n");
 #endif
-                            ret.CPU += (currentConfOpt->defValue == 0 ? 1 : currentConfOpt->defValue)*temp_CPU;
-                            ret.MEM += (currentConfOpt->defValue == 0 ? 1 : currentConfOpt->defValue)*temp_MEM;
-                            ret.IO += (currentConfOpt->defValue == 0 ? 1 : currentConfOpt->defValue)*temp_IO;
-                            ret.NET += (currentConfOpt->defValue == 0 ? 1 : currentConfOpt->defValue)*temp_NET;
                         }
+                        
+                        ret.CPU += tempScore.CPU;
+                        ret.MEM += tempScore.MEM;
+                        ret.IO += tempScore.IO;
+                        ret.NET += tempScore.NET;
                     }
-                    ret.CPU += temp_CPU;
-                    ret.MEM += temp_MEM;
-                    ret.IO += temp_IO;
-                    ret.NET += temp_NET;
                 }
             }
             mysql_free_result(res_ptr2);
@@ -1210,13 +1266,12 @@ confScore getFuncScore(char *confOptName, funcInfo info, int curPthreadID)
     mysql_close(tempMysqlConnect);
     funcCallCount[curPthreadID]--;
     //删除函数调用回退的最后一个记录
-    /*
     if(endFuncCallInfo->prev != NULL)
         endFuncCallInfo->prev->next = NULL;
     else
         funcCallPathInfo[curPthreadID] = NULL;
     free(endFuncCallInfo);
-    */
+
     return ret;
 }
 

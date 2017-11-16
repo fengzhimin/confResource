@@ -14,7 +14,7 @@
 
 #define OPENLOG  1      //0=不记录日志   1=记录日志
 
-#define DEBUG    1      //0=不打印调试信息    1 = 打印调试信息
+#define DEBUG    0      //0=不打印调试信息    1 = 打印调试信息
 
 #define PRINT_INFLUENCE_FUNCTION  1    //1 = 打印直接影响资源分数的函数  0 = 不打印
 
@@ -43,6 +43,8 @@
 
 #define MAX_PATH_LENGTH          1024    //path max length
 
+#define MAX_EXPR_LENGTH          512     //max expression length
+
 #define FORNUM                   0     //for multiple
 #define WHILENUM                 0     //while and do-while multiple
 
@@ -53,7 +55,7 @@
 //analyze xml file pthread number
 #define MAX_ANALYZE_XML_PTHREAD_NUM  15
 //analyze config option pthread number
-#define MAX_ANALYZE_CONFOPT_PTHREAD_NUM  1
+#define MAX_ANALYZE_CONFOPT_PTHREAD_NUM  4
 
 typedef struct configurationScore
 {
@@ -187,6 +189,22 @@ typedef struct variableDirectInflFuncList
     varDirectInflFunc info;
     struct variableDirectInflFuncList *next;
 } varDirectInflFuncList;
+
+/***********************************
+ * @para type: 循环类型   0 = for     1 = while   2 = do-while
+ * @para loopExpr: 循环条件表达式
+************************************/
+typedef struct loopExpression
+{
+    int type;
+    char loopExpr[MAX_EXPR_LENGTH];
+} loopExpr;
+
+typedef struct loopExpressionList
+{
+    loopExpr expr;
+    struct loopExpressionList *next;
+} loopExprList;
 
 extern char bind_address[CONFIG_VALUE_MAX_NUM];
 extern int port;

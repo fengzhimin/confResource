@@ -226,5 +226,35 @@ confVarDefValue ExtractSpeciParaDefValue(int paraIndex, char *funcName, char *xm
 ***********************************/
 varDirectInflFuncList *getVarInfluFunc(char *varName, char *funcName, char *xmlFilePath, char *funcArgumentType, \
     varDirectInflFuncList *(*DirectInflFunc)(char *, xmlNodePtr, varType *, bool));
+    
+/************************************
+ * func: 获取变量varName在函数funcName中通过数据传播所影响的变量信息
+ * return: 被影响的变量信息
+ * @para varName: 要分析的变量
+ * @para funcName: 要分析的函数名
+ * @para xmlFilePath: funcName函数所在的xml文件路径
+ * @para funcArgumentType: funcName函数的参数格式
+***********************************/
+varDef *getVarInfluVarInfo(char *varName, char *funcName, char *xmlFilePath, char *funcArgumentType);
+
+/*************************************
+ * func: get specific called function node from current node
+ * return: called function node
+ * @para cur: current node
+ * @para calledFuncName: called function name
+ * @para calledLine: called line
+**************************************/
+xmlNodePtr getSpeciCalledFuncNode(xmlNodePtr cur, char *calledFuncName, int calledLine);
+
+/**************************************
+ * func: 获取一个被调用函数所处的循环信息表达式
+ * return: 返回所处循环信息的列表
+ * @para funcName: 调用函数的名称
+ * @para xmlFilePath: funcName所在xml路径
+ * @para funcArgumentType: funcName 参数类型
+ * @para calledFuncName: 被调用函数名称
+ * @para calledLine: calledFuncName在函数funcName中被调用的行数
+***************************************/
+loopExprList *getCalledFuncLoopInfo(char *funcName, char *xmlFilePath, char *funcArgumentType, char *calledFuncName, int calledLine);
 
 #endif
