@@ -26,7 +26,7 @@ bool ExtractFuncFromCPPXML(char *xmlFilePath, char *tempFuncScoreTableName, char
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "Document(%s) not parsed successfully. \n", xmlFilePath);
-		RecordLog(error_info);
+		Error(error_info);
         return false;
     }
     cur = xmlDocGetRootElement(doc);
@@ -34,7 +34,7 @@ bool ExtractFuncFromCPPXML(char *xmlFilePath, char *tempFuncScoreTableName, char
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "empty document(%s). \n", xmlFilePath);
-		RecordLog(error_info);  
+		Error(error_info);  
         xmlFreeDoc(doc);
         return false;
     }
@@ -90,7 +90,7 @@ bool ExtractCPPFunc(char *xmlFilePath, xmlNodePtr cur, char *tempFuncScoreTableN
                     {
                         memset(error_info, 0, LOGINFO_LENGTH);
                         sprintf(error_info, "execute commad %s failure.\n", tempSqlCommand);
-                        RecordLog(error_info);
+                        Error(error_info);
                         ret = false;
                     }
 
@@ -138,14 +138,14 @@ bool ExtractCPPFunc(char *xmlFilePath, xmlNodePtr cur, char *tempFuncScoreTableN
                             tempMysqlConnect = mysql_init(&temp_db);
                             if(tempMysqlConnect == NULL)
                             {
-                                RecordLog("init mysql failure\n");
+                                Error("init mysql failure\n");
                                 return false;
                             }
                             if(NULL == mysql_real_connect((MYSQL *)tempMysqlConnect, bind_address, user, pass, database, port, NULL, 0))
                             {
                                 memset(error_info, 0, LOGINFO_LENGTH);
                                 sprintf(error_info, "connect failed: %s\n", mysql_error(tempMysqlConnect));
-                                RecordLog(error_info);
+                                Error(error_info);
                                 mysql_close(tempMysqlConnect);
                                 return false;
                             }
@@ -248,7 +248,7 @@ static void scanCallFunctionFromNode(char *tempFuncCallTableName, xmlNodePtr cur
                     {
                         memset(error_info, 0, LOGINFO_LENGTH);
                         sprintf(error_info, "execute commad %s failure.\n", tempSqlCommand);
-                        RecordLog(error_info);
+                        Error(error_info);
                     }
                 }
             }
@@ -324,14 +324,14 @@ funcInfoList *scanCPPCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, boo
                 tempMysqlConnect = mysql_init(&temp_db);
                 if(tempMysqlConnect == NULL)
                 {
-                    RecordLog("init mysql failure\n");
+                    Error("init mysql failure\n");
                     return false;
                 }
                 if(NULL == mysql_real_connect((MYSQL *)tempMysqlConnect, bind_address, user, pass, database, port, NULL, 0))
                 {
                     memset(error_info, 0, LOGINFO_LENGTH);
                     sprintf(error_info, "connect failed: %s\n", mysql_error(tempMysqlConnect));
-                    RecordLog(error_info);
+                    Error(error_info);
                     mysql_close(tempMysqlConnect);
                     return false;
                 }
@@ -339,7 +339,7 @@ funcInfoList *scanCPPCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, boo
                 {
                     memset(error_info, 0, LOGINFO_LENGTH);
                     sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
-                    RecordLog(error_info);
+                    Error(error_info);
                     mysql_close(tempMysqlConnect);
                     return false;
                 }
@@ -475,7 +475,7 @@ bool ExtractClassInheritFromCPPXML(char *docName)
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "Document(%s) not parsed successfully. \n", docName);
-		RecordLog(error_info);
+		Error(error_info);
         return false;
     }
     cur = xmlDocGetRootElement(doc);
@@ -483,7 +483,7 @@ bool ExtractClassInheritFromCPPXML(char *docName)
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "empty document(%s). \n", docName);
-		RecordLog(error_info);  
+		Error(error_info);  
         xmlFreeDoc(doc);
         return false;
     }
@@ -989,14 +989,14 @@ funcInfoList *varCPPScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *
                         tempMysqlConnect = mysql_init(&temp_db);
                         if(tempMysqlConnect == NULL)
                         {
-                            RecordLog("init mysql failure\n");
+                            Error("init mysql failure\n");
                             return false;
                         }
                         if(NULL == mysql_real_connect((MYSQL *)tempMysqlConnect, bind_address, user, pass, database, port, NULL, 0))
                         {
                             memset(error_info, 0, LOGINFO_LENGTH);
                             sprintf(error_info, "connect failed: %s\n", mysql_error(tempMysqlConnect));
-                            RecordLog(error_info);
+                            Error(error_info);
                             mysql_close(tempMysqlConnect);
                             return false;
                         }
@@ -1004,7 +1004,7 @@ funcInfoList *varCPPScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *
                         {
                             memset(error_info, 0, LOGINFO_LENGTH);
                             sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
-                            RecordLog(error_info);
+                            Error(error_info);
                             mysql_close(tempMysqlConnect);
                             return false;
                         }
@@ -1176,14 +1176,14 @@ varDirectInflFuncList *getCPPDirectInflFuncFromNode(char *varName, xmlNodePtr fu
                         tempMysqlConnect = mysql_init(&temp_db);
                         if(tempMysqlConnect == NULL)
                         {
-                            RecordLog("init mysql failure\n");
+                            Error("init mysql failure\n");
                             return NULL;
                         }
                         if(NULL == mysql_real_connect((MYSQL *)tempMysqlConnect, bind_address, user, pass, database, port, NULL, 0))
                         {
                             memset(error_info, 0, LOGINFO_LENGTH);
                             sprintf(error_info, "connect failed: %s\n", mysql_error(tempMysqlConnect));
-                            RecordLog(error_info);
+                            Error(error_info);
                             mysql_close(tempMysqlConnect);
                             return NULL;
                         }
@@ -1191,7 +1191,7 @@ varDirectInflFuncList *getCPPDirectInflFuncFromNode(char *varName, xmlNodePtr fu
                         {
                             memset(error_info, 0, LOGINFO_LENGTH);
                             sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
-                            RecordLog(error_info);
+                            Error(error_info);
                             mysql_close(tempMysqlConnect);
                             return NULL;
                         }
@@ -1262,7 +1262,7 @@ confVarDefValue getCPPVarDefaultValue(char *varName, char *xmlFilePath)
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "Document(%s) not parsed successfully. \n", xmlFilePath);
-		RecordLog(error_info);
+		Error(error_info);
         return ret;
     }
     cur = xmlDocGetRootElement(doc);
@@ -1270,7 +1270,7 @@ confVarDefValue getCPPVarDefaultValue(char *varName, char *xmlFilePath)
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "empty document(%s). \n", xmlFilePath);
-		RecordLog(error_info);  
+		Error(error_info);  
         xmlFreeDoc(doc);
         return ret;
     }

@@ -15,7 +15,7 @@ bool createDir(char *path)
     {
          memset(error_info, 0, LOGINFO_LENGTH);
          sprintf(error_info, "create %s failed: %s.\n", path, strerror(errno));
-         RecordLog(error_info);
+         Error(error_info);
          return false;
     }
     
@@ -33,7 +33,7 @@ bool deleteDir(char *path)
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "open %s failed: %s.\n", path, strerror(errno));
-        RecordLog(error_info);
+        Error(error_info);
         return false;
     }
 

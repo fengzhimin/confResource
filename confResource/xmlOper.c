@@ -78,14 +78,14 @@ bool JudgeVarInflFuncCallPath(char *varName, funcInfoList *funcCallPath, confSco
             tempMysqlConnect = mysql_init(&temp_db);
             if(tempMysqlConnect == NULL)
             {
-                RecordLog("init mysql failure\n");
+                Error("init mysql failure\n");
                 return false;
             }
             if(NULL == mysql_real_connect((MYSQL *)tempMysqlConnect, bind_address, user, pass, database, port, NULL, 0))
             {
                 memset(error_info, 0, LOGINFO_LENGTH);
                 sprintf(error_info, "connect failed: %s\n", mysql_error(tempMysqlConnect));
-                RecordLog(error_info);
+                Error(error_info);
                 mysql_close(tempMysqlConnect);
                 return false;
             }
@@ -96,7 +96,7 @@ bool JudgeVarInflFuncCallPath(char *varName, funcInfoList *funcCallPath, confSco
             {
                 memset(error_info, 0, LOGINFO_LENGTH);
                 sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
-                RecordLog(error_info);
+                Error(error_info);
                 mysql_close(tempMysqlConnect);
                 return ret;
             }
@@ -161,7 +161,7 @@ bool JudgeVarInflFuncCallPath(char *varName, funcInfoList *funcCallPath, confSco
             {
                 memset(error_info, 0, LOGINFO_LENGTH);
                 sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
-                RecordLog(error_info);
+                Error(error_info);
                 mysql_close(tempMysqlConnect);
                 return false;
             }
@@ -180,7 +180,7 @@ bool JudgeVarInflFuncCallPath(char *varName, funcInfoList *funcCallPath, confSco
                     {
                         memset(error_info, 0, LOGINFO_LENGTH);
                         sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
-                        RecordLog(error_info);
+                        Error(error_info);
                         mysql_close(tempMysqlConnect);
                         return false;
                     }
@@ -309,7 +309,7 @@ bool JudgeVarInflFuncCallPath(char *varName, funcInfoList *funcCallPath, confSco
                         memset(error_info, 0, LOGINFO_LENGTH);
                         sprintf(error_info, "%s: get function(%s) index = %d parameter failure!\n", current->info.info.sourceFile, \
                             current->info.info.funcName, current->info.index);
-                        RecordLog(error_info);
+                        Warning(error_info);
                     }
                 }
                     
@@ -408,7 +408,7 @@ bool JudgeVarInflSpeciVarByFuncCallPath(char *varName, char *influedVarName, fun
                     memset(error_info, 0, LOGINFO_LENGTH);
                     sprintf(error_info, "%s: get function(%s) index = %d parameter failure!\n", current->info.info.sourceFile, \
                         current->info.info.funcName, current->info.index);
-                    RecordLog(error_info);
+                    Warning(error_info);
                 }
             }
                 
@@ -487,7 +487,7 @@ varDef *ExtractVarInflVarByFuncCallPath(char *varName, funcInfoList *funcCallPat
                     memset(error_info, 0, LOGINFO_LENGTH);
                     sprintf(error_info, "%s: get function(%s) index = %d parameter failure!\n", current->info.info.sourceFile, \
                         current->info.info.funcName, current->info.index);
-                    RecordLog(error_info);
+                    Warning(error_info);
                 }
             }
                 

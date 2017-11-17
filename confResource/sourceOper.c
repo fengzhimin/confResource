@@ -86,7 +86,7 @@ bool getProgramName(char *sourcePath)
     {
         if((length - index) > MAX_PROGRAMNAME_NUM)
         {
-            RecordLog("program name greater than preset values\n");
+            Error("program name greater than preset values\n");
             return false;
         }
         else
@@ -96,7 +96,7 @@ bool getProgramName(char *sourcePath)
     {
         if(length > MAX_PROGRAMNAME_NUM)
         {
-            RecordLog("program name greater than preset values\n");
+            Error("program name greater than preset values\n");
             return false;
         }
         else
@@ -195,7 +195,7 @@ bool CodeToXML(char *srcPath, char *desPath)
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "create process failed: %s.\n", strerror(errno));
-        RecordLog(error_info);
+        Error(error_info);
         return false;
     }
     else if(pid == 0)
@@ -204,7 +204,7 @@ bool CodeToXML(char *srcPath, char *desPath)
         {
             memset(error_info, 0, LOGINFO_LENGTH);
             sprintf(error_info, "convert %s to XML failed: %s.\n", srcPath, strerror(errno));
-            RecordLog(error_info);
+            Error(error_info);
 
             exit(-1);
         }
@@ -216,7 +216,7 @@ bool CodeToXML(char *srcPath, char *desPath)
         {
             memset(error_info, 0, LOGINFO_LENGTH);
             sprintf(error_info, "wait child process exit failed: %s.\n", strerror(errno));
-            RecordLog(error_info);
+            Error(error_info);
             
             return false;
         }
@@ -286,7 +286,7 @@ bool convertProgram(char *dirPath)
             {
                 memset(error_info, 0, LOGINFO_LENGTH);
                 sprintf(error_info, "lstat %s to failed: %s.\n", child_dir, strerror(errno));
-                RecordLog(error_info);
+                Error(error_info);
                 closedir(pdir);
                 
                 return false;
@@ -324,7 +324,7 @@ bool convertProgram(char *dirPath)
                             free(pthread_ret);
                             if(!ret)
                             {
-                                RecordLog("pthread_join convert src failure!\n");
+                                Error("pthread_join convert src failure!\n");
                                 closedir(pdir);
                                 return ret;
                             }
@@ -349,7 +349,7 @@ bool convertProgram(char *dirPath)
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "open directory %s to failed: %s.\n", dirPath, strerror(errno));
-        RecordLog(error_info);
+        Error(error_info);
         
         ret = false;
     }
@@ -381,7 +381,7 @@ bool analyzeProgram(char *dirPath)
             {
                 memset(error_info, 0, LOGINFO_LENGTH);
                 sprintf(error_info, "lstat %s to failed: %s.\n", child_dir, strerror(errno));
-                RecordLog(error_info);
+                Error(error_info);
                 closedir(pdir);
                 
                 return ret;
@@ -414,7 +414,7 @@ bool analyzeProgram(char *dirPath)
                         free(pthread_ret);
                         if(!ret)
                         {
-                            RecordLog("pthread_join analyze xml failure!\n");
+                            Error("pthread_join analyze xml failure!\n");
                             closedir(pdir);
                             return ret;
                         }
@@ -435,7 +435,7 @@ bool analyzeProgram(char *dirPath)
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "open directory %s to failed: %s.\n", dirPath, strerror(errno));
-        RecordLog(error_info);
+        Error(error_info);
     }
     closedir(pdir);
     
@@ -465,7 +465,7 @@ int getTotalAnalyzeFileNum(char *dirPath)
             {
                 memset(error_info, 0, LOGINFO_LENGTH);
                 sprintf(error_info, "lstat %s to failed: %s.\n", child_dir, strerror(errno));
-                RecordLog(error_info);
+                Error(error_info);
                 closedir(pdir);
                 
                 return 0;
@@ -493,7 +493,7 @@ int getTotalAnalyzeFileNum(char *dirPath)
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "open directory %s to failed: %s.\n", dirPath, strerror(errno));
-        RecordLog(error_info);
+        Error(error_info);
     }
     closedir(pdir);
     
@@ -527,7 +527,7 @@ bool initSoftware(char *srcPath)
                 free(pthread_ret);
                 if(!ret)
                 {
-                    RecordLog("pthread_join convert src failure!\n");
+                    Error("pthread_join convert src failure!\n");
                 }
             }
         }
@@ -552,7 +552,7 @@ bool initSoftware(char *srcPath)
                 free(pthread_ret);
                 if(!ret)
                 {
-                    RecordLog("pthread_join analyze xml failure!\n");
+                    Error("pthread_join analyze xml failure!\n");
                 }
             }
         }
@@ -565,7 +565,7 @@ bool initSoftware(char *srcPath)
             ret = true;
         else
         {
-            RecordLog("delete tempFuncScore table failure!\n");
+            Error("delete tempFuncScore table failure!\n");
             ret = false;
         }
         sprintf(deleteTempFuncCallTable, deleteTempFuncCallTableTemplate, tempFuncCallTableName[i]);
@@ -573,7 +573,7 @@ bool initSoftware(char *srcPath)
         ret = true;
         else
         {
-            RecordLog("delete tempFuncCall table failure!\n");
+            Error("delete tempFuncCall table failure!\n");
             ret = false;
         }
     }
@@ -590,14 +590,14 @@ void optDataBaseOper(char *tempFuncScoreTableName, char *tempFuncCallTableName)
     tempMysqlConnect = mysql_init(&temp_db);
     if(tempMysqlConnect == NULL)
     {
-        RecordLog("init mysql failure\n");
+        Error("init mysql failure\n");
         return ;
     }
     if(NULL == mysql_real_connect((MYSQL *)tempMysqlConnect, bind_address, user, pass, database, port, NULL, 0))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "connect failed: %s\n", mysql_error(tempMysqlConnect));
-        RecordLog(error_info);
+        Error(error_info);
         return ;
     }
     char tempSqlCommand[LINE_CHAR_MAX_NUM] = "";
@@ -606,7 +606,7 @@ void optDataBaseOper(char *tempFuncScoreTableName, char *tempFuncCallTableName)
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", tempSqlCommand);
-        RecordLog(error_info);
+        Error(error_info);
     }
     //删除相同的inline函数定义
     memset(tempSqlCommand, 0, LINE_CHAR_MAX_NUM);
@@ -615,7 +615,7 @@ void optDataBaseOper(char *tempFuncScoreTableName, char *tempFuncCallTableName)
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", tempSqlCommand);
-        RecordLog(error_info);
+        Error(error_info);
     }
     //merge tempFuncScore into funcScore
     memset(tempSqlCommand, 0, LINE_CHAR_MAX_NUM);
@@ -624,7 +624,7 @@ void optDataBaseOper(char *tempFuncScoreTableName, char *tempFuncCallTableName)
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", tempSqlCommand);
-        RecordLog(error_info);
+        Error(error_info);
     }
     // delete library function call record from funcCall
     memset(tempSqlCommand, 0, LINE_CHAR_MAX_NUM);
@@ -634,7 +634,7 @@ void optDataBaseOper(char *tempFuncScoreTableName, char *tempFuncCallTableName)
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", tempSqlCommand);
-        RecordLog(error_info);
+        Error(error_info);
     }
     //merge tempFuncCall into funcCall
     memset(tempSqlCommand, 0, LINE_CHAR_MAX_NUM);
@@ -643,7 +643,7 @@ void optDataBaseOper(char *tempFuncScoreTableName, char *tempFuncCallTableName)
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", tempSqlCommand);
-        RecordLog(error_info);
+        Error(error_info);
     }
     //clear tempFuncScore
     memset(tempSqlCommand, 0, LINE_CHAR_MAX_NUM);
@@ -652,7 +652,7 @@ void optDataBaseOper(char *tempFuncScoreTableName, char *tempFuncCallTableName)
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", tempSqlCommand);
-        RecordLog(error_info);
+        Error(error_info);
     }
     //clear tempFuncCall
     memset(tempSqlCommand, 0, LINE_CHAR_MAX_NUM);
@@ -661,7 +661,7 @@ void optDataBaseOper(char *tempFuncScoreTableName, char *tempFuncCallTableName)
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", tempSqlCommand);
-        RecordLog(error_info);
+        Error(error_info);
     }
     mysql_close(tempMysqlConnect);
 }
@@ -691,7 +691,7 @@ bool buildFuncScore()
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
-        RecordLog(error_info);
+        Error(error_info);
     }
     //update funcCall table type field
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
@@ -700,7 +700,7 @@ bool buildFuncScore()
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
-        RecordLog(error_info);
+        Error(error_info);
     }
     else
         ret = true;
@@ -723,7 +723,7 @@ bool buildFuncScore()
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
-        RecordLog(error_info);
+        Error(error_info);
     }
     //MEM score
     printf("MEM score calculating\n");
@@ -734,7 +734,7 @@ bool buildFuncScore()
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
-        RecordLog(error_info);
+        Error(error_info);
     }
     else
     {
@@ -742,7 +742,7 @@ bool buildFuncScore()
         sprintf(sqlCommand, "alter table %s add column score int", tmp_table);
         if(!executeCommand(sqlCommand))
         {
-            RecordLog("execute commad alter table tmp_table add column score int failure.");
+            Error("execute commad alter table tmp_table add column score int failure.");
         }
         else
         {
@@ -751,7 +751,7 @@ bool buildFuncScore()
             where tmp_table.calledFunc=funcLibrary.funcName", tmp_table, FORNUM, WHILENUM);
             if(!executeCommand(sqlCommand))
             {
-                RecordLog("execute commad update tmp_table, funcLibrary set tmp_table.score=funcLibrary.score where tmp_table.calledFunc=funcLibrary.funcName failure.");
+                Error("execute commad update tmp_table, funcLibrary set tmp_table.score=funcLibrary.score where tmp_table.calledFunc=funcLibrary.funcName failure.");
             }
         }
     }
@@ -762,7 +762,7 @@ bool buildFuncScore()
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
-        RecordLog(error_info);
+        Error(error_info);
     }
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
     sprintf(sqlCommand, "drop table %s", tmp_table);
@@ -770,7 +770,7 @@ bool buildFuncScore()
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
-        RecordLog(error_info);
+        Error(error_info);
     }
     else
         ret = true;
@@ -785,7 +785,7 @@ bool buildFuncScore()
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
-        RecordLog(error_info);
+        Error(error_info);
     }
     else
     {
@@ -793,7 +793,7 @@ bool buildFuncScore()
         sprintf(sqlCommand, "alter table %s add column score int", tmp_table);
         if(!executeCommand(sqlCommand))
         {
-            RecordLog("execute commad alter table tmp_table add column score int failure.");
+            Error("execute commad alter table tmp_table add column score int failure.");
         }
         else
         {
@@ -802,7 +802,7 @@ bool buildFuncScore()
             where tmp_table.calledFunc=funcLibrary.funcName", tmp_table, FORNUM, WHILENUM);
             if(!executeCommand(sqlCommand))
             {
-                RecordLog("execute commad update tmp_table, funcLibrary set tmp_table.score=funcLibrary.score where tmp_table.calledFunc=funcLibrary.funcName failure.");
+                Error("execute commad update tmp_table, funcLibrary set tmp_table.score=funcLibrary.score where tmp_table.calledFunc=funcLibrary.funcName failure.");
             }
         }
     }
@@ -813,7 +813,7 @@ bool buildFuncScore()
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
-        RecordLog(error_info);
+        Error(error_info);
     }
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
     sprintf(sqlCommand, "drop table %s", tmp_table);
@@ -821,7 +821,7 @@ bool buildFuncScore()
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
-        RecordLog(error_info);
+        Error(error_info);
     }
     else
         ret = true;
@@ -835,7 +835,7 @@ bool buildFuncScore()
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
-        RecordLog(error_info);
+        Error(error_info);
     }
     else
     {
@@ -843,7 +843,7 @@ bool buildFuncScore()
         sprintf(sqlCommand, "alter table %s add column score int", tmp_table);
         if(!executeCommand(sqlCommand))
         {
-            RecordLog("execute commad alter table tmp_table add column score int failure.");
+            Error("execute commad alter table tmp_table add column score int failure.");
         }
         else
         {
@@ -852,7 +852,7 @@ bool buildFuncScore()
             where tmp_table.calledFunc=funcLibrary.funcName", tmp_table, FORNUM, WHILENUM);
             if(!executeCommand(sqlCommand))
             {
-                RecordLog("execute commad update tmp_table, funcLibrary set tmp_table.score=funcLibrary.score where tmp_table.calledFunc=funcLibrary.funcName failure.");
+                Error("execute commad update tmp_table, funcLibrary set tmp_table.score=funcLibrary.score where tmp_table.calledFunc=funcLibrary.funcName failure.");
             }
         }
     }
@@ -863,7 +863,7 @@ bool buildFuncScore()
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
-        RecordLog(error_info);
+        Error(error_info);
     }
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
     sprintf(sqlCommand, "drop table %s", tmp_table);
@@ -871,7 +871,7 @@ bool buildFuncScore()
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
-        RecordLog(error_info);
+        Error(error_info);
     }
     else
         ret = true;
@@ -885,7 +885,7 @@ bool buildFuncScore()
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
-        RecordLog(error_info);
+        Error(error_info);
     }
     else
     {
@@ -893,7 +893,7 @@ bool buildFuncScore()
         sprintf(sqlCommand, "alter table %s add column score int", tmp_table);
         if(!executeCommand(sqlCommand))
         {
-            RecordLog("execute commad alter table tmp_table add column score int failure.");
+            Error("execute commad alter table tmp_table add column score int failure.");
         }
         else
         {
@@ -902,7 +902,7 @@ bool buildFuncScore()
             where tmp_table.calledFunc=funcLibrary.funcName", tmp_table, FORNUM, WHILENUM);
             if(!executeCommand(sqlCommand))
             {
-                RecordLog("execute commad update tmp_table, funcLibrary set tmp_table.score=funcLibrary.score where tmp_table.calledFunc=funcLibrary.funcName failure.");
+                Error("execute commad update tmp_table, funcLibrary set tmp_table.score=funcLibrary.score where tmp_table.calledFunc=funcLibrary.funcName failure.");
             }
         }
     }
@@ -913,7 +913,7 @@ bool buildFuncScore()
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
-        RecordLog(error_info);
+        Error(error_info);
     }
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
     sprintf(sqlCommand, "drop table %s", tmp_table);
@@ -921,7 +921,7 @@ bool buildFuncScore()
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
-        RecordLog(error_info);
+        Error(error_info);
     }
     else
         ret = true;
@@ -933,7 +933,7 @@ bool buildFuncScore()
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
-        RecordLog(error_info);
+        Error(error_info);
     }
     else
         ret = true;
@@ -946,7 +946,7 @@ bool buildFuncScore()
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
-        RecordLog(error_info);
+        Error(error_info);
     }
     else
         ret = true;
@@ -959,7 +959,7 @@ bool buildFuncScore()
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
-        RecordLog(error_info);
+        Error(error_info);
     }
     else
         ret = true;
@@ -1043,14 +1043,14 @@ confScore getFuncScore(char *confOptName, funcInfo info, int curPthreadID)
     tempMysqlConnect = mysql_init(&temp_db);
     if(tempMysqlConnect == NULL)
     {
-        RecordLog("init mysql failure\n");
+        Error("init mysql failure\n");
         return ret;
     }
     if(NULL == mysql_real_connect((MYSQL *)tempMysqlConnect, bind_address, user, pass, database, port, NULL, 0))
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "connect failed: %s\n", mysql_error(tempMysqlConnect));
-        RecordLog(error_info);
+        Error(error_info);
         mysql_close(tempMysqlConnect);
         return ret;
     }
@@ -1061,7 +1061,7 @@ confScore getFuncScore(char *confOptName, funcInfo info, int curPthreadID)
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
-        RecordLog(error_info);
+        Error(error_info);
         mysql_close(tempMysqlConnect);
         return ret;
     }
@@ -1084,7 +1084,7 @@ confScore getFuncScore(char *confOptName, funcInfo info, int curPthreadID)
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
-        RecordLog(error_info);
+        Error(error_info);
         mysql_close(tempMysqlConnect);
         return ret;
     }
@@ -1184,7 +1184,7 @@ confScore getFuncScore(char *confOptName, funcInfo info, int curPthreadID)
         {
             memset(error_info, 0, LOGINFO_LENGTH);
             sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
-            RecordLog(error_info);
+            Error(error_info);
             mysql_close(tempMysqlConnect);
             return ret;
         }
@@ -1207,7 +1207,7 @@ confScore getFuncScore(char *confOptName, funcInfo info, int curPthreadID)
         {
             memset(error_info, 0, LOGINFO_LENGTH);
             sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
-            RecordLog(error_info);
+            Error(error_info);
             mysql_close(tempMysqlConnect);
             return ret;
         }
@@ -1338,14 +1338,14 @@ static void *getScore(void *arg)
                 tempMysqlConnect = mysql_init(&temp_db);
                 if(tempMysqlConnect == NULL)
                 {
-                    RecordLog("init mysql failure\n");
+                    Error("init mysql failure\n");
                     return NULL;
                 }
                 if(NULL == mysql_real_connect((MYSQL *)tempMysqlConnect, bind_address, user, pass, database, port, NULL, 0))
                 {
                     memset(error_info, 0, LOGINFO_LENGTH);
                     sprintf(error_info, "connect failed: %s\n", mysql_error(tempMysqlConnect));
-                    RecordLog(error_info);
+                    Error(error_info);
                     mysql_close(tempMysqlConnect);
                     return NULL;
                 }
@@ -1359,7 +1359,7 @@ static void *getScore(void *arg)
                 {
                     memset(error_info, 0, LOGINFO_LENGTH);
                     sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
-                    RecordLog(error_info);
+                    Error(error_info);
                     mysql_close(tempMysqlConnect);
                     return NULL;
                 }
@@ -1382,7 +1382,7 @@ static void *getScore(void *arg)
                 {
                     memset(error_info, 0, LOGINFO_LENGTH);
                     sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
-                    RecordLog(error_info);
+                    Error(error_info);
                     mysql_close(tempMysqlConnect);
                     return NULL;
                 }
@@ -1407,7 +1407,7 @@ static void *getScore(void *arg)
                 {
                     memset(error_info, 0, LOGINFO_LENGTH);
                     sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
-                    RecordLog(error_info);
+                    Error(error_info);
                     mysql_close(tempMysqlConnect);
                     return NULL;
                 }
@@ -1431,7 +1431,7 @@ static void *getScore(void *arg)
                 {
                     memset(error_info, 0, LOGINFO_LENGTH);
                     sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
-                    RecordLog(error_info);
+                    Error(error_info);
                     mysql_close(tempMysqlConnect);
                     return NULL;
                 }
@@ -1455,7 +1455,7 @@ static void *getScore(void *arg)
                 {
                     memset(error_info, 0, LOGINFO_LENGTH);
                     sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
-                    RecordLog(error_info);
+                    Error(error_info);
                     mysql_close(tempMysqlConnect);
                     return NULL;
                 }
@@ -1517,7 +1517,7 @@ confScore buildConfScore(char *confName, char *xmlPath)
             {
                 memset(error_info, 0, LOGINFO_LENGTH);
                 sprintf(error_info, "lstat %s to failed: %s.\n", child_dir, strerror(errno));
-                RecordLog(error_info);
+                Error(error_info);
                 closedir(pdir);
                 
                 return ret;
@@ -1549,7 +1549,7 @@ confScore buildConfScore(char *confName, char *xmlPath)
                     }
                     else
                     {
-                        RecordLog("pthread_join analyze configure option failure!\n");
+                        Error("pthread_join analyze configure option failure!\n");
                     }
                 }
                 
@@ -1570,7 +1570,7 @@ confScore buildConfScore(char *confName, char *xmlPath)
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "open directory %s to failed: %s.\n", xmlPath, strerror(errno));
-        RecordLog(error_info);
+        Error(error_info);
     }
     closedir(pdir);
     
@@ -1599,7 +1599,7 @@ void getConfKeyInfluence(char *confKeyName, char *dirPath)
             {
                 memset(error_info, 0, LOGINFO_LENGTH);
                 sprintf(error_info, "lstat %s to failed: %s.\n", child_dir, strerror(errno));
-                RecordLog(error_info);
+                Error(error_info);
                 closedir(pdir);
                 
                 return ;
@@ -1621,7 +1621,7 @@ void getConfKeyInfluence(char *confKeyName, char *dirPath)
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "open directory %s to failed: %s.\n", dirPath, strerror(errno));
-        RecordLog(error_info);
+        Error(error_info);
     }
     closedir(pdir);
 }

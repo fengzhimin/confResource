@@ -21,7 +21,7 @@ bool buildLibrary()
         ret = true;
     else
     {
-        RecordLog("delete funcLibrary table failure!\n");
+        Error("delete funcLibrary table failure!\n");
         ret = false;
     }
 
@@ -30,7 +30,7 @@ bool buildLibrary()
         ret = true;
     else
     {
-        RecordLog("create funcLibrary table failure!\n");
+        Error("create funcLibrary table failure!\n");
         ret = false;
     }
     
@@ -39,7 +39,7 @@ bool buildLibrary()
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "open file(%s) failed: %s\n", FUNCLIBRARY_PATH, strerror(errno));
-		RecordLog(error_info);
+		Error(error_info);
         
         return ret;
     }
@@ -54,7 +54,7 @@ bool buildLibrary()
             ret = true;
         else
         {
-            RecordLog("insert function library failure!\n");
+            Error("insert function library failure!\n");
             ret = false;
         }     
         memset(lineData, 0, LINE_CHAR_MAX_NUM);

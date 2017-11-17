@@ -53,7 +53,7 @@ int main(int argc, char **argv)
         time(&start); 
         memset(log_info, 0, LOGINFO_LENGTH);
         sprintf(log_info, "----------analysing configuration(%s) use resource info-----------\n", currentConfOpt->confName);
-        RecordLog(log_info);
+        Result(log_info);
         confScore resultScore;
         memset(&resultScore, 0, sizeof(confScore));
         for( i = 0; i < currentConfOpt->mapVariableNum; i++)
@@ -83,13 +83,13 @@ int main(int argc, char **argv)
         }
         memset(log_info, 0, LOGINFO_LENGTH);
         sprintf(log_info, "CPU: %d MEM: %d IO: %d NET: %d\n", resultScore.CPU, resultScore.MEM, resultScore.IO, resultScore.NET);
-        RecordLog(log_info);
+        Result(log_info);
         time(&end); 
         finish = end - start;
         memset(log_info, 0, LOGINFO_LENGTH);
         sprintf(log_info, "time is: %d second\n", (int)finish);
-        RecordLog(log_info);
-        RecordLog("------complete--------\n\n");
+        Result(log_info);
+        Result("------complete--------\n\n");
     }
 
     stopMysql();

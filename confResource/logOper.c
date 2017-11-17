@@ -33,9 +33,20 @@ char *CreateLogInfo(const char *logInfo, const char *file, const char* function,
 	return mergeInfo;
 }
 
-int WriteLog(const char* logName, const char* logInfo, const char *file, const char* function, const int line)
+int WriteLog(int rank, const char* logName, const char* logInfo, const char *file, const char* function, const int line)
 {
-	printf("%s", logInfo);   //终端及时显示信息
+    switch(rank)
+    {
+        case 0:
+            printf("\033[31m%s\033[0m", logInfo);   //终端及时显示信息
+            break;
+        case 1:
+            printf("\033[32m%s\033[0m", logInfo);   //终端及时显示信息
+            break;
+        default:
+            printf("%s", logInfo);   //终端及时显示信息
+    }
+	
 #if OPENLOG
 	int _fd = OpenFile(logName, O_APPEND | O_RDWR);
 	if(-1 == _fd)

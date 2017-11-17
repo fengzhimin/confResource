@@ -77,14 +77,14 @@ bool JudgeArgumentSimilar(char *funcName, char *xmlFilePath, char *arg1, char *a
         tempMysqlConnect = mysql_init(&temp_db);
         if(tempMysqlConnect == NULL)
         {
-            RecordLog("init mysql failure\n");
+            Error("init mysql failure\n");
             return NULL;
         }
         if(NULL == mysql_real_connect((MYSQL *)tempMysqlConnect, bind_address, user, pass, database, port, NULL, 0))
         {
             memset(error_info, 0, LOGINFO_LENGTH);
             sprintf(error_info, "connect failed: %s\n", mysql_error(tempMysqlConnect));
-            RecordLog(error_info);
+            Error(error_info);
             mysql_close(tempMysqlConnect);
             return NULL;
         }
@@ -92,7 +92,7 @@ bool JudgeArgumentSimilar(char *funcName, char *xmlFilePath, char *arg1, char *a
         {
             memset(error_info, 0, LOGINFO_LENGTH);
             sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
-            RecordLog(error_info);
+            Error(error_info);
             mysql_close(tempMysqlConnect);
             return NULL;
         }
@@ -565,7 +565,7 @@ void ExtractGlobalVarDef(char *xmlFilePath)
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "Document(%s) not parsed successfully. \n", xmlFilePath);
-		RecordLog(error_info);
+		Error(error_info);
         return ;
     }
     cur = xmlDocGetRootElement(doc);
@@ -573,7 +573,7 @@ void ExtractGlobalVarDef(char *xmlFilePath)
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "empty document(%s). \n", xmlFilePath);
-		RecordLog(error_info);  
+		Error(error_info);  
         xmlFreeDoc(doc);
         return ;
     }
@@ -812,6 +812,8 @@ char *ExtractFuncArgumentType(xmlNodePtr cur)
     xmlNodePtr argument_list = cur->children;
     char *retTypeString = malloc(sizeof(char)*512);
     memset(retTypeString, 0, sizeof(char)*512);
+    bool point_void = false;
+    bool point = false;
     while(argument_list != NULL)
     {
         //非正确解析的函数定义中参数列表使用argument_list标签
@@ -840,10 +842,21 @@ char *ExtractFuncArgumentType(xmlNodePtr cur)
                                             if(strlen(retTypeString) == 0)
                                             {
                                                 if(strcasecmp((char*)xmlNodeGetContent(name), "void") == 0)
-                                                    sprintf(retTypeString, "(%s", (char*)xmlNodeGetContent(name));
-                                                else
-                                                    sprintf(retTypeString, "(%s", (char*)xmlNodeGetContent(name));
-                                                
+                                                {
+                                                    point_void = true;
+                                                    while(type != NULL)
+                                                    {
+                                                        
+                                                        //判断函数参数是否为void *类型
+                                                        if(!xmlStrcmp(type->name, (const xmlChar*)"name"))
+                                                        {
+                                                            point = true;
+                                                            break;
+                                                        }
+                                                        type = type->next;
+                                                    }
+                                                }
+                                                sprintf(retTypeString, "(%s", (char*)xmlNodeGetContent(name));
                                             }
                                             else
                                             {
@@ -886,11 +899,7 @@ char *ExtractFuncArgumentType(xmlNodePtr cur)
                                 {
                                     if(strlen(retTypeString) == 0)
                                     {
-                                        if(strcasecmp((char*)xmlNodeGetContent(name), "void") == 0)
-                                            sprintf(retTypeString, "(%s", (char*)xmlNodeGetContent(name));
-                                        else
-                                            sprintf(retTypeString, "(%s", (char*)xmlNodeGetContent(name));
-                                        
+                                        sprintf(retTypeString, "(%s", (char*)xmlNodeGetContent(name));
                                     }
                                     else
                                     {
@@ -919,7 +928,18 @@ char *ExtractFuncArgumentType(xmlNodePtr cur)
     else
     {
         int charNum = getSpecCharNumFromStr(retTypeString, '/') + 1;
-        sprintf(retTypeString, "%s#%d", retTypeString, charNum);
+        if(charNum > 1)
+        {
+            sprintf(retTypeString, "%s#%d", retTypeString, charNum);
+        }
+        else
+        {
+            if(point_void && !point)
+                sprintf(retTypeString, "%s#%d", retTypeString, 0);
+            else
+                sprintf(retTypeString, "%s#%d", retTypeString, charNum);
+        }
+        
         strcat(retTypeString, ")");
     }
     
@@ -1174,7 +1194,7 @@ funcCallInfoList *Sclice(char *varName, char *xmlFilePath, funcInfoList *(*varSc
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "Document(%s) not parsed successfully. \n", xmlFilePath);
-		RecordLog(error_info);
+		Error(error_info);
         return NULL;
     }
     cur = xmlDocGetRootElement(doc);
@@ -1182,7 +1202,7 @@ funcCallInfoList *Sclice(char *varName, char *xmlFilePath, funcInfoList *(*varSc
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "empty document(%s). \n", xmlFilePath);
-		RecordLog(error_info);  
+		Error(error_info);  
         xmlFreeDoc(doc);
         return NULL;
     }
@@ -1272,7 +1292,7 @@ funcCallInfoList *Sclice(char *varName, char *xmlFilePath, funcInfoList *(*varSc
                 }
                 else
                 {
-                    RecordLog("get function name or line error!\n");
+                    Error("get function name or line error!\n");
                     free(argumentTypeString);
                     xmlFreeDoc(doc);
                     return NULL;
@@ -1301,7 +1321,7 @@ funcCallInfoList *ScliceDebug(char *varName, char *xmlFilePath, funcInfoList *(*
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "Document(%s) not parsed successfully. \n", xmlFilePath);
-		RecordLog(error_info);
+		Error(error_info);
         return NULL;
     }
     cur = xmlDocGetRootElement(doc);
@@ -1309,7 +1329,7 @@ funcCallInfoList *ScliceDebug(char *varName, char *xmlFilePath, funcInfoList *(*
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "empty document(%s). \n", xmlFilePath);
-		RecordLog(error_info);  
+		Error(error_info);  
         xmlFreeDoc(doc);
         return NULL;
     }
@@ -1406,7 +1426,7 @@ funcCallInfoList *ScliceDebug(char *varName, char *xmlFilePath, funcInfoList *(*
                 }
                 else
                 {
-                    RecordLog("get function name or line error!\n");
+                    Warning("get function name or line error!\n");
                     free(argumentTypeString);
                     xmlFreeDoc(doc);
                     return NULL;
@@ -1612,7 +1632,7 @@ char *getParaNameByIndex(int index, char *funcName, char *xmlFilePath, char *fun
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "Document(%s) not parsed successfully. \n", xmlFilePath);
-		RecordLog(error_info);
+		Error(error_info);
         return ret;
     }
     cur = xmlDocGetRootElement(doc);
@@ -1620,7 +1640,7 @@ char *getParaNameByIndex(int index, char *funcName, char *xmlFilePath, char *fun
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "empty document(%s). \n", xmlFilePath);
-		RecordLog(error_info);  
+		Error(error_info);  
         xmlFreeDoc(doc);
         return ret;
     }
@@ -1678,7 +1698,7 @@ char *getParaNameByIndex(int index, char *funcName, char *xmlFilePath, char *fun
                             free(argumentTypeString);
                             memset(error_info, 0, LOGINFO_LENGTH);
                             sprintf(error_info, "%s: function: %s has more than one define!\n", xmlFilePath, funcName);
-                            RecordLog(error_info);
+                            Warning(error_info);
                         }
                     }
                 }
@@ -1728,7 +1748,7 @@ confVarDefValue ExtractSpeciParaDefValue(int paraIndex, char *funcName, char *xm
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "Document(%s) not parsed successfully. \n", xmlFilePath);
-		RecordLog(error_info);
+		Error(error_info);
         return ret;
     }
     cur = xmlDocGetRootElement(doc);
@@ -1736,7 +1756,7 @@ confVarDefValue ExtractSpeciParaDefValue(int paraIndex, char *funcName, char *xm
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "empty document(%s). \n", xmlFilePath);
-		RecordLog(error_info);  
+		Error(error_info);  
         xmlFreeDoc(doc);
         return ret;
     }
@@ -1835,7 +1855,7 @@ confVarDefValue ExtractSpeciParaDefValue(int paraIndex, char *funcName, char *xm
                             free(argumentTypeString);
                             memset(error_info, 0, LOGINFO_LENGTH);
                             sprintf(error_info, "%s: function: %s has more than one define!\n", xmlFilePath, funcName);
-                            RecordLog(error_info);
+                            Warning(error_info);
                         }
                     }
                 }
@@ -1864,7 +1884,7 @@ varDirectInflFuncList *getVarInfluFunc(char *varName, char *funcName, char *xmlF
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "Document(%s) not parsed successfully. \n", xmlFilePath);
-		RecordLog(error_info);
+		Error(error_info);
         return begin;
     }
     cur = xmlDocGetRootElement(doc);
@@ -1872,7 +1892,7 @@ varDirectInflFuncList *getVarInfluFunc(char *varName, char *funcName, char *xmlF
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "empty document(%s). \n", xmlFilePath);
-		RecordLog(error_info);  
+		Error(error_info);  
         xmlFreeDoc(doc);
         return begin;
     }
@@ -1969,7 +1989,7 @@ varDirectInflFuncList *getVarInfluFunc(char *varName, char *funcName, char *xmlF
                             free(argumentTypeString);
                             memset(error_info, 0, LOGINFO_LENGTH);
                             sprintf(error_info, "%s: function: %s has more than one define!\n", xmlFilePath, funcName);
-                            RecordLog(error_info);
+                            Warning(error_info);
                         }
                     }
                 }
@@ -1995,7 +2015,7 @@ varDef *getVarInfluVarInfo(char *varName, char *funcName, char *xmlFilePath, cha
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "Document(%s) not parsed successfully. \n", xmlFilePath);
-		RecordLog(error_info);
+		Error(error_info);
         return begin;
     }
     cur = xmlDocGetRootElement(doc);
@@ -2003,7 +2023,7 @@ varDef *getVarInfluVarInfo(char *varName, char *funcName, char *xmlFilePath, cha
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "empty document(%s). \n", xmlFilePath);
-		RecordLog(error_info);  
+		Error(error_info);  
         xmlFreeDoc(doc);
         return begin;
     }
@@ -2053,7 +2073,7 @@ varDef *getVarInfluVarInfo(char *varName, char *funcName, char *xmlFilePath, cha
                             free(argumentTypeString);
                             memset(error_info, 0, LOGINFO_LENGTH);
                             sprintf(error_info, "%s: function: %s has more than one define!\n", xmlFilePath, funcName);
-                            RecordLog(error_info);
+                            Warning(error_info);
                         }
                     }
                 }
@@ -2117,7 +2137,7 @@ loopExprList *getCalledFuncLoopInfo(char *funcName, char *xmlFilePath, char *fun
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "Document(%s) not parsed successfully. \n", xmlFilePath);
-		RecordLog(error_info);
+		Error(error_info);
         return begin;
     }
     cur = xmlDocGetRootElement(doc);
@@ -2125,7 +2145,7 @@ loopExprList *getCalledFuncLoopInfo(char *funcName, char *xmlFilePath, char *fun
     {
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "empty document(%s). \n", xmlFilePath);
-		RecordLog(error_info);  
+		Error(error_info);  
         xmlFreeDoc(doc);
         return begin;
     }
@@ -2229,7 +2249,7 @@ loopExprList *getCalledFuncLoopInfo(char *funcName, char *xmlFilePath, char *fun
                             free(argumentTypeString);
                             memset(error_info, 0, LOGINFO_LENGTH);
                             sprintf(error_info, "%s: function: %s has more than one define!\n", xmlFilePath, funcName);
-                            RecordLog(error_info);
+                            Warning(error_info);
                         }
                     }
                 }

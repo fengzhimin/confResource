@@ -64,7 +64,7 @@ bool buildTempTable()
         ret = true;
     else
     {
-        RecordLog("create funcScore table failure!\n");
+        Error("create funcScore table failure!\n");
         ret = false;
     }
     
@@ -73,7 +73,7 @@ bool buildTempTable()
         ret = true;
     else
     {
-        RecordLog("create class inherit table failure!\n");
+        Error("create class inherit table failure!\n");
         ret = false;
     }
     
@@ -82,7 +82,7 @@ bool buildTempTable()
         ret = true;
     else
     {
-        RecordLog("create funcCall table failure!\n");
+        Error("create funcCall table failure!\n");
         ret = false;
     }
     int i;
@@ -93,7 +93,7 @@ bool buildTempTable()
             ret = true;
         else
         {
-            RecordLog("create tempFuncScore table failure!\n");
+            Error("create tempFuncScore table failure!\n");
             ret = false;
         }
         sprintf(createTempFuncCallTable, createTempFuncCallTableTemplate, tempFuncCallTableName[i]);
@@ -101,7 +101,7 @@ bool buildTempTable()
         ret = true;
         else
         {
-            RecordLog("create tempFuncCall table failure!\n");
+            Error("create tempFuncCall table failure!\n");
             ret = false;
         }
     }
@@ -117,7 +117,7 @@ bool deleteTempTable()
         ret = true;
     else
     {
-        RecordLog("delete funcScore table failure!\n");
+        Error("delete funcScore table failure!\n");
         ret = false;
     }
     
@@ -126,7 +126,7 @@ bool deleteTempTable()
         ret = true;
     else
     {
-        RecordLog("delete class inherit table failure!\n");
+        Error("delete class inherit table failure!\n");
         ret = false;
     }
     
@@ -135,7 +135,7 @@ bool deleteTempTable()
         ret = true;
     else
     {
-        RecordLog("delete funcCall table failure!\n");
+        Error("delete funcCall table failure!\n");
         ret = false;
     }
     int i;
@@ -146,7 +146,7 @@ bool deleteTempTable()
             ret = true;
         else
         {
-            RecordLog("delete tempFuncScore table failure!\n");
+            Error("delete tempFuncScore table failure!\n");
             ret = false;
         }
         sprintf(deleteTempFuncCallTable, deleteTempFuncCallTableTemplate, tempFuncCallTableName[i]);
@@ -154,7 +154,7 @@ bool deleteTempTable()
         ret = true;
         else
         {
-            RecordLog("delete tempFuncCall table failure!\n");
+            Error("delete tempFuncCall table failure!\n");
             ret = false;
         }
     }
