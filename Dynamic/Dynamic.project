@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<CodeLite_Project Name="StaticAnalysis" Version="10.0.0" InternalType="Console">
+<CodeLite_Project Name="DynamicAnalysis" Version="10.0.0" InternalType="Console">
   <Plugins>
     <Plugin Name="qmake">
       <![CDATA[00010001N0005Debug000000000000]]>
@@ -10,50 +10,32 @@
   <VirtualDirectory Name="main">
     <File Name="main.c"/>
   </VirtualDirectory>
-  <VirtualDirectory Name="xmlParse">
-    <File Name="CXmlOper.h"/>
-    <File Name="CXmlOper.c"/>
-    <File Name="CPPXmlOper.c"/>
-    <File Name="CPPXmlOper.h"/>
-    <File Name="commonXmlOper.h"/>
-    <File Name="commonXmlOper.c"/>
-    <File Name="xmlOper.h"/>
-    <File Name="xmlOper.c"/>
-  </VirtualDirectory>
-  <VirtualDirectory Name="mysql">
-    <File Name="mysqlOper.h"/>
-    <File Name="mysqlOper.c"/>
-    <File Name="buildFuncLibrary.h"/>
-    <File Name="buildFuncLibrary.c"/>
-    <File Name="buildTempTable.h"/>
-    <File Name="buildTempTable.c"/>
-  </VirtualDirectory>
   <VirtualDirectory Name="common">
-    <File Name="confOper.h"/>
-    <File Name="confOper.c"/>
     <File Name="config.h"/>
-    <File Name="fileOper.h"/>
-    <File Name="fileOper.c"/>
-    <File Name="strOper.h"/>
-    <File Name="strOper.c"/>
-    <File Name="dirOper.h"/>
-    <File Name="dirOper.c"/>
-    <File Name="dateOper.h"/>
-    <File Name="dateOper.c"/>
     <File Name="config.c"/>
-  </VirtualDirectory>
-  <VirtualDirectory Name="configuration">
-    <File Name="confResource.conf"/>
-    <File Name="funcLibrary.conf"/>
-    <File Name="input.conf"/>
-  </VirtualDirectory>
-  <VirtualDirectory Name="sourceCode">
-    <File Name="sourceOper.h"/>
-    <File Name="sourceOper.c"/>
+    <File Name="dateOper.c"/>
+    <File Name="dateOper.h"/>
+    <File Name="dirOper.c"/>
+    <File Name="dirOper.h"/>
+    <File Name="fileOper.c"/>
+    <File Name="fileOper.h"/>
+    <File Name="strOper.c"/>
+    <File Name="strOper.h"/>
   </VirtualDirectory>
   <VirtualDirectory Name="log">
     <File Name="logOper.h"/>
     <File Name="logOper.c"/>
+  </VirtualDirectory>
+  <VirtualDirectory Name="configuration">
+    <File Name="input.conf"/>
+  </VirtualDirectory>
+  <VirtualDirectory Name="xmlParse">
+    <File Name="xmlOper.h"/>
+    <File Name="xmlOper.c"/>
+  </VirtualDirectory>
+  <VirtualDirectory Name="sourceCode">
+    <File Name="sourceOper.h"/>
+    <File Name="sourceOper.c"/>
   </VirtualDirectory>
   <Settings Type="Executable">
     <GlobalSettings>
@@ -104,7 +86,7 @@
         <SearchPaths/>
       </Completion>
     </Configuration>
-    <Configuration Name="Release" CompilerType="gnu gcc" DebuggerType="GNU gdb debugger" Type="Executable" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
+    <Configuration Name="Release" CompilerType="Cross GCC ( x86_64-linux-gnu )" DebuggerType="GNU gdb debugger" Type="Executable" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
       <Compiler Options="-O2;-Wall" C_Options="-O2;-Wall" Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
         <IncludePath Value="."/>
         <Preprocessor Value="NDEBUG"/>

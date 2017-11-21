@@ -1,14 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CodeLite_Workspace Name="confResource" Database="confResource.tags" Version="10.0.0">
-  <Project Name="confResource" Path="confResource/confResource.project" Active="Yes"/>
+  <Project Name="StaticAnalysis" Path="confResource/confResource.project" Active="Yes"/>
+  <Project Name="DynamicAnalysis" Path="Dynamic/Dynamic.project" Active="No"/>
   <BuildMatrix>
     <WorkspaceConfiguration Name="Debug" Selected="yes">
       <Environment/>
-      <Project Name="confResource" ConfigName="Debug"/>
+      <Project Name="StaticAnalysis" ConfigName="Debug"/>
+      <Project Name="DynamicAnalysis" ConfigName="Debug"/>
     </WorkspaceConfiguration>
     <WorkspaceConfiguration Name="Release" Selected="yes">
       <Environment/>
-      <Project Name="confResource" ConfigName="Release"/>
+      <Project Name="StaticAnalysis" ConfigName="Release"/>
+      <Project Name="DynamicAnalysis" ConfigName="Release"/>
     </WorkspaceConfiguration>
   </BuildMatrix>
 </CodeLite_Workspace>
