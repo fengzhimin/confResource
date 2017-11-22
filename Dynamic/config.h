@@ -10,6 +10,8 @@
 
 #include <stdbool.h>
 #include <pthread.h>
+#include <libxml/xmlmemory.h>
+#include <libxml/parser.h>
 
 #define OPENLOG  1      //0=不记录日志   1=记录日志
 
@@ -23,5 +25,57 @@
 
 #define LOGINFO_LENGTH           1024 
 
+#define MAX_FUNCNAME_LENGTH      128
+
+#define MAX_PATH_LENGTH          1024    //path max length
+
+#define MAX_PROGRAMNAME_NUM      128     //a program max name length
+
+//convert source to xml file pthread number
+#define MAX_CONVERT_SRC_PTHREAD_NUM  10
+
+//convert xml file to source file  pthread number
+#define MAX_CONVERT_XML_PTHREAD_NUM  10
+
+#define INPUT_PATH        "../input.conf"
+
+/***************************************
+ * @para blockNode: 函数体节点
+ * @para funcName: 函数名
+***************************************/ 
+typedef struct SelfDefineFunctionNode
+{
+    xmlNodePtr blockNode;
+    char funcName[MAX_FUNCNAME_LENGTH];
+} SelfDefFuncNode;
+
+typedef struct SelfDefineFunctionNodeList
+{
+    SelfDefFuncNode funcInfo;
+    struct SelfDefineFunctionNodeList *next;
+} SelfDefFuncNodeList;
+
+typedef struct convertPthread_argument
+{
+    char src_dir[DIRPATH_MAX];
+    char des_dir[DIRPATH_MAX];
+    int pthreadID;
+} convertPthread_arg;
+
+extern char srcPath[MAX_PATH_LENGTH];
+
+//analyse program name
+extern char programName[MAX_PROGRAMNAME_NUM];
+
+extern pthread_t convertSRCPthreadID[MAX_CONVERT_SRC_PTHREAD_NUM];
+extern int ConvertSRCPthreadRet[MAX_CONVERT_SRC_PTHREAD_NUM];
+extern pthread_t convertXMLPthreadID[MAX_CONVERT_SRC_PTHREAD_NUM];
+extern int ConvertXMLPthreadRet[MAX_CONVERT_SRC_PTHREAD_NUM];
+extern int totalConvertFileNum;
+extern int curConvertFileNum;
+extern int currentConvertSrcPthreadID;
+extern int currentConvertXmlPthreadID;
+extern convertPthread_arg convSrcPthreadArg[MAX_CONVERT_SRC_PTHREAD_NUM];
+extern convertPthread_arg convXmlPthreadArg[MAX_CONVERT_XML_PTHREAD_NUM];
 
 #endif
