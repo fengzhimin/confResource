@@ -37,6 +37,9 @@
 //convert xml file to source file  pthread number
 #define MAX_CONVERT_XML_PTHREAD_NUM  10
 
+//insert xml file pthread number
+#define MAX_INSERT_XML_PTHREAD_NUM   10
+
 #define INPUT_PATH        "../input.conf"
 
 /***************************************
@@ -69,13 +72,17 @@ extern char programName[MAX_PROGRAMNAME_NUM];
 
 extern pthread_t convertSRCPthreadID[MAX_CONVERT_SRC_PTHREAD_NUM];
 extern int ConvertSRCPthreadRet[MAX_CONVERT_SRC_PTHREAD_NUM];
-extern pthread_t convertXMLPthreadID[MAX_CONVERT_SRC_PTHREAD_NUM];
-extern int ConvertXMLPthreadRet[MAX_CONVERT_SRC_PTHREAD_NUM];
+extern pthread_t convertXMLPthreadID[MAX_CONVERT_XML_PTHREAD_NUM];
+extern int ConvertXMLPthreadRet[MAX_CONVERT_XML_PTHREAD_NUM];
+extern pthread_t insertXMLPthreadID[MAX_INSERT_XML_PTHREAD_NUM];
+extern int InsertXMLPthreadRet[MAX_INSERT_XML_PTHREAD_NUM];
 extern int totalConvertFileNum;
 extern int curConvertFileNum;
 extern int currentConvertSrcPthreadID;
 extern int currentConvertXmlPthreadID;
+extern int currentInsertXmlPthreadID;
 extern convertPthread_arg convSrcPthreadArg[MAX_CONVERT_SRC_PTHREAD_NUM];
 extern convertPthread_arg convXmlPthreadArg[MAX_CONVERT_XML_PTHREAD_NUM];
+extern char insXmlPthreadArg[MAX_INSERT_XML_PTHREAD_NUM][DIRPATH_MAX];
 
 #endif

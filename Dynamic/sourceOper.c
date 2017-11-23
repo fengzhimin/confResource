@@ -472,6 +472,7 @@ bool XMLToSrc(char *dirPath)
                         {
                             ret = *(int *)pthread_ret;
                             free(pthread_ret);
+                            
                             if(!ret)
                             {
                                 Error("pthread_join convert xml failure!\n");
@@ -490,6 +491,107 @@ bool XMLToSrc(char *dirPath)
                     
                     currentConvertXmlPthreadID++;
                     currentConvertXmlPthreadID = currentConvertXmlPthreadID%MAX_CONVERT_XML_PTHREAD_NUM;
+                }
+            }
+        }
+    }
+    else
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "open directory %s to failed: %s.\n", dirPath, strerror(errno));
+        Error(error_info);
+        
+        ret = false;
+    }
+    closedir(pdir);
+    
+    return ret;
+}
+
+static void *pthread_handle_Insert(void *arg)
+{
+    int *ret = malloc(sizeof(int));
+    char *argument = (char *)arg;
+    if(InsertCode(argument))
+        *ret = 1;
+    else
+        *ret = 0;
+    pthread_exit((void *)ret);
+}
+
+bool InsertXML(char *dirPath)
+{
+    DIR *pdir;
+    struct dirent *pdirent;
+    struct stat statbuf;
+    bool ret = true;
+    
+    char child_dir[DIRPATH_MAX];
+    pdir = opendir(dirPath);
+    if(pdir)
+    {
+        while((pdirent = readdir(pdir)) != NULL)
+        {
+            //跳过"."和".."和隐藏文件夹
+            if(strcmp(pdirent->d_name, ".") == 0 || strcmp(pdirent->d_name, "..") == 0 || (pdirent->d_name[0] == '.'))
+                continue;
+            
+            memset(child_dir, 0, DIRPATH_MAX);
+            sprintf(child_dir, "%s/%s", dirPath, pdirent->d_name);
+            if(lstat(child_dir, &statbuf) < 0)
+            {
+                memset(error_info, 0, LOGINFO_LENGTH);
+                sprintf(error_info, "lstat %s to failed: %s.\n", child_dir, strerror(errno));
+                Error(error_info);
+                closedir(pdir);
+                
+                return false;
+            }
+            
+            //judge whether directory or not
+            if(S_ISDIR(statbuf.st_mode))
+            {
+                if(InsertXML(child_dir))
+                    ret = true;
+                else
+                {
+                    ret = false;
+                    closedir(pdir);
+                    return ret;
+                }
+            }
+            if(S_ISREG(statbuf.st_mode))
+            {
+                if(judgeCSrcXmlFile(child_dir) || judgeCPPSrcXmlFile(child_dir))
+                {
+                    //handle C language preprocess file
+                    curConvertFileNum++;
+                    printf("insert xml file %s(%d/%d)\n", child_dir, curConvertFileNum, totalConvertFileNum);
+                    
+                    void *pthread_ret = NULL;
+                    if(InsertXMLPthreadRet[currentInsertXmlPthreadID] == 0)
+                    {
+                        pthread_join(insertXMLPthreadID[currentInsertXmlPthreadID], &pthread_ret);
+                        if(pthread_ret != NULL)
+                        {
+                            ret = *(int *)pthread_ret;
+                            free(pthread_ret);
+                            if(!ret)
+                            {
+                                Error("pthread_join insert xml failure!\n");
+                                closedir(pdir);
+                                return ret;
+                            }
+                        }
+                    }
+                    memset(insXmlPthreadArg[currentInsertXmlPthreadID], 0, DIRPATH_MAX);
+                    strcpy(insXmlPthreadArg[currentInsertXmlPthreadID], child_dir);
+                    
+                    InsertXMLPthreadRet[currentInsertXmlPthreadID] = pthread_create(&insertXMLPthreadID[currentInsertXmlPthreadID], \
+                    NULL, pthread_handle_Insert, (void *)insXmlPthreadArg[currentInsertXmlPthreadID]);
+                    
+                    currentInsertXmlPthreadID++;
+                    currentInsertXmlPthreadID = currentInsertXmlPthreadID%MAX_INSERT_XML_PTHREAD_NUM;
                 }
             }
         }
@@ -562,6 +664,38 @@ bool BuildXmlToSrc()
                 if(!ret)
                 {
                     Error("pthread_join convert xml failure!\n");
+                }
+            }
+        }
+    }
+    
+    return ret;
+}
+
+bool BuildInsertXml()
+{
+    int i;
+    for(i = 0; i < MAX_INSERT_XML_PTHREAD_NUM; i++)
+        InsertXMLPthreadRet[i] = -1;
+    curConvertFileNum = 0;
+    currentInsertXmlPthreadID = 0;
+    char xml_dir[DIRPATH_MAX];
+    memset(xml_dir, 0, DIRPATH_MAX);
+    sprintf(xml_dir, "temp_%s", programName);
+    bool ret = InsertXML(xml_dir);
+    for(i = 0; i < MAX_INSERT_XML_PTHREAD_NUM; i++)
+    {
+        void *pthread_ret = NULL;
+        if(InsertXMLPthreadRet[i] == 0)
+        {
+            pthread_join(insertXMLPthreadID[i], &pthread_ret);
+            if(pthread_ret != NULL)
+            {
+                ret = *(int *)pthread_ret;
+                free(pthread_ret);
+                if(!ret)
+                {
+                    Error("pthread_join insert xml failure!\n");
                 }
             }
         }

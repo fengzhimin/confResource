@@ -13,10 +13,13 @@ int main (int argc, char **argv)
     docname = "test.c.xml";
     InsertCode(docname);
     */
+    
     getSoftWareConfInfo();
     getProgramName(srcPath);
     BuildSrcToXml();
+    BuildInsertXml();
     BuildXmlToSrc();
-    //ClearTmp();
+    ClearTmp();
+    
     return 0;
 }

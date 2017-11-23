@@ -14,6 +14,7 @@
 #include <libxml/xmlmemory.h>
 #include <libxml/parser.h>
 #include "config.h"
+#include "strOper.h"
 
 /********************************
  * func: 添加头文件
@@ -29,7 +30,7 @@ void AddHeaderFile(xmlNodePtr root_node);
  * @para funcName: 函数名
  * @para srcPath: 函数所在源文件
 *********************************/
-void AddLoopCount(xmlNodePtr funcBlockNode, char *funcName, char *srcPath);
+void AddLoopCount(xmlNodePtr funcBlockNode, char *funcName, char *srcPath, int loopCount);
 
 /********************************
  * func: 查找函数定义的节点
