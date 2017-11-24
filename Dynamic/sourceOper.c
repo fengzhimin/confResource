@@ -642,12 +642,15 @@ bool BuildSrcToXml()
 
 bool BuildXmlToSrc()
 {
+    char xml_dir[DIRPATH_MAX] = "";
+    //创建插装结果的文件夹
+    sprintf(xml_dir, "%s/record", programName);
+    createDir(xml_dir);
     int i;
     for(i = 0; i < MAX_CONVERT_XML_PTHREAD_NUM; i++)
         ConvertXMLPthreadRet[i] = -1;
     curConvertFileNum = 0;
     currentConvertXmlPthreadID = 0;
-    char xml_dir[DIRPATH_MAX];
     memset(xml_dir, 0, DIRPATH_MAX);
     sprintf(xml_dir, "temp_%s", programName);
     bool ret = XMLToSrc(xml_dir);

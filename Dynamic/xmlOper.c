@@ -25,15 +25,18 @@ void AddHeaderFile(xmlNodePtr root_node)
     }
 }
 
-void AddLoopCount(xmlNodePtr funcBlockNode, char *funcName, char *srcPath, int loopCount)
+void AddLoopCount(xmlNodePtr funcBlockNode, char *funcName, char *srcPath, int *loopCount)
 {
     xmlNodePtr cur = funcBlockNode->children;
     while(cur != NULL)
     {
+    next:
+        AddLoopCount(cur, funcName, srcPath, loopCount);
+        
         if(!xmlStrcmp(cur->name, (const xmlChar *) "block") && (!xmlStrcmp(cur->parent->name, (const xmlChar *) "for") || \
             !xmlStrcmp(cur->parent->name, (const xmlChar *) "while") || !xmlStrcmp(cur->parent->name, (const xmlChar *) "do")))
         {
-            loopCount++;
+            (*loopCount)++;
             char temp[1024] = "";
             xmlChar *value = NULL;
             
@@ -41,72 +44,83 @@ void AddLoopCount(xmlNodePtr funcBlockNode, char *funcName, char *srcPath, int l
             if(blockType != NULL && strcasecmp((char *)blockType, "pseudo") == 0)
             {
                 //没有括号
-                sprintf(temp, "count%d++;}", loopCount);
+                memset(temp, 0, 1024);
+                sprintf(temp, "count%d++;}", *loopCount);
                 xmlNewTextChild(cur, NULL, (const xmlChar*)"keyword", (xmlChar *)temp);
-                xmlNodePtr temp_cur = cur->prev;
-                while(!xmlStrcmp(temp_cur->name, (const xmlChar *) "text"))
-                    temp_cur = temp_cur->prev;
-                xmlNewTextChild(temp_cur, NULL, (const xmlChar*)"keyword", (xmlChar *)"{");
+                if(!xmlStrcmp(cur->parent->name, (const xmlChar *) "do"))
+                {
+                    value = xmlNodeGetContent(cur->prev);
+                    memset(temp, 0, 1024);
+                    sprintf(temp, "%s{", value);
+                    xmlNodeSetContent(cur->prev, (xmlChar *)temp);
+                }
+                else
+                {
+                    xmlNodePtr temp_cur = cur->prev;
+                    while(!xmlStrcmp(temp_cur->name, (const xmlChar *) "text"))
+                        temp_cur = temp_cur->prev;
+                    xmlNewTextChild(temp_cur, NULL, (const xmlChar*)"keyword", (xmlChar *)"{");
+                }
             }
             else
             {
                 xmlNodePtr temp_cur = cur->last->prev;
+                //处理空的循环体
+                if(temp_cur == NULL)
+                    goto next;
                 while(!xmlStrcmp(temp_cur->name, (const xmlChar *) "text"))
                     temp_cur = temp_cur->prev;
-                sprintf(temp, "count%d++;", loopCount);
+                memset(temp, 0, 1024);
+                sprintf(temp, "count%d++;", *loopCount);
                 xmlNewTextChild(temp_cur, NULL, (const xmlChar*)"keyword", (xmlChar *)temp);
             }
             
             if(cur->parent->prev != NULL)
             {
                 value = xmlNodeGetContent(cur->parent->prev);
-                sprintf(temp, "%s{int count%d=0;", value, loopCount);
+                sprintf(temp, "%s{int count%d=0;", value, *loopCount);
                 xmlNodeSetContent(cur->parent->prev, (xmlChar *)temp);
             }
             else
             {
-                value = xmlNodeGetContent(cur->parent);
-                sprintf(temp, "{int count%d=0;%s", loopCount, value);
-                xmlNodeSetContent(cur->parent, (xmlChar *)temp);
+                xmlNodePtr temp_prev_node = cur->parent;
+                while(temp_prev_node->prev == NULL || !xmlStrcmp(temp_prev_node->prev->name, (const xmlChar *) "text"))
+                {
+                    if(temp_prev_node->prev == NULL)
+                        temp_prev_node = temp_prev_node->parent;
+                    else
+                        temp_prev_node = temp_prev_node->prev;
+                }
+                
+                memset(temp, 0, 1024);
+                sprintf(temp, "{int count%d=0;", *loopCount);
+                xmlNewTextChild(temp_prev_node->prev, NULL, (const xmlChar*)"keyword", (xmlChar *)temp);
             }
             
             int position = ExtractLastCharIndex(srcPath, '/');
             char temp_record[128] = "";
             strcpy(temp_record, &(srcPath[position+1]));
             
-            if(cur->parent->next != NULL)
+            xmlNodePtr temp_next_node = cur->parent;
+            while(temp_next_node == NULL || !xmlStrcmp(temp_next_node->name, (const xmlChar *) "text"))
             {
-                value = xmlNodeGetContent(cur->parent->next);
-                int temp_size = strlen((char *)value);
-                char *temp_str = malloc(sizeof(char)*(temp_size+1024));
-                memset(temp_str, 0, sizeof(char)*(temp_size+1024));
-                sprintf(temp_str, "char str_count%d[10]=\"\";\nsprintf(str_count%d, \"%%d\", count%d);\nint fd%d=open(\"./record/%s.txt\", O_APPEND|O_RDWR|O_CREAT, 0644);\n \
-                write(fd%d, \"srcPath=\", strlen(\"srcPath=\"));\n write(fd%d, \"%s\", strlen(\"%s\"));\nwrite(fd%d, \": funcName=\", strlen(\": funcName=\"));\n \
-                write(fd%d, \"%s\", strlen(\"%s\"));\nwrite(fd%d, \": count%d=\", strlen(\": count%d=\"));\nwrite(fd%d, str_count%d, strlen(str_count%d));\nwrite(fd%d, \"\\n\", 1);\n \
-                close(fd%d);}%s", loopCount, loopCount, loopCount, loopCount, temp_record, loopCount, loopCount, srcPath, srcPath, loopCount, loopCount, funcName, funcName, loopCount, \
-                loopCount, loopCount, loopCount, loopCount, loopCount, loopCount, loopCount, value);
-                xmlNodeSetContent(cur->parent->next, (xmlChar *)temp_str);
-                free(temp_str);
-            }
-            else
-            {
-                value = xmlNodeGetContent(cur->parent);
-                int temp_size = strlen((char *)value);
-                char *temp_str = malloc(sizeof(char)*(temp_size+1024));
-                memset(temp_str, 0, sizeof(char)*(temp_size+1024));
-                sprintf(temp_str, "%schar str_count%d[10]=\"\";\nsprintf(str_count%d, \"%%d\", count%d);\nint fd%d=open(\"./record/%s.txt\", O_APPEND|O_RDWR|O_CREAT, 0644);\n \
-                write(fd%d, \"srcPath=\", strlen(\"srcPath=\"));\n write(fd%d, \"%s\", strlen(\"%s\"));\nwrite(fd%d, \": funcName=\", strlen(\": funcName=\"));\n \
-                write(fd%d, \"%s\", strlen(\"%s\"));\nwrite(fd%d, \": count%d=\", strlen(\": count%d=\"));\nwrite(fd%d, str_count%d, strlen(str_count%d));\nwrite(fd%d, \"\\n\", 1);\n \
-                close(fd%d);}", value, loopCount, loopCount, loopCount, loopCount, temp_record, loopCount, loopCount, srcPath, srcPath, loopCount, loopCount, funcName, funcName, loopCount, \
-                loopCount, loopCount, loopCount, loopCount, loopCount, loopCount, loopCount);
-                xmlNodeSetContent(cur->parent, (xmlChar *)temp_str);
-                free(temp_str);
+                if(temp_next_node == NULL)
+                    temp_next_node = temp_next_node->parent;
+                else
+                    temp_next_node = temp_next_node->next;
             }
             
-            break;
+            char *temp_str = malloc(sizeof(char)*(1024));
+            memset(temp_str, 0, sizeof(char)*(+1024));
+            sprintf(temp_str, "char str_count%d[10]=\"\";\nsprintf(str_count%d, \"%%d\", count%d);\nint fd%d=open(\"./record/%s.txt\", O_APPEND|O_RDWR|O_CREAT, 0644);\n \
+            write(fd%d, \"srcPath=\", 8);\n write(fd%d, \"%s\", strnlen(\"%s\", 1024));\nwrite(fd%d, \": funcName=\", 11);\n \
+            write(fd%d, \"%s\", strnlen(\"%s\", 128));\nwrite(fd%d, \": count%d=\", strnlen(\": count%d=\",15));\nwrite(fd%d, str_count%d, strnlen(str_count%d, 15));\nwrite(fd%d, \"\\n\", 1);\n \
+            close(fd%d);}", *loopCount, *loopCount, *loopCount, *loopCount, temp_record, *loopCount, *loopCount, srcPath, srcPath, *loopCount, *loopCount, funcName, \
+            funcName, *loopCount, *loopCount, *loopCount, *loopCount, *loopCount, *loopCount, *loopCount, *loopCount);
+            xmlNewTextChild(temp_next_node, NULL, (const xmlChar*)"keyword", (xmlChar *)temp_str);
+            free(temp_str);
         }
-        
-        AddLoopCount(cur, funcName, srcPath, loopCount);
+
         cur = cur->next;
     }
 }
@@ -187,7 +201,8 @@ bool InsertCode(char *filePath)
     strncpy(src_dirPath, &(filePath[5]), strlen(filePath)-9);
     while(current != NULL)
     {
-        AddLoopCount(current->funcInfo.blockNode, current->funcInfo.funcName, src_dirPath, 0);
+        int loopCount = 0;
+        AddLoopCount(current->funcInfo.blockNode, current->funcInfo.funcName, src_dirPath, &loopCount);
         current = current->next;
     }
     

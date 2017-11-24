@@ -19,7 +19,7 @@ int main (int argc, char **argv)
     BuildSrcToXml();
     BuildInsertXml();
     BuildXmlToSrc();
-    ClearTmp();
+    //ClearTmp();
     
     return 0;
 }
