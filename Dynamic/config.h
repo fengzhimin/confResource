@@ -38,7 +38,7 @@
 #define MAX_CONVERT_XML_PTHREAD_NUM  10
 
 //insert xml file pthread number
-#define MAX_INSERT_XML_PTHREAD_NUM   10
+#define MAX_INSERT_XML_PTHREAD_NUM   1
 
 #define INPUT_PATH        "../input.conf"
 

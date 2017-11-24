@@ -342,9 +342,6 @@ bool SrcToXML(char *dirPath)
             {
                 if(judgeCSrcFile(child_dir) || judgeCPPSrcFile(child_dir))
                 {
-                    //handle C language preprocess file
-                    curConvertFileNum++;
-                    printf("convert src file %s(%d/%d)\n", child_dir, curConvertFileNum, totalConvertFileNum);
                     memset(xml_dir, 0, DIRPATH_MAX);
                     sprintf(xml_dir, "%s/%s.xml", temp_dir, pdirent->d_name);
                     
@@ -364,6 +361,10 @@ bool SrcToXML(char *dirPath)
                             }
                         }
                     }
+                    
+                    curConvertFileNum++;
+                    printf("convert src file %s(%d/%d)\n", child_dir, curConvertFileNum, totalConvertFileNum);
+                    
                     memset(&convSrcPthreadArg[currentConvertSrcPthreadID], 0, sizeof(convertPthread_arg));
                     strcpy(convSrcPthreadArg[currentConvertSrcPthreadID].des_dir, xml_dir);
                     strcpy(convSrcPthreadArg[currentConvertSrcPthreadID].src_dir, child_dir);
@@ -458,9 +459,7 @@ bool XMLToSrc(char *dirPath)
             {
                 if(judgeCSrcXmlFile(child_dir) || judgeCPPSrcXmlFile(child_dir))
                 {
-                    //handle C language preprocess file
-                    curConvertFileNum++;
-                    printf("convert xml file %s(%d/%d)\n", child_dir, curConvertFileNum, totalConvertFileNum);
+                    
                     memset(xml_dir, 0, DIRPATH_MAX);
                     sprintf(xml_dir, "%s/%s", temp_dir, pdirent->d_name);
                     
@@ -481,6 +480,10 @@ bool XMLToSrc(char *dirPath)
                             }
                         }
                     }
+                    
+                    curConvertFileNum++;
+                    printf("convert xml file %s(%d/%d)\n", child_dir, curConvertFileNum, totalConvertFileNum);
+                    
                     memset(&convXmlPthreadArg[currentConvertXmlPthreadID], 0, sizeof(convertPthread_arg));
                     //删除.xml后缀
                     strncpy(convXmlPthreadArg[currentConvertXmlPthreadID].des_dir, xml_dir, strlen(xml_dir)-4);
@@ -564,10 +567,6 @@ bool InsertXML(char *dirPath)
             {
                 if(judgeCSrcXmlFile(child_dir) || judgeCPPSrcXmlFile(child_dir))
                 {
-                    //handle C language preprocess file
-                    curConvertFileNum++;
-                    printf("insert xml file %s(%d/%d)\n", child_dir, curConvertFileNum, totalConvertFileNum);
-                    
                     void *pthread_ret = NULL;
                     if(InsertXMLPthreadRet[currentInsertXmlPthreadID] == 0)
                     {
@@ -584,6 +583,10 @@ bool InsertXML(char *dirPath)
                             }
                         }
                     }
+                    
+                    curConvertFileNum++;
+                    printf("insert xml file %s(%d/%d)\n", child_dir, curConvertFileNum, totalConvertFileNum);
+                    
                     memset(insXmlPthreadArg[currentInsertXmlPthreadID], 0, DIRPATH_MAX);
                     strcpy(insXmlPthreadArg[currentInsertXmlPthreadID], child_dir);
                     

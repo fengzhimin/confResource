@@ -10,7 +10,7 @@ int main (int argc, char **argv)
 {
     /*
     char *docname;
-    docname = "test.c.xml";
+    docname = "test.cc.xml";
     InsertCode(docname);
     */
     
@@ -19,7 +19,8 @@ int main (int argc, char **argv)
     BuildSrcToXml();
     BuildInsertXml();
     BuildXmlToSrc();
-    //ClearTmp();
+    ClearTmp();
+    
     
     return 0;
 }

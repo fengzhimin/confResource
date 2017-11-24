@@ -1,45 +1,42 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Session Name="/home/fzm/confResource/confResource.workspace">
-  <int Value="3" Name="m_selectedTab"/>
+  <int Value="4" Name="m_selectedTab"/>
   <wxString Value="/home/fzm/confResource/confResource.workspace" Name="m_workspaceName"/>
   <TabInfoArray Name="TabInfoArray">
     <TabInfo>
       <wxString Value="/home/fzm/confResource/Dynamic/main.c" Name="FileName"/>
       <int Value="0" Name="FirstVisibleLine"/>
-      <int Value="4" Name="CurrentLine"/>
+      <int Value="23" Name="CurrentLine"/>
       <wxArrayString Name="Bookmarks"/>
       <IntVector Name="CollapsedFolds"/>
     </TabInfo>
     <TabInfo>
       <wxString Value="/home/fzm/confResource/Dynamic/input.conf" Name="FileName"/>
       <int Value="0" Name="FirstVisibleLine"/>
-      <int Value="2" Name="CurrentLine"/>
+      <int Value="1" Name="CurrentLine"/>
       <wxArrayString Name="Bookmarks"/>
       <IntVector Name="CollapsedFolds"/>
     </TabInfo>
     <TabInfo>
-      <wxString Value="/home/fzm/confResource/Dynamic/sourceOper.h" Name="FileName"/>
-      <int Value="52" Name="FirstVisibleLine"/>
-      <int Value="86" Name="CurrentLine"/>
+      <wxString Value="/home/fzm/confResource/Dynamic/config.h" Name="FileName"/>
+      <int Value="16" Name="FirstVisibleLine"/>
+      <int Value="31" Name="CurrentLine"/>
       <wxArrayString Name="Bookmarks"/>
       <IntVector Name="CollapsedFolds"/>
     </TabInfo>
     <TabInfo>
-      <wxString Value="/home/fzm/confResource/Dynamic/xmlOper.c" Name="FileName"/>
-      <int Value="70" Name="FirstVisibleLine"/>
-      <int Value="75" Name="CurrentLine"/>
+      <wxString Value="/home/fzm/confResource/Dynamic/sourceOper.c" Name="FileName"/>
+      <int Value="493" Name="FirstVisibleLine"/>
+      <int Value="568" Name="CurrentLine"/>
       <wxArrayString Name="Bookmarks">
-        <wxString Value="98:3"/>
-        <wxString Value="117:3"/>
-        <wxString Value="119:3"/>
-        <wxString Value="120:3"/>
+        <wxString Value="596:3"/>
       </wxArrayString>
       <IntVector Name="CollapsedFolds"/>
     </TabInfo>
     <TabInfo>
-      <wxString Value="/home/fzm/confResource/Dynamic/xmlOper.h" Name="FileName"/>
-      <int Value="11" Name="FirstVisibleLine"/>
-      <int Value="32" Name="CurrentLine"/>
+      <wxString Value="/home/fzm/confResource/Dynamic/xmlOper.c" Name="FileName"/>
+      <int Value="0" Name="FirstVisibleLine"/>
+      <int Value="8" Name="CurrentLine"/>
       <wxArrayString Name="Bookmarks"/>
       <IntVector Name="CollapsedFolds"/>
     </TabInfo>
