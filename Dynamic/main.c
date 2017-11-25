@@ -21,6 +21,5 @@ int main (int argc, char **argv)
     BuildXmlToSrc();
     ClearTmp();
     
-    
     return 0;
 }

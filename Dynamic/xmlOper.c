@@ -12,13 +12,12 @@ void AddHeaderFile(xmlNodePtr root_node)
     xmlNodePtr cur = root_node->children;
     while(cur != NULL)
     {
-        if(xmlStrcmp(cur->name, (const xmlChar *) "comment"))
+        if(xmlStrcmp(cur->name, (const xmlChar *) "text"))
         {
-            xmlChar *value = xmlNodeGetContent(cur);
             char temp[1024] = "";
             //sprintf(temp, "#include <sys/types.h>\n#include <sys/stat.h>\n#include <fcntl.h>\n#include <unistd.h>\n#include <string.h>\n%s", value);
-            sprintf(temp, "#include <insertFile.h>\n%s", value);
-            xmlNodeSetContent(cur, (xmlChar *)temp);
+            sprintf(temp, "\n#include <insertFile.h>");
+            xmlNewTextChild(cur, NULL, (const xmlChar*)"keyword", (xmlChar *)temp);
             break;
         }
         
