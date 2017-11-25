@@ -15,6 +15,7 @@
 #include <libxml/parser.h>
 #include "config.h"
 #include "strOper.h"
+#include "sourceOper.h"
 
 /********************************
  * func: 添加头文件

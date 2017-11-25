@@ -10,7 +10,7 @@ int main (int argc, char **argv)
 {
     /*
     char *docname;
-    docname = "test.cc.xml";
+    docname = "test.c.xml";
     InsertCode(docname);
     */
     

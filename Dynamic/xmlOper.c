@@ -16,7 +16,8 @@ void AddHeaderFile(xmlNodePtr root_node)
         {
             xmlChar *value = xmlNodeGetContent(cur);
             char temp[1024] = "";
-            sprintf(temp, "#include <sys/types.h>\n#include <sys/stat.h>\n#include <fcntl.h>\n#include <unistd.h>\n#include <string.h>\n%s", value);
+            //sprintf(temp, "#include <sys/types.h>\n#include <sys/stat.h>\n#include <fcntl.h>\n#include <unistd.h>\n#include <string.h>\n%s", value);
+            sprintf(temp, "#include <insertFile.h>\n%s", value);
             xmlNodeSetContent(cur, (xmlChar *)temp);
             break;
         }
@@ -58,7 +59,7 @@ void AddLoopCount(xmlNodePtr funcBlockNode, char *funcName, char *srcPath, int *
                     xmlNodePtr temp_cur = cur->prev;
                     while(!xmlStrcmp(temp_cur->name, (const xmlChar *) "text"))
                         temp_cur = temp_cur->prev;
-                    xmlNewTextChild(temp_cur, NULL, (const xmlChar*)"keyword", (xmlChar *)"{");
+                    xmlNewTextChild(temp_cur, NULL, (const xmlChar*)"keyword", (xmlChar *)"\n{");
                 }
             }
             else
@@ -94,9 +95,18 @@ void AddLoopCount(xmlNodePtr funcBlockNode, char *funcName, char *srcPath, int *
                         temp_prev_node = temp_prev_node->prev;
                 }
                 
-                if(!xmlStrcmp(temp_prev_node->prev->name, (const xmlChar *)"then"))
+                xmlNodePtr temp_then = temp_prev_node->prev;
+                while(temp_then != NULL)
+                {
+                    if(!xmlStrcmp(temp_then->name, (const xmlChar *)"text") || !xmlStrcmp(temp_then->name, (const xmlChar *)"comment"))
+                        temp_then = temp_then->prev;
+                    else
+                        break;
+                }
+                if(temp_then != NULL && !xmlStrcmp(temp_then->name, (const xmlChar *)"then"))
                 {
                     //处理mysql dota.c(1095行)
+                    //处理else 后紧跟着循环情况
                     value = xmlNodeGetContent(temp_prev_node->next->children);
                     sprintf(temp, "%s\n{int count%d=0;", value, *loopCount);
                     xmlNodeSetContent(temp_prev_node->next->children, (xmlChar *)temp);
@@ -111,7 +121,7 @@ void AddLoopCount(xmlNodePtr funcBlockNode, char *funcName, char *srcPath, int *
             
             int position = ExtractLastCharIndex(srcPath, '/');
             char temp_record[128] = "";
-            strcpy(temp_record, &(srcPath[position+1]));
+            sprintf(temp_record, "%s.txt", &(srcPath[position+1]));
             
             xmlNodePtr temp_next_node = cur->parent;
             while(temp_next_node == NULL || !xmlStrcmp(temp_next_node->name, (const xmlChar *) "text"))
@@ -124,11 +134,15 @@ void AddLoopCount(xmlNodePtr funcBlockNode, char *funcName, char *srcPath, int *
             
             char *temp_str = malloc(sizeof(char)*(1024));
             memset(temp_str, 0, sizeof(char)*(+1024));
+            /*
             sprintf(temp_str, "\nchar str_count%d[10]=\"\";\nsprintf(str_count%d, \"%%d\", count%d);\nint fd%d=open(\"./record/%s.txt\", O_APPEND|O_RDWR|O_CREAT, 0644);\n \
             write(fd%d, \"srcPath=\", 8);\n write(fd%d, \"%s\", strnlen(\"%s\", 1024));\nwrite(fd%d, \": funcName=\", 11);\n \
             write(fd%d, \"%s\", strnlen(\"%s\", 128));\nwrite(fd%d, \": count%d=\", strnlen(\": count%d=\",15));\nwrite(fd%d, str_count%d, strnlen(str_count%d, 15));\nwrite(fd%d, \"\\n\", 1);\n \
             close(fd%d);}", *loopCount, *loopCount, *loopCount, *loopCount, temp_record, *loopCount, *loopCount, srcPath, srcPath, *loopCount, *loopCount, funcName, \
             funcName, *loopCount, *loopCount, *loopCount, *loopCount, *loopCount, *loopCount, *loopCount, *loopCount);
+            */
+            
+            sprintf(temp_str, "\ninsert_count((char *)\"%s\", (char *)\"%s\", (char *)\"%s\", %d, count%d);}", temp_record, srcPath, funcName, *loopCount, *loopCount);
             xmlNewTextChild(temp_next_node, NULL, (const xmlChar*)"keyword", (xmlChar *)temp_str);
             free(temp_str);
         }
@@ -163,6 +177,7 @@ SelfDefFuncNodeList *getFuncBlockNodeAndName(xmlNodePtr root_node)
                     if(strcasecmp("__attribute__", (char*)xmlNodeGetContent(temp_cur)) == 0)
                         break;
                     strcpy(temp.funcName, (char*)xmlNodeGetContent(temp_cur));
+                    removeChar(temp.funcName, '\n');
                 }
                 else if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"block"))
                 {
@@ -204,31 +219,41 @@ bool InsertCode(char *filePath)
         xmlFreeDoc(doc);
       return false;
     }
-    //添加头文件
-    AddHeaderFile(cur);
     
-    SelfDefFuncNodeList *begin = NULL;
-    SelfDefFuncNodeList *current = NULL;
-    begin = current = getFuncBlockNodeAndName(cur);
     char src_dirPath[DIRPATH_MAX] = "";
     strncpy(src_dirPath, &(filePath[5]), strlen(filePath)-9);
-    while(current != NULL)
+    if(strstr(src_dirPath, "resolveip.c") != NULL)
     {
-        int loopCount = 0;
-        AddLoopCount(current->funcInfo.blockNode, current->funcInfo.funcName, src_dirPath, &loopCount);
-        current = current->next;
+        //srcml 无法正确解析resolveip.c
+        xmlFreeDoc (doc);
     }
-    
-    current = begin;
-    while(current != NULL)
+    else
     {
-        begin = begin->next;
-        free(current);
+        //添加头文件
+        AddHeaderFile(cur);
+        
+        SelfDefFuncNodeList *begin = NULL;
+        SelfDefFuncNodeList *current = NULL;
+        begin = current = getFuncBlockNodeAndName(cur);
+        
+        while(current != NULL)
+        {
+            int loopCount = 0;
+            AddLoopCount(current->funcInfo.blockNode, current->funcInfo.funcName, src_dirPath, &loopCount);
+            current = current->next;
+        }
+        
         current = begin;
+        while(current != NULL)
+        {
+            begin = begin->next;
+            free(current);
+            current = begin;
+        }
+        
+        xmlSaveFormatFile(filePath, doc, 0);
+        xmlFreeDoc (doc);
     }
-    
-    xmlSaveFormatFile(filePath, doc, 0);
-    xmlFreeDoc (doc);
     
     return true;
 }

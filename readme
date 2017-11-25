@@ -4,3 +4,8 @@ libxml2: sudo apt-get install libxml2-dev
 依赖如下程序：
 mysql数据库: sudo apt-get install mysql-server
 srcml: http://www.srcml.org/
+
+动态插装程序运行前提:
+1、将libInsertFile.so拷贝到/usr/lib或者/lib目录下
+2、将insertFile.h拷贝到/usr/include目录下
+3、将环境变量PATH的首目录设置为c++、g++、cc和gcc这个四个脚本所在的目录
