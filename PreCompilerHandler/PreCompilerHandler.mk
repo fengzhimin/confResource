@@ -3,10 +3,10 @@
 ## any manual changes will be erased      
 ##
 ## Debug
-ProjectName            :=DynamicAnalysis
+ProjectName            :=PreCompilerHandler
 ConfigurationName      :=Debug
 WorkspacePath          :=/home/fzm/confResource
-ProjectPath            :=/home/fzm/confResource/Dynamic
+ProjectPath            :=/home/fzm/confResource/PreCompilerHandler
 IntermediateDirectory  :=./Debug
 OutDir                 := $(IntermediateDirectory)
 CurrentFileName        :=
@@ -32,10 +32,10 @@ Preprocessors          :=
 ObjectSwitch           :=-o 
 ArchiveOutputSwitch    := 
 PreprocessOnlySwitch   :=-E
-ObjectsFileList        :="DynamicAnalysis.txt"
+ObjectsFileList        :="PreCompilerHandler.txt"
 PCHCompileFlags        :=
 MakeDirCommand         :=mkdir -p
-LinkOptions            :=  -lxml2 -lmysqlclient -lpthread
+LinkOptions            :=  -lpthread
 IncludePath            := $(IncludeSwitch)/usr/include/libxml2 $(IncludeSwitch)/usr/include/mysql/  $(IncludeSwitch). $(IncludeSwitch). 
 IncludePCH             := 
 RcIncludePath          := 
@@ -60,7 +60,7 @@ AS       := /usr/bin/as
 ## User defined environment variables
 ##
 CodeLiteDir:=/usr/share/codelite
-Objects0=$(IntermediateDirectory)/main.c$(ObjectSuffix) $(IntermediateDirectory)/config.c$(ObjectSuffix) $(IntermediateDirectory)/dateOper.c$(ObjectSuffix) $(IntermediateDirectory)/dirOper.c$(ObjectSuffix) $(IntermediateDirectory)/fileOper.c$(ObjectSuffix) $(IntermediateDirectory)/strOper.c$(ObjectSuffix) $(IntermediateDirectory)/logOper.c$(ObjectSuffix) $(IntermediateDirectory)/xmlOper.c$(ObjectSuffix) $(IntermediateDirectory)/sourceOper.c$(ObjectSuffix) 
+Objects0=$(IntermediateDirectory)/main.c$(ObjectSuffix) $(IntermediateDirectory)/config.c$(ObjectSuffix) $(IntermediateDirectory)/dateOper.c$(ObjectSuffix) $(IntermediateDirectory)/fileOper.c$(ObjectSuffix) $(IntermediateDirectory)/strOper.c$(ObjectSuffix) $(IntermediateDirectory)/logOper.c$(ObjectSuffix) $(IntermediateDirectory)/JsonOper.c$(ObjectSuffix) $(IntermediateDirectory)/PreCompileOper.c$(ObjectSuffix) 
 
 
 
@@ -92,7 +92,7 @@ PreBuild:
 ## Objects
 ##
 $(IntermediateDirectory)/main.c$(ObjectSuffix): main.c $(IntermediateDirectory)/main.c$(DependSuffix)
-	$(CC) $(SourceSwitch) "/home/fzm/confResource/Dynamic/main.c" $(CFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/main.c$(ObjectSuffix) $(IncludePath)
+	$(CC) $(SourceSwitch) "/home/fzm/confResource/PreCompilerHandler/main.c" $(CFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/main.c$(ObjectSuffix) $(IncludePath)
 $(IntermediateDirectory)/main.c$(DependSuffix): main.c
 	@$(CC) $(CFLAGS) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/main.c$(ObjectSuffix) -MF$(IntermediateDirectory)/main.c$(DependSuffix) -MM main.c
 
@@ -100,7 +100,7 @@ $(IntermediateDirectory)/main.c$(PreprocessSuffix): main.c
 	$(CC) $(CFLAGS) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/main.c$(PreprocessSuffix) main.c
 
 $(IntermediateDirectory)/config.c$(ObjectSuffix): config.c $(IntermediateDirectory)/config.c$(DependSuffix)
-	$(CC) $(SourceSwitch) "/home/fzm/confResource/Dynamic/config.c" $(CFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/config.c$(ObjectSuffix) $(IncludePath)
+	$(CC) $(SourceSwitch) "/home/fzm/confResource/PreCompilerHandler/config.c" $(CFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/config.c$(ObjectSuffix) $(IncludePath)
 $(IntermediateDirectory)/config.c$(DependSuffix): config.c
 	@$(CC) $(CFLAGS) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/config.c$(ObjectSuffix) -MF$(IntermediateDirectory)/config.c$(DependSuffix) -MM config.c
 
@@ -108,23 +108,15 @@ $(IntermediateDirectory)/config.c$(PreprocessSuffix): config.c
 	$(CC) $(CFLAGS) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/config.c$(PreprocessSuffix) config.c
 
 $(IntermediateDirectory)/dateOper.c$(ObjectSuffix): dateOper.c $(IntermediateDirectory)/dateOper.c$(DependSuffix)
-	$(CC) $(SourceSwitch) "/home/fzm/confResource/Dynamic/dateOper.c" $(CFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/dateOper.c$(ObjectSuffix) $(IncludePath)
+	$(CC) $(SourceSwitch) "/home/fzm/confResource/PreCompilerHandler/dateOper.c" $(CFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/dateOper.c$(ObjectSuffix) $(IncludePath)
 $(IntermediateDirectory)/dateOper.c$(DependSuffix): dateOper.c
 	@$(CC) $(CFLAGS) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/dateOper.c$(ObjectSuffix) -MF$(IntermediateDirectory)/dateOper.c$(DependSuffix) -MM dateOper.c
 
 $(IntermediateDirectory)/dateOper.c$(PreprocessSuffix): dateOper.c
 	$(CC) $(CFLAGS) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/dateOper.c$(PreprocessSuffix) dateOper.c
 
-$(IntermediateDirectory)/dirOper.c$(ObjectSuffix): dirOper.c $(IntermediateDirectory)/dirOper.c$(DependSuffix)
-	$(CC) $(SourceSwitch) "/home/fzm/confResource/Dynamic/dirOper.c" $(CFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/dirOper.c$(ObjectSuffix) $(IncludePath)
-$(IntermediateDirectory)/dirOper.c$(DependSuffix): dirOper.c
-	@$(CC) $(CFLAGS) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/dirOper.c$(ObjectSuffix) -MF$(IntermediateDirectory)/dirOper.c$(DependSuffix) -MM dirOper.c
-
-$(IntermediateDirectory)/dirOper.c$(PreprocessSuffix): dirOper.c
-	$(CC) $(CFLAGS) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/dirOper.c$(PreprocessSuffix) dirOper.c
-
 $(IntermediateDirectory)/fileOper.c$(ObjectSuffix): fileOper.c $(IntermediateDirectory)/fileOper.c$(DependSuffix)
-	$(CC) $(SourceSwitch) "/home/fzm/confResource/Dynamic/fileOper.c" $(CFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/fileOper.c$(ObjectSuffix) $(IncludePath)
+	$(CC) $(SourceSwitch) "/home/fzm/confResource/PreCompilerHandler/fileOper.c" $(CFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/fileOper.c$(ObjectSuffix) $(IncludePath)
 $(IntermediateDirectory)/fileOper.c$(DependSuffix): fileOper.c
 	@$(CC) $(CFLAGS) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/fileOper.c$(ObjectSuffix) -MF$(IntermediateDirectory)/fileOper.c$(DependSuffix) -MM fileOper.c
 
@@ -132,7 +124,7 @@ $(IntermediateDirectory)/fileOper.c$(PreprocessSuffix): fileOper.c
 	$(CC) $(CFLAGS) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/fileOper.c$(PreprocessSuffix) fileOper.c
 
 $(IntermediateDirectory)/strOper.c$(ObjectSuffix): strOper.c $(IntermediateDirectory)/strOper.c$(DependSuffix)
-	$(CC) $(SourceSwitch) "/home/fzm/confResource/Dynamic/strOper.c" $(CFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/strOper.c$(ObjectSuffix) $(IncludePath)
+	$(CC) $(SourceSwitch) "/home/fzm/confResource/PreCompilerHandler/strOper.c" $(CFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/strOper.c$(ObjectSuffix) $(IncludePath)
 $(IntermediateDirectory)/strOper.c$(DependSuffix): strOper.c
 	@$(CC) $(CFLAGS) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/strOper.c$(ObjectSuffix) -MF$(IntermediateDirectory)/strOper.c$(DependSuffix) -MM strOper.c
 
@@ -140,28 +132,28 @@ $(IntermediateDirectory)/strOper.c$(PreprocessSuffix): strOper.c
 	$(CC) $(CFLAGS) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/strOper.c$(PreprocessSuffix) strOper.c
 
 $(IntermediateDirectory)/logOper.c$(ObjectSuffix): logOper.c $(IntermediateDirectory)/logOper.c$(DependSuffix)
-	$(CC) $(SourceSwitch) "/home/fzm/confResource/Dynamic/logOper.c" $(CFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/logOper.c$(ObjectSuffix) $(IncludePath)
+	$(CC) $(SourceSwitch) "/home/fzm/confResource/PreCompilerHandler/logOper.c" $(CFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/logOper.c$(ObjectSuffix) $(IncludePath)
 $(IntermediateDirectory)/logOper.c$(DependSuffix): logOper.c
 	@$(CC) $(CFLAGS) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/logOper.c$(ObjectSuffix) -MF$(IntermediateDirectory)/logOper.c$(DependSuffix) -MM logOper.c
 
 $(IntermediateDirectory)/logOper.c$(PreprocessSuffix): logOper.c
 	$(CC) $(CFLAGS) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/logOper.c$(PreprocessSuffix) logOper.c
 
-$(IntermediateDirectory)/xmlOper.c$(ObjectSuffix): xmlOper.c $(IntermediateDirectory)/xmlOper.c$(DependSuffix)
-	$(CC) $(SourceSwitch) "/home/fzm/confResource/Dynamic/xmlOper.c" $(CFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/xmlOper.c$(ObjectSuffix) $(IncludePath)
-$(IntermediateDirectory)/xmlOper.c$(DependSuffix): xmlOper.c
-	@$(CC) $(CFLAGS) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/xmlOper.c$(ObjectSuffix) -MF$(IntermediateDirectory)/xmlOper.c$(DependSuffix) -MM xmlOper.c
+$(IntermediateDirectory)/JsonOper.c$(ObjectSuffix): JsonOper.c $(IntermediateDirectory)/JsonOper.c$(DependSuffix)
+	$(CC) $(SourceSwitch) "/home/fzm/confResource/PreCompilerHandler/JsonOper.c" $(CFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/JsonOper.c$(ObjectSuffix) $(IncludePath)
+$(IntermediateDirectory)/JsonOper.c$(DependSuffix): JsonOper.c
+	@$(CC) $(CFLAGS) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/JsonOper.c$(ObjectSuffix) -MF$(IntermediateDirectory)/JsonOper.c$(DependSuffix) -MM JsonOper.c
 
-$(IntermediateDirectory)/xmlOper.c$(PreprocessSuffix): xmlOper.c
-	$(CC) $(CFLAGS) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/xmlOper.c$(PreprocessSuffix) xmlOper.c
+$(IntermediateDirectory)/JsonOper.c$(PreprocessSuffix): JsonOper.c
+	$(CC) $(CFLAGS) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/JsonOper.c$(PreprocessSuffix) JsonOper.c
 
-$(IntermediateDirectory)/sourceOper.c$(ObjectSuffix): sourceOper.c $(IntermediateDirectory)/sourceOper.c$(DependSuffix)
-	$(CC) $(SourceSwitch) "/home/fzm/confResource/Dynamic/sourceOper.c" $(CFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/sourceOper.c$(ObjectSuffix) $(IncludePath)
-$(IntermediateDirectory)/sourceOper.c$(DependSuffix): sourceOper.c
-	@$(CC) $(CFLAGS) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/sourceOper.c$(ObjectSuffix) -MF$(IntermediateDirectory)/sourceOper.c$(DependSuffix) -MM sourceOper.c
+$(IntermediateDirectory)/PreCompileOper.c$(ObjectSuffix): PreCompileOper.c $(IntermediateDirectory)/PreCompileOper.c$(DependSuffix)
+	$(CC) $(SourceSwitch) "/home/fzm/confResource/PreCompilerHandler/PreCompileOper.c" $(CFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/PreCompileOper.c$(ObjectSuffix) $(IncludePath)
+$(IntermediateDirectory)/PreCompileOper.c$(DependSuffix): PreCompileOper.c
+	@$(CC) $(CFLAGS) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/PreCompileOper.c$(ObjectSuffix) -MF$(IntermediateDirectory)/PreCompileOper.c$(DependSuffix) -MM PreCompileOper.c
 
-$(IntermediateDirectory)/sourceOper.c$(PreprocessSuffix): sourceOper.c
-	$(CC) $(CFLAGS) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/sourceOper.c$(PreprocessSuffix) sourceOper.c
+$(IntermediateDirectory)/PreCompileOper.c$(PreprocessSuffix): PreCompileOper.c
+	$(CC) $(CFLAGS) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/PreCompileOper.c$(PreprocessSuffix) PreCompileOper.c
 
 
 -include $(IntermediateDirectory)/*$(DependSuffix)

@@ -2,16 +2,19 @@
 <CodeLite_Workspace Name="confResource" Database="confResource.tags" Version="10.0.0">
   <Project Name="StaticAnalysis" Path="confResource/confResource.project" Active="No"/>
   <Project Name="DynamicAnalysis" Path="Dynamic/Dynamic.project" Active="Yes"/>
+  <Project Name="PreCompilerHandler" Path="PreCompilerHandler/PreCompilerHandler.project" Active="No"/>
   <BuildMatrix>
     <WorkspaceConfiguration Name="Debug" Selected="yes">
       <Environment/>
       <Project Name="StaticAnalysis" ConfigName="Debug"/>
       <Project Name="DynamicAnalysis" ConfigName="Debug"/>
+      <Project Name="PreCompilerHandler" ConfigName="Debug"/>
     </WorkspaceConfiguration>
     <WorkspaceConfiguration Name="Release" Selected="yes">
       <Environment/>
       <Project Name="StaticAnalysis" ConfigName="Release"/>
       <Project Name="DynamicAnalysis" ConfigName="Release"/>
+      <Project Name="PreCompilerHandler" ConfigName="Release"/>
     </WorkspaceConfiguration>
   </BuildMatrix>
 </CodeLite_Workspace>
