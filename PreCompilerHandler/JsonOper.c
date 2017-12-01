@@ -133,7 +133,10 @@ PreCompileInfoList *ExtractInfoFromJson()
             removeJsonChar(subStr2[1]);
             strcpy(end->info.fileName, subStr2[1]);
             //设置输入文件
-            sprintf(end->info.preCompileCommand, "%s -o %s.I", end->info.preCompileCommand, subStr2[1]);
+            char temp_fileName[MAX_FILENAME_LENGTH] = "";
+            int temp_position = ExtractLastCharIndex(subStr2[1], '.');
+            strncpy(temp_fileName, subStr2[1], temp_position);
+            sprintf(end->info.preCompileCommand, "%s -o %s.E%s", end->info.preCompileCommand, temp_fileName, &(subStr2[1][temp_position]));
         }
         
         memset(lineData, 0, LINE_CHAR_MAX_NUM);

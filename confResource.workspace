@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CodeLite_Workspace Name="confResource" Database="confResource.tags" Version="10.0.0">
-  <Project Name="StaticAnalysis" Path="confResource/confResource.project" Active="No"/>
-  <Project Name="DynamicAnalysis" Path="Dynamic/Dynamic.project" Active="Yes"/>
+  <Project Name="StaticAnalysis" Path="confResource/confResource.project" Active="Yes"/>
+  <Project Name="DynamicAnalysis" Path="Dynamic/Dynamic.project" Active="No"/>
   <Project Name="PreCompilerHandler" Path="PreCompilerHandler/PreCompilerHandler.project" Active="No"/>
   <BuildMatrix>
     <WorkspaceConfiguration Name="Debug" Selected="yes">

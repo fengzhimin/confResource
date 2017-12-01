@@ -4,6 +4,11 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/syscall.h>
+#include <sys/file.h>
+
+#define gettid() syscall(__NR_gettid)
 
 void insert_count(char *fileName, char *srcPath, char *funcName, int countNum, int countValue)
 {
@@ -13,8 +18,17 @@ void insert_count(char *fileName, char *srcPath, char *funcName, int countNum, i
 		mkdir("./record_count", 0777);
 	}
 	char filePath[1024] = "";
-	sprintf(filePath, "./record_count/%s.txt", fileName);
+	sprintf(filePath, "./record_count/%s", fileName);
 	int fd = open(filePath, O_APPEND | O_RDWR | O_CREAT, 0644);
+	int count = 0;
+	while(fd == -1)
+	{
+		memset(filePath, 0, 1024);
+		sprintf(filePath, "./record_count/%s%d", fileName, count++);
+		fd = open(filePath, O_APPEND | O_RDWR | O_CREAT, 0644);
+	}
+	
+	flock(fd, LOCK_EX);
 	char str_countValue[10] = "";
 	sprintf(str_countValue, "%d", countValue);
 	char str_countNum[17] = "";
