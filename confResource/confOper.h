@@ -11,6 +11,7 @@
 #include "strOper.h"
 #include "fileOper.h"
 #include "config.h"
+#include "logOper.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>

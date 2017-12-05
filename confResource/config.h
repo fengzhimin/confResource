@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include <mysql.h>
 #include <pthread.h>
+#include <errno.h>
 
 #define OPENLOG  1      //0=不记录日志   1=记录日志
 
@@ -122,7 +123,7 @@ typedef struct variableDef
 typedef struct variableType
 {
     char varName[MAX_VARIABLE_LENGTH];
-    char type[MAX_VARIABLE_LENGTH];
+    char type[MAX_VARIABLE_LENGTH];   //表示int  double  等等
     int line;
     struct variableType *next;
 } varType;
@@ -206,6 +207,55 @@ typedef struct loopExpressionList
     struct loopExpressionList *next;
 } loopExprList;
 
+/*********************************
+ * func: 记录循环count变量
+ * @para count: 记录count索引 例如 count = 1 表示 记录循环变量是count1
+ * @para type: 循环类型  0: for    1: while   2: do-while
+ * @para funcName: 循环所在函数名
+ * @para sourcePath: 函数所在文件路径
+**********************************/
+typedef struct loopCountInformation
+{
+    int count;
+    int type;
+    char funcName[MAX_FUNCNAME_LENGTH];
+    char sourcePath[DIRPATH_MAX];
+} loopCountInfo;
+
+typedef struct loopCountInformationList
+{
+    loopCountInfo info;
+    struct loopCountInformationList *next;
+} loopCountInfoList;
+
+/************************************
+ * func: 定义比例式关系
+ * @para confOptName: 配置项名称
+ * @para CPURatio: 对应CPU资源的比例系数
+ * @para MEMRatio: 对应MEM资源的比例系数
+ * @para IORatio: 对应IO资源的比例系数
+ * @para NETRatio: 对应NET资源的比例系数
+************************************/
+typedef struct relationExpression
+{
+    char confOptName[MAX_VARIABLE_LENGTH];
+    int CPURatio;
+    int MEMRatio;
+    int IORatio;
+    int NETRatio;
+} relationExpr;
+
+/************************************
+ * func: 计算平均循环次数
+ * @para sum: 循环总和
+ * @para recordNum: 记录个数
+************************************/
+typedef struct loopRecordInfomation
+{
+    int sum;
+    int recordNum;
+} loopRecordInfo;
+
 extern char bind_address[CONFIG_VALUE_MAX_NUM];
 extern int port;
 extern char user[CONFIG_VALUE_MAX_NUM];
@@ -233,6 +283,7 @@ extern char funcCallTableName[MAX_PROGRAMNAME_NUM*2];
 extern char tempFuncCallTableName[MAX_ANALYZE_XML_PTHREAD_NUM][MAX_PROGRAMNAME_NUM*2];
 
 extern char srcPath[MAX_PATH_LENGTH];
+extern char recordCountPath[MAX_PATH_LENGTH];
 extern bool rebuild;
 extern confOptMap *beginConfOpt;
 extern confOptMap *endConfOpt;

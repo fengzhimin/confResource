@@ -19,6 +19,7 @@
 #include "mysqlOper.h"
 #include "CXmlOper.h"
 #include "CPPXmlOper.h"
+#include "searchLoopCount.h"
 
 /*******************************
  * func: Extract function Name from XML file
@@ -70,5 +71,13 @@ bool JudgeVarInflSpeciVarByFuncCallPath(char *varName, char *influedVarName, fun
  * @para funcCallPath: 函数调用路径
 ***********************************/
 varDef *ExtractVarInflVarByFuncCallPath(char *varName, funcInfoList *funcCallPath);
+
+/*************************************
+ * func: 获取一条函数调用路径上的循环倍数关系，为了得出该配置项变量所影响资源的关系
+ * return: 各资源对应的系数
+ * @para varName: 分析的变量
+ * @para funcCallPath: 函数调用路径
+**************************************/
+relationExpr getConfOptRelation(char *varName, funcInfoList *funcCallPath);
 
 #endif

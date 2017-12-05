@@ -162,6 +162,9 @@ int StrToInt(char *str)
 	int i, retNum = 0;
 	for(i = 0; i < strLength; i++)
 	{
+        if(str[i] < '0' || str[i] > '9')
+            continue;
+        
 		retNum *= 10;
 		retNum += str[i] - '0';
 	}
@@ -173,10 +176,10 @@ int ExtractLastCharIndex(char *str, char ch)
 {
     int strLength = strlen(str);
     int i, ret = -1;
-    for(i = 0; i < strLength; i++)
+    for(i = strLength - 1; i >= 0; i--)
     {
         if(str[i] == ch)
-            ret = i;
+            return i;
     }
     
     return ret;

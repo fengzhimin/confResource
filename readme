@@ -9,3 +9,6 @@ srcml: http://www.srcml.org/
 1、将libInsertFile.so拷贝到/usr/lib或者/lib目录下
 2、将insertFile.h拷贝到/usr/include目录下
 3、将环境变量PATH的首目录设置为c++、g++、cc和gcc这个四个脚本所在的目录
+
+动态运行插装后的mysql
+具体参考:http://blog.csdn.net/zero_295813128/article/details/51258568

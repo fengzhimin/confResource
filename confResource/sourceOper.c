@@ -20,6 +20,9 @@ bool getSoftWareConfInfo()
     int fd = OpenFile(INPUT_PATH, O_RDONLY);
 	if(fd == -1)
 	{
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "open file %s failed: %s.\n", INPUT_PATH, strerror(errno));
+        Error(error_info);
 		return false;
 	}
 	memset(lineData, 0, LINE_CHAR_MAX_NUM);
@@ -38,6 +41,11 @@ bool getSoftWareConfInfo()
             {
                 //get srcPath value
                 strcpy(srcPath, subStr2[1]);
+            }
+            else if(strcasecmp(subStr2[0], "recordCountPath") == 0)
+            {
+                //get recordCountPath value
+                strcpy(recordCountPath, subStr2[1]);
             }
             else if(strcasecmp(subStr2[0], "rebuild") == 0)
             {
@@ -304,7 +312,7 @@ bool convertProgram(char *dirPath)
                     return ret;
                 }
             }
-            if(S_ISREG(statbuf.st_mode))
+            else if(S_ISREG(statbuf.st_mode))
             {
                 if(judgeCPreprocessFile(child_dir) || judgeCPPPreprocessFile(child_dir))
                 {
@@ -476,7 +484,7 @@ int getTotalAnalyzeFileNum(char *dirPath)
             {
                 ret += getTotalAnalyzeFileNum(child_dir);
             }
-            if(S_ISREG(statbuf.st_mode))
+            else if(S_ISREG(statbuf.st_mode))
             {
                 if(judgeCPreprocessFile(child_dir))
                 {
@@ -1173,6 +1181,7 @@ confScore getFuncScore(char *confOptName, funcInfo info, int curPthreadID)
             
         }
         mysql_free_result(res_ptr1);
+        
         //get function score from funcScore table
         memset(tempSqlCommand, 0, LINE_CHAR_MAX_NUM);
         sprintf(tempSqlCommand, "select CPU, MEM, IO, NET from %s where funcName='%s' and type='%s'\
@@ -1243,6 +1252,10 @@ confScore getFuncScore(char *confOptName, funcInfo info, int curPthreadID)
                         tempScore.NET = temp_NET;
                         if(JudgeVarInflFuncCallPath(confOptName, tempFuncCallInfo, &tempScore))
                         {
+                            relationExpr relaExpr = getConfOptRelation(confOptName, tempFuncCallInfo);
+                            printf("conf:%s\tCPU:%d\tMEM:%d\tIO:%d\tNET:%d\n", relaExpr.confOptName, relaExpr.CPURatio, relaExpr.MEMRatio, \
+                            relaExpr.IORatio, relaExpr.NETRatio);
+                            
 #if PRINT_INFLUENCE_FUNCTION == 1
                             while(tempFuncCallInfo != NULL)
                             {
@@ -1265,6 +1278,7 @@ confScore getFuncScore(char *confOptName, funcInfo info, int curPthreadID)
     }
     mysql_close(tempMysqlConnect);
     funcCallCount[curPthreadID]--;
+    
     //删除函数调用回退的最后一个记录
     if(endFuncCallInfo->prev != NULL)
         endFuncCallInfo->prev->next = NULL;
@@ -1532,7 +1546,7 @@ confScore buildConfScore(char *confName, char *xmlPath)
                 ret.IO += temp_ret.IO;
                 ret.NET += temp_ret.NET;
             }
-            if(S_ISREG(statbuf.st_mode))
+            else if(S_ISREG(statbuf.st_mode))
             {
                 void *pthread_ret = NULL;
                 if(analyzeConfOptPthreadRet[currentAnalyzeConfOptPthreadID] == 0)

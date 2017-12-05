@@ -10,6 +10,7 @@
 
 #include <stdbool.h>
 #include <pthread.h>
+#include <errno.h>
 
 #define OPENLOG  1      //0=不记录日志   1=记录日志
 

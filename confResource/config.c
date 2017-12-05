@@ -68,6 +68,7 @@ int max_funcCallRecursive_NUM = 5;
 char currentAnalyseXmlPath[DIRPATH_MAX] = "";
 
 char srcPath[MAX_PATH_LENGTH] = "";
+char recordCountPath[MAX_PATH_LENGTH] = "";
 bool rebuild = true;
 confOptMap *beginConfOpt = NULL;
 confOptMap *endConfOpt = NULL;

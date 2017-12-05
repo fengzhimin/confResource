@@ -145,4 +145,8 @@
       </Completion>
     </Configuration>
   </Settings>
+  <VirtualDirectory Name="LoopCount">
+    <File Name="searchLoopCount.h"/>
+    <File Name="searchLoopCount.c"/>
+  </VirtualDirectory>
 </CodeLite_Project>

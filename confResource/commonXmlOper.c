@@ -2263,3 +2263,203 @@ loopExprList *getCalledFuncLoopInfo(char *funcName, char *xmlFilePath, char *fun
     
     return begin;
 }
+
+loopCountInfoList *getCalledFuncLoopCountInfo(char *funcName, char *xmlFilePath, char *funcArgumentType, char *calledFuncName, int calledLine)
+{
+    loopCountInfoList *begin = NULL;
+    loopCountInfoList *end = NULL;
+    xmlDocPtr doc;
+    xmlNodePtr cur;
+    xmlKeepBlanksDefault(0);
+    doc = xmlParseFile(xmlFilePath);
+    if(doc == NULL )
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "Document(%s) not parsed successfully. \n", xmlFilePath);
+		Error(error_info);
+        return begin;
+    }
+    cur = xmlDocGetRootElement(doc);
+    if (cur == NULL)
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "empty document(%s). \n", xmlFilePath);
+		Error(error_info);  
+        xmlFreeDoc(doc);
+        return begin;
+    }
+    
+    cur = cur->children;
+    while (cur != NULL)
+    {
+        if(!xmlStrcmp(cur->name, (const xmlChar*)"function") || \
+            (!xmlStrcmp(cur->name, (const xmlChar*)"extern") && cur->children != NULL && !xmlStrcmp(cur->last->name, (const xmlChar*)"function")) || \
+            (!xmlStrcmp(cur->name, (const xmlChar*)"decl_stmt") && cur->children != NULL && !xmlStrcmp(cur->last->name, (const xmlChar*)"decl")))
+        {
+            xmlNodePtr funcNode;
+            if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
+                funcNode = cur;
+            else
+                funcNode = cur->last;
+            xmlNodePtr temp_cur = funcNode->children;
+            while(temp_cur != NULL)
+            {
+                if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
+                { 
+                    if(strcasecmp(funcName, (char*)xmlNodeGetContent(temp_cur)) == 0)
+                    {
+                        //get function argument type string
+                        char *argumentTypeString = ExtractFuncArgumentType(funcNode);
+                        char sourcePath[512] = "";
+                        //删除开头的temp_和结尾的.xml
+                        strncpy(sourcePath, (char *)&(xmlFilePath[5]), strlen(xmlFilePath)-9);
+                        if(JudgeArgumentSimilar(funcName, sourcePath, argumentTypeString, funcArgumentType))
+                        {
+                            //函数名和参数格式都匹配的函数
+                            free(argumentTypeString);
+                            //获取被调用函数的节点
+                            xmlNodePtr tempNode = getSpeciCalledFuncNode(funcNode, calledFuncName, calledLine);
+                            if(tempNode != NULL)
+                            {
+                                xmlNodePtr parentNode = tempNode->parent;
+                                while(parentNode != NULL)
+                                {
+                                    loopCountInfo tempLoopCount;
+                                    tempLoopCount.type = -1;
+                                    tempLoopCount.count = -1;
+                                    strcpy(tempLoopCount.funcName, funcName);
+                                    //删除结尾的.xml
+                                    strncpy(tempLoopCount.sourcePath, xmlFilePath, strlen(xmlFilePath)-4);
+                                    char strCount[5] = "";
+                                    if(!xmlStrcmp(parentNode->name, (const xmlChar*)"for"))
+                                    {
+                                        xmlNodePtr childrenNode = parentNode->children;
+                                        while(childrenNode != NULL)
+                                        {
+                                            if(!xmlStrcmp(childrenNode->name, (const xmlChar*)"block"))
+                                            {
+                                                xmlNodePtr countNode = childrenNode->last;
+                                                while(countNode != NULL)
+                                                {
+                                                    //不等于text节点
+                                                    if(xmlStrcmp(countNode->name, (const xmlChar*)"text"))
+                                                    {
+                                                        char *countContent = (char*)xmlNodeGetContent(countNode);
+                                                        if(strstr(countContent, "count") != NULL && \
+                                                            strstr(countContent, "++") != NULL)
+                                                        {
+                                                            tempLoopCount.type = 0;
+                                                            strncpy(strCount, &(countContent[5]), strlen(countContent)-7);
+                                                            tempLoopCount.count = StrToInt(strCount);
+                                                            
+                                                            goto next;
+                                                        }
+                                                        
+                                                    }
+                                                    
+                                                    countNode = countNode->prev;
+                                                }
+                                                
+                                            }
+                                            childrenNode = childrenNode->next;
+                                        }
+                                    }
+                                    else if(!xmlStrcmp(parentNode->name, (const xmlChar*)"do"))
+                                    {
+                                        xmlNodePtr childrenNode = parentNode->children;
+                                        while(childrenNode != NULL)
+                                        {
+                                            if(!xmlStrcmp(childrenNode->name, (const xmlChar*)"block"))
+                                            {
+                                                xmlNodePtr countNode = childrenNode->last;
+                                                while(countNode != NULL)
+                                                {
+                                                    //不等于text节点
+                                                    if(xmlStrcmp(countNode->name, (const xmlChar*)"text"))
+                                                    {
+                                                        char *countContent = (char*)xmlNodeGetContent(countNode);
+                                                        if(strstr(countContent, "count") != NULL && \
+                                                            strstr(countContent, "++") != NULL)
+                                                        {
+                                                            tempLoopCount.type = 2;
+                                                            strncpy(strCount, &(countContent[5]), strlen(countContent)-7);
+                                                            tempLoopCount.count = StrToInt(strCount);
+                                                            
+                                                            goto next;
+                                                        }
+                                                        
+                                                    }
+                                                    
+                                                    countNode = countNode->prev;
+                                                }
+                                            }
+                                            childrenNode = childrenNode->next;
+                                        }
+                                    }
+                                    else if(!xmlStrcmp(parentNode->name, (const xmlChar*)"while"))
+                                    {
+                                        xmlNodePtr childrenNode = parentNode->children;
+                                        while(childrenNode != NULL)
+                                        {
+                                            if(!xmlStrcmp(childrenNode->name, (const xmlChar*)"condition"))
+                                            {
+                                                xmlNodePtr countNode = childrenNode->last;
+                                                while(countNode != NULL)
+                                                {
+                                                    //不等于text节点
+                                                    if(xmlStrcmp(countNode->name, (const xmlChar*)"block"))
+                                                    {
+                                                        char *countContent = (char*)xmlNodeGetContent(countNode);
+                                                        if(strstr(countContent, "count") != NULL && \
+                                                            strstr(countContent, "++") != NULL)
+                                                        {
+                                                            tempLoopCount.type = 1;
+                                                            strncpy(strCount, &(countContent[5]), strlen(countContent)-7);
+                                                            tempLoopCount.count = StrToInt(strCount);
+                                                            
+                                                            goto next;
+                                                        }
+                                                        
+                                                    }
+                                                    
+                                                    countNode = countNode->prev;
+                                                }
+                                            }
+                                            childrenNode = childrenNode->next;
+                                        }
+                                    }
+
+next:
+                                    if(tempLoopCount.type != -1 && tempLoopCount.count != -1)
+                                    {
+                                        if(begin == NULL)
+                                            begin = end = malloc(sizeof(loopCountInfoList));
+                                        else
+                                            end = end->next = malloc(sizeof(loopCountInfoList));
+                                        
+                                        memset(end, 0, sizeof(loopCountInfoList));
+                                        end->info = tempLoopCount;
+                                    }
+                                    parentNode = parentNode->parent;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            free(argumentTypeString);
+                            memset(error_info, 0, LOGINFO_LENGTH);
+                            sprintf(error_info, "%s: function: %s has more than one define!\n", xmlFilePath, funcName);
+                            Warning(error_info);
+                        }
+                    }
+                }
+                temp_cur = temp_cur->next;
+            }
+        }
+        cur = cur->next;
+    }
+      
+    xmlFreeDoc(doc);
+    
+    return begin;
+}

@@ -9,12 +9,16 @@
 
 static char subStr2[2][MAX_SUBSTR];
 static char lineData[LINE_CHAR_MAX_NUM];
+static char error_info[LOGINFO_LENGTH];
 
 bool getConfValueByLabelAndKey(char *label, char *key, char *value)
 {
 	int fd = OpenFile(CONFIG_PATH, O_RDONLY);
 	if(fd == -1)
 	{
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "open file(%s) failed: %s.\n", CONFIG_PATH, strerror(errno));
+        Error(error_info);
 		return false;
 	}
 	memset(lineData, 0, LINE_CHAR_MAX_NUM);

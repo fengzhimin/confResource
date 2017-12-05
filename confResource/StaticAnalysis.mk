@@ -13,7 +13,7 @@ CurrentFileName        :=
 CurrentFilePath        :=
 CurrentFileFullPath    :=
 User                   :=fzm
-Date                   :=01/12/17
+Date                   :=05/12/17
 CodeLitePath           :=/home/fzm/.codelite
 LinkerName             :=/usr/bin/g++
 SharedObjectLinkerName :=/usr/bin/g++ -shared -fPIC
@@ -61,7 +61,7 @@ AS       := /usr/bin/as
 ##
 CodeLiteDir:=/usr/share/codelite
 Objects0=$(IntermediateDirectory)/main.c$(ObjectSuffix) $(IntermediateDirectory)/CXmlOper.c$(ObjectSuffix) $(IntermediateDirectory)/CPPXmlOper.c$(ObjectSuffix) $(IntermediateDirectory)/commonXmlOper.c$(ObjectSuffix) $(IntermediateDirectory)/xmlOper.c$(ObjectSuffix) $(IntermediateDirectory)/mysqlOper.c$(ObjectSuffix) $(IntermediateDirectory)/buildFuncLibrary.c$(ObjectSuffix) $(IntermediateDirectory)/buildTempTable.c$(ObjectSuffix) $(IntermediateDirectory)/confOper.c$(ObjectSuffix) $(IntermediateDirectory)/fileOper.c$(ObjectSuffix) \
-	$(IntermediateDirectory)/strOper.c$(ObjectSuffix) $(IntermediateDirectory)/dirOper.c$(ObjectSuffix) $(IntermediateDirectory)/dateOper.c$(ObjectSuffix) $(IntermediateDirectory)/config.c$(ObjectSuffix) $(IntermediateDirectory)/sourceOper.c$(ObjectSuffix) $(IntermediateDirectory)/logOper.c$(ObjectSuffix) 
+	$(IntermediateDirectory)/strOper.c$(ObjectSuffix) $(IntermediateDirectory)/dirOper.c$(ObjectSuffix) $(IntermediateDirectory)/dateOper.c$(ObjectSuffix) $(IntermediateDirectory)/config.c$(ObjectSuffix) $(IntermediateDirectory)/sourceOper.c$(ObjectSuffix) $(IntermediateDirectory)/logOper.c$(ObjectSuffix) $(IntermediateDirectory)/searchLoopCount.c$(ObjectSuffix) 
 
 
 
@@ -219,6 +219,14 @@ $(IntermediateDirectory)/logOper.c$(DependSuffix): logOper.c
 
 $(IntermediateDirectory)/logOper.c$(PreprocessSuffix): logOper.c
 	$(CC) $(CFLAGS) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/logOper.c$(PreprocessSuffix) logOper.c
+
+$(IntermediateDirectory)/searchLoopCount.c$(ObjectSuffix): searchLoopCount.c $(IntermediateDirectory)/searchLoopCount.c$(DependSuffix)
+	$(CC) $(SourceSwitch) "/home/fzm/confResource/confResource/searchLoopCount.c" $(CFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/searchLoopCount.c$(ObjectSuffix) $(IncludePath)
+$(IntermediateDirectory)/searchLoopCount.c$(DependSuffix): searchLoopCount.c
+	@$(CC) $(CFLAGS) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/searchLoopCount.c$(ObjectSuffix) -MF$(IntermediateDirectory)/searchLoopCount.c$(DependSuffix) -MM searchLoopCount.c
+
+$(IntermediateDirectory)/searchLoopCount.c$(PreprocessSuffix): searchLoopCount.c
+	$(CC) $(CFLAGS) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/searchLoopCount.c$(PreprocessSuffix) searchLoopCount.c
 
 
 -include $(IntermediateDirectory)/*$(DependSuffix)

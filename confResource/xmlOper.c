@@ -188,8 +188,8 @@ bool JudgeVarInflFuncCallPath(char *varName, funcInfoList *funcCallPath, confSco
                     {
                         MYSQL_RES *temp_res_ptr;
                         temp_res_ptr = mysql_store_result(tempMysqlConnect);
-                        int rownum = mysql_num_rows(temp_res_ptr);
-                        if(rownum == 1)
+                        int temp_rownum = mysql_num_rows(temp_res_ptr);
+                        if(temp_rownum == 1)
                         {
                             MYSQL_ROW temp_sqlrow = mysql_fetch_row(temp_res_ptr);
                             
@@ -217,6 +217,10 @@ bool JudgeVarInflFuncCallPath(char *varName, funcInfoList *funcCallPath, confSco
                                 loopExprList *curLoopInfo = loopInfo;
                                 while(curLoopInfo != NULL)
                                 {
+                                    /*
+                                     * varName为原始配置项变量名称
+                                     * tempVarName可能是被原始配置项变量通过值传播所影响的变量名称
+                                     */
                                     if(strstr(curLoopInfo->expr.loopExpr, tempVarName) != NULL || strstr(curLoopInfo->expr.loopExpr, varName) != NULL)
                                     {
                                         if(temp_value)
@@ -510,4 +514,249 @@ varDef *ExtractVarInflVarByFuncCallPath(char *varName, funcInfoList *funcCallPat
     }
     
     return NULL;
+}
+
+relationExpr getConfOptRelation(char *varName, funcInfoList *funcCallPath)
+{
+    relationExpr ret;
+    memset(&ret, 0, sizeof(relationExpr));
+    strcpy(ret.confOptName, varName);
+    int ratio = 1;
+    char xmlFilePath[512];
+    funcInfoList *currentPath = funcCallPath;
+    while(currentPath != NULL)
+    {
+        if(currentPath->next == NULL)
+        {
+            varDirectInflFuncList *beginFunc = NULL;
+            varDirectInflFuncList *currentFunc = NULL;
+            memset(xmlFilePath, 0, 512);
+            sprintf(xmlFilePath, "temp_%s.xml", currentPath->info.sourceFile);
+            varDef * beginVar = ExtractVarInflVarByFuncCallPath(varName, funcCallPath);
+            varDef * currentVar = beginVar;
+            if(judgeCPreprocessFile(currentPath->info.sourceFile))
+                beginFunc = currentFunc = getCVarInfluFunc(currentVar->varName, currentPath->info.funcName, xmlFilePath, currentPath->info.argumentType);
+            else
+                beginFunc = currentFunc = getCPPVarInfluFunc(currentVar->varName, currentPath->info.funcName, xmlFilePath, currentPath->info.argumentType);
+            while(currentVar != NULL)
+            {
+                beginVar = beginVar->next;
+                free(currentVar);
+                currentVar = beginVar;
+            }
+            
+            //判断是那类资源
+            MYSQL temp_db;
+            MYSQL *tempMysqlConnect = NULL;
+            tempMysqlConnect = mysql_init(&temp_db);
+            if(tempMysqlConnect == NULL)
+            {
+                Error("init mysql failure\n");
+                return ret;
+            }
+            if(NULL == mysql_real_connect((MYSQL *)tempMysqlConnect, bind_address, user, pass, database, port, NULL, 0))
+            {
+                memset(error_info, 0, LOGINFO_LENGTH);
+                sprintf(error_info, "connect failed: %s\n", mysql_error(tempMysqlConnect));
+                Error(error_info);
+                mysql_close(tempMysqlConnect);
+                return ret;
+            }
+            char temp_SqlCommand[LINE_CHAR_MAX_NUM] = "";
+            sprintf(temp_SqlCommand, "select distinct argumentType from %s where funcName='%s' and funcCallType='%s' and sourceFile='%s'", \
+                funcCallTableName, currentPath->info.funcName, currentPath->info.funcType, currentPath->info.sourceFile);
+            if(mysql_real_query(tempMysqlConnect, temp_SqlCommand, strlen(temp_SqlCommand)) != 0)
+            {
+                memset(error_info, 0, LOGINFO_LENGTH);
+                sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
+                Error(error_info);
+                mysql_close(tempMysqlConnect);
+                return ret;
+            }
+            else
+            {
+                MYSQL_RES *res_ptr;
+                res_ptr = mysql_store_result(tempMysqlConnect);
+                int rownum = mysql_num_rows(res_ptr);
+                //判断是否存在函数重载
+                if(rownum <= 1)
+                {
+                    memset(temp_SqlCommand, 0, LINE_CHAR_MAX_NUM);
+                    sprintf(temp_SqlCommand, "select calledFunc, line, forNum, whileNum from %s where funcName='%s' and funcCallType='%s' and sourceFile='%s' \
+                    and type='L'", funcCallTableName, currentPath->info.funcName, currentPath->info.funcType, currentPath->info.sourceFile);
+                }
+                else
+                {
+                    int argumentNum = getSpecCharNumFromStr(currentPath->info.argumentType, '/') + 1;
+                    char temp_argumentType[512] = "";
+                    strcpy(temp_argumentType, currentPath->info.argumentType);
+                    char selectArgumentType[512] = "(";
+                    if(argumentNum == 1)
+                    {
+                        //only one argument or only void#0
+                        if(strstr(temp_argumentType, "non") == NULL)
+                            strcpy(selectArgumentType, temp_argumentType);
+                        else
+                            strcpy(selectArgumentType, "(%#1)");
+                    }
+                    else
+                    {
+                        //more than one argument
+                        char (*arguType)[MAX_SUBSTR] = (char (*)[MAX_SUBSTR])malloc(argumentNum*MAX_SUBSTR);
+                        int arguNum = 0;
+                        removeChar(temp_argumentType, '(');
+                        removeChar(temp_argumentType, ')');
+                        removeChar(temp_argumentType, '#');
+                        removeNum(temp_argumentType);
+                        cutStrByLabel(temp_argumentType, '/', arguType, argumentNum);
+                        
+                        for(arguNum = 0; arguNum < argumentNum; arguNum++)
+                        {
+                            if(arguNum != 0)
+                                strcat(selectArgumentType, "/");
+                            if(strcasecmp(arguType[arguNum], "non") == 0)
+                                strcat(selectArgumentType, "%");
+                            else
+                                strcat(selectArgumentType, arguType[arguNum]);
+                        }
+                        free(arguType);
+                        sprintf(selectArgumentType, "%s#%d)", selectArgumentType, argumentNum);
+                    }
+                    memset(temp_SqlCommand, 0, LINE_CHAR_MAX_NUM);
+                    sprintf(temp_SqlCommand, "select calledFunc, line, forNum, whileNum from %s where funcName='%s' and funcCallType='%s' and sourceFile='%s' \
+                    and type='L' and argumentType like '%s'", funcCallTableName, currentPath->info.funcName, currentPath->info.funcType, \
+                    currentPath->info.sourceFile, selectArgumentType);
+                }
+                mysql_free_result(res_ptr);
+            }
+                
+            if(mysql_real_query(tempMysqlConnect, temp_SqlCommand, strlen(temp_SqlCommand)) != 0)
+            {
+                memset(error_info, 0, LOGINFO_LENGTH);
+                sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
+                Error(error_info);
+                mysql_close(tempMysqlConnect);
+                return ret;
+            }
+            else
+            {
+                MYSQL_RES *res_ptr;
+                res_ptr = mysql_store_result(tempMysqlConnect);
+                int rownum = mysql_num_rows(res_ptr);
+                //获取自定义函数调用库函数的记录
+                for(int i = 0; i < rownum; i++)
+                {
+                    MYSQL_ROW sqlrow = mysql_fetch_row(res_ptr);
+                    memset(temp_SqlCommand, 0, LINE_CHAR_MAX_NUM);
+                    sprintf(temp_SqlCommand, "select type, score from funcLibrary where funcName='%s'", sqlrow[0]);
+                    if(mysql_real_query(tempMysqlConnect, temp_SqlCommand, strlen(temp_SqlCommand)) != 0)
+                    {
+                        memset(error_info, 0, LOGINFO_LENGTH);
+                        sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
+                        Error(error_info);
+                        mysql_close(tempMysqlConnect);
+                        return ret;
+                    }
+                    else
+                    {
+                        MYSQL_RES *temp_res_ptr;
+                        temp_res_ptr = mysql_store_result(tempMysqlConnect);
+                        int temp_rownum = mysql_num_rows(temp_res_ptr);
+                        if(temp_rownum == 1)
+                        {
+                            MYSQL_ROW temp_sqlrow = mysql_fetch_row(temp_res_ptr);
+                            
+                            //判断调用库函数的自定义函数中是否配置项变量影响到了库函数
+                            currentFunc = beginFunc;
+                            while(currentFunc != NULL)
+                            {
+                                if(strcasecmp(currentFunc->info.info.funcName, sqlrow[0]) == 0 && currentFunc->info.info.calledLine == StrToInt(sqlrow[1]))
+                                {
+                                    //判断库函数是否受到了循环的影响
+                                    int tempRatio = ratio;
+                                    if((StrToInt(sqlrow[2]) + StrToInt(sqlrow[3])) > 0)
+                                    {
+                                        loopCountInfoList *begin = NULL;
+                                        loopCountInfoList *current = NULL;
+                                        begin = current = getCalledFuncLoopCountInfo(currentPath->info.funcName, xmlFilePath, currentPath->info.argumentType, \
+                                            sqlrow[0], StrToInt(sqlrow[1]));
+                                        
+                                        while(current != NULL)
+                                        {
+                                            //查找动态测试循环次数的结果
+                                            tempRatio *= getLoopCount(current->info);
+                                            
+                                            current = current->next;
+                                        }
+                                        
+                                        current = begin;
+                                        while(current != NULL)
+                                        {
+                                            begin = begin->next;
+                                            free(current);
+                                            current = begin;
+                                        }
+                                    }
+                                    if(strcasecmp(temp_sqlrow[0], "CPU") == 0)
+                                    {
+                                        ret.CPURatio = tempRatio;
+                                    }
+                                    else if(strcasecmp(temp_sqlrow[0], "MEM") == 0)
+                                    {
+                                        ret.MEMRatio = tempRatio;
+                                    }
+                                    else if(strcasecmp(temp_sqlrow[0], "IO") == 0)
+                                    {
+                                        ret.IORatio = tempRatio;
+                                    }
+                                    else if(strcasecmp(temp_sqlrow[0], "NET") == 0)
+                                    {
+                                        ret.NETRatio = tempRatio;
+                                    }
+                                    
+                                    break;
+                                }
+                                
+                                currentFunc = currentFunc->next;
+                            }
+                            
+                        }
+                        mysql_free_result(temp_res_ptr);
+                    }
+                }
+                mysql_free_result(res_ptr);
+            }
+            
+            mysql_close(tempMysqlConnect);
+            
+            return ret;
+        }
+        char xmlFilePath[512];
+        sprintf(xmlFilePath, "temp_%s.xml", currentPath->info.sourceFile);
+        
+        loopCountInfoList *begin = NULL;
+        loopCountInfoList *current = NULL;
+        begin = current = getCalledFuncLoopCountInfo(currentPath->info.funcName, xmlFilePath, currentPath->info.argumentType, \
+            currentPath->next->info.funcName, currentPath->next->info.calledLine);
+        
+        while(current != NULL)
+        {
+            //查找动态测试循环次数的结果
+            ratio *= getLoopCount(current->info);
+            
+            current = current->next;
+        }
+        
+        current = begin;
+        while(current != NULL)
+        {
+            begin = begin->next;
+            free(current);
+            current = begin;
+        }
+        
+        currentPath = currentPath->next;
+    }
+    
+    return ret;
 }
