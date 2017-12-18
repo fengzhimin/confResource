@@ -15,6 +15,7 @@ int main(int argc, char **argv)
 {
     char config_value[CONFIG_VALUE_MAX_NUM];
     time_t start, end, finish;
+    
 	if(getConfValueByLabelAndKey("funcCall", "num", config_value))
     {
 		max_funcCallRecursive_NUM = StrToInt(config_value);

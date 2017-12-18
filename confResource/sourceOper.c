@@ -692,7 +692,26 @@ bool buildFuncScore()
     printf("updating funcCall table\n");
     time_t start, end, finish; 
     time(&start);
-    // delete library function call record from funcCall
+    /*
+     * 有待测试是否需要执行这步
+     */
+    //删除没有用到的函数声明
+    memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+    sprintf(sqlCommand, "delete from %s where funcName not in (select calledFunc from %s)", funcScoreTableName, funcCallTableName);
+    if(!executeCommand(sqlCommand))
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+        Error(error_info);
+        return false;
+    }
+    else
+        ret = true;
+    
+    /*
+     * 有待测试是否需要执行这步
+     */
+    // delete unused function call record from funcCall
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
     sprintf(sqlCommand, "delete from %s where funcName not in (select funcName from %s)", funcCallTableName, funcScoreTableName);
     if(!executeCommand(sqlCommand))
@@ -700,7 +719,27 @@ bool buildFuncScore()
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
         Error(error_info);
+        return false;
     }
+    else
+        ret = true;
+    
+    //更新C++类中函数调用类自身的函数
+    memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
+    sprintf(sqlCommand, "update %s as funcScore, %s as funcCall set funcCall.calledFunc=funcScore.funcName, funcCall.calledFuncType=funcScore.type \
+        where funcScore.className!='non' and funcCall.className!='non' and funcScore.sourceFile=funcCall.sourceFile and \
+        funcScore.className=funcCall.className and funcScore.funcName=concat(concat(funcCall.className, '::'), funcCall.calledFunc)", \
+        funcScoreTableName, funcCallTableName);
+    if(!executeCommand(sqlCommand))
+    {
+        memset(error_info, 0, LOGINFO_LENGTH);
+        sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
+        Error(error_info);
+        return false;
+    }
+    else
+        ret = true;
+
     //update funcCall table type field
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
     sprintf(sqlCommand, "update %s as funcScore, %s as funcCall set funcCall.type='S' where funcScore.funcName=funcCall.calledFunc", funcScoreTableName, funcCallTableName);
@@ -709,6 +748,7 @@ bool buildFuncScore()
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
         Error(error_info);
+        return false;
     }
     else
         ret = true;
@@ -732,6 +772,7 @@ bool buildFuncScore()
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
         Error(error_info);
+        return false;
     }
     //MEM score
     printf("MEM score calculating\n");
@@ -743,6 +784,7 @@ bool buildFuncScore()
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
         Error(error_info);
+        return false;
     }
     else
     {
@@ -751,6 +793,7 @@ bool buildFuncScore()
         if(!executeCommand(sqlCommand))
         {
             Error("execute commad alter table tmp_table add column score int failure.");
+            return false;
         }
         else
         {
@@ -760,6 +803,7 @@ bool buildFuncScore()
             if(!executeCommand(sqlCommand))
             {
                 Error("execute commad update tmp_table, funcLibrary set tmp_table.score=funcLibrary.score where tmp_table.calledFunc=funcLibrary.funcName failure.");
+                return false;
             }
         }
     }
@@ -771,6 +815,7 @@ bool buildFuncScore()
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
         Error(error_info);
+        return false;
     }
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
     sprintf(sqlCommand, "drop table %s", tmp_table);
@@ -779,6 +824,7 @@ bool buildFuncScore()
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
         Error(error_info);
+        return false;
     }
     else
         ret = true;
@@ -794,6 +840,7 @@ bool buildFuncScore()
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
         Error(error_info);
+        return false;
     }
     else
     {
@@ -802,6 +849,7 @@ bool buildFuncScore()
         if(!executeCommand(sqlCommand))
         {
             Error("execute commad alter table tmp_table add column score int failure.");
+            return false;
         }
         else
         {
@@ -811,6 +859,7 @@ bool buildFuncScore()
             if(!executeCommand(sqlCommand))
             {
                 Error("execute commad update tmp_table, funcLibrary set tmp_table.score=funcLibrary.score where tmp_table.calledFunc=funcLibrary.funcName failure.");
+                return false;
             }
         }
     }
@@ -822,6 +871,7 @@ bool buildFuncScore()
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
         Error(error_info);
+        return false;
     }
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
     sprintf(sqlCommand, "drop table %s", tmp_table);
@@ -830,6 +880,7 @@ bool buildFuncScore()
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
         Error(error_info);
+        return false;
     }
     else
         ret = true;
@@ -844,6 +895,7 @@ bool buildFuncScore()
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
         Error(error_info);
+        return false;
     }
     else
     {
@@ -852,6 +904,7 @@ bool buildFuncScore()
         if(!executeCommand(sqlCommand))
         {
             Error("execute commad alter table tmp_table add column score int failure.");
+            return false;
         }
         else
         {
@@ -861,6 +914,7 @@ bool buildFuncScore()
             if(!executeCommand(sqlCommand))
             {
                 Error("execute commad update tmp_table, funcLibrary set tmp_table.score=funcLibrary.score where tmp_table.calledFunc=funcLibrary.funcName failure.");
+                return false;
             }
         }
     }
@@ -872,6 +926,7 @@ bool buildFuncScore()
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
         Error(error_info);
+        return false;
     }
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
     sprintf(sqlCommand, "drop table %s", tmp_table);
@@ -880,6 +935,7 @@ bool buildFuncScore()
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
         Error(error_info);
+        return false;
     }
     else
         ret = true;
@@ -894,6 +950,7 @@ bool buildFuncScore()
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
         Error(error_info);
+        return false;
     }
     else
     {
@@ -902,6 +959,7 @@ bool buildFuncScore()
         if(!executeCommand(sqlCommand))
         {
             Error("execute commad alter table tmp_table add column score int failure.");
+            return false;
         }
         else
         {
@@ -911,6 +969,7 @@ bool buildFuncScore()
             if(!executeCommand(sqlCommand))
             {
                 Error("execute commad update tmp_table, funcLibrary set tmp_table.score=funcLibrary.score where tmp_table.calledFunc=funcLibrary.funcName failure.");
+                return false;
             }
         }
     }
@@ -922,6 +981,7 @@ bool buildFuncScore()
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
         Error(error_info);
+        return false;
     }
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
     sprintf(sqlCommand, "drop table %s", tmp_table);
@@ -930,6 +990,7 @@ bool buildFuncScore()
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
         Error(error_info);
+        return false;
     }
     else
         ret = true;
@@ -942,6 +1003,7 @@ bool buildFuncScore()
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
         Error(error_info);
+        return false;
     }
     else
         ret = true;
@@ -955,6 +1017,7 @@ bool buildFuncScore()
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
         Error(error_info);
+        return false;
     }
     else
         ret = true;
@@ -968,6 +1031,7 @@ bool buildFuncScore()
         memset(error_info, 0, LOGINFO_LENGTH);
         sprintf(error_info, "execute commad %s failure.\n", sqlCommand);
         Error(error_info);
+        return false;
     }
     else
         ret = true;
@@ -1264,6 +1328,15 @@ confScore getFuncScore(char *confOptName, funcInfo info, int curPthreadID)
                             }
                             printf("\n");
 #endif
+                        }
+                        else
+                        {
+                            while(tempFuncCallInfo != NULL)
+                            {
+                                printf("\033[35m%s->\033[0m", tempFuncCallInfo->info.funcName);
+                                tempFuncCallInfo = tempFuncCallInfo->next;
+                            }
+                            printf("\n");
                         }
                         
                         ret.CPU += tempScore.CPU;
