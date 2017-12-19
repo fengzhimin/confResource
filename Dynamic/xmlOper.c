@@ -42,6 +42,7 @@ void AddLoopCount(xmlNodePtr funcBlockNode, char *funcName, char *srcPath, int *
             xmlChar *blockType = xmlGetProp(cur, (xmlChar*)"type");
             if(blockType != NULL && strcasecmp((char *)blockType, "pseudo") == 0)
             {
+                xmlFree(blockType);
                 //没有括号
                 memset(temp, 0, 1024);
                 sprintf(temp, "\ncount%d++;}", *loopCount);

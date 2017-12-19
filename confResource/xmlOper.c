@@ -37,20 +37,6 @@ funcCallInfoList *VarSclice(char *varName, char *xmlFilePath)
     }
 }
 
-confVarDefValue getVarDefaultValue(char *varName, char *xmlFilePath)
-{
-    if(judgeCSrcXmlFile(xmlFilePath))
-    {
-        //handler C language variable sclice
-        return getCVarDefaultValue(varName, xmlFilePath);
-    }
-    else
-    {
-        //handler C++ language variable sclice
-        return getCPPVarDefaultValue(varName, xmlFilePath);
-    }
-}
-
 bool JudgeVarInflFuncCallPath(char *varName, funcInfoList *funcCallPath, confScore *score)
 {
     bool ret = false;

@@ -38,14 +38,6 @@ bool ExtractFuncFromXML(char *xmlFilePath, char *tempFuncScoreTableName, char *t
 **********************************/
 funcCallInfoList *VarSclice(char *varName, char *xmlFilePath);
 
-/*************************************
- * func: get C++ language variable default value
- * return: confVarDefValue.defValue = -1 : no default value
- * @para varName: analysed variable name
- * @para xmlFilePath: xml file path
-**************************************/
-confVarDefValue getVarDefaultValue(char *varName, char *xmlFilePath);
-
 /**********************************
  * func: 判断一个变量是否通过数据传播影响给定的一条函数调用路径(目的是为了判断配置项变量是否应该库函数，从而确定库函数的基础分数)
  * return: true = 影响   false = 不影响

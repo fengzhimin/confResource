@@ -73,14 +73,6 @@ funcCallInfoList *CSclice(char *varName, char *xmlFilePath);
 *************************************/
 varDirectInflFuncList *getCDirectInflFuncFromNode(char *varName, xmlNodePtr funcBlockNode, varType *varTypeBegin, bool flag);
 
-/*************************************
- * func: get C language variable default value
- * return: confVarDefValue.defValue = -1 : no default value
- * @para varName: analysed variable name
- * @para xmlFilePath: xml file path
-**************************************/
-confVarDefValue getCVarDefaultValue(char *varName, char *xmlFilePath);
-
 /***********************************
  * func: 获取变量varName在C函数funcName中通过数据传播所影响的被调用的函数信息
  * return: 影响函数的列表

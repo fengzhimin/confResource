@@ -26,7 +26,6 @@
 #define scanAssignVar(cur)   scanAssignVarFromNode(cur, true)
 #define ExtractDirectInfluVar(cur, varName, varTypeBegin)  ExtractDirectInfluVarFromNode(cur, varName, varTypeBegin, true)
 #define ScliceInflVar(varName, cur, varTypeBegin)  ScliceInflVarInfo(varName, cur, NULL, NULL, varTypeBegin)
-#define getVarDefValue(varName, cur)  getVarDefValueFromNode(varName, cur, true)
 
 /*********************************
  * func: judge a variable whether be used in current node or not
@@ -164,22 +163,6 @@ funcCallInfoList *Sclice(char *varName, char *xmlFilePath, funcInfoList *(*varSc
 funcCallInfoList *ScliceDebug(char *varName, char *xmlFilePath, funcInfoList *(*varScliceFunc)(varDef, xmlNodePtr , varType *, bool));
 
 /***********************************
- * func: judge expr node whether is varName default value templet or not
- * return: confVarDefValue.defValue = -1 : no default value
- * @para varName: variable name
- * @para expr: expression node
-************************************/
-confVarDefValue judgeVarDefValueModel(char *varName, xmlNodePtr expr);
-
-/**********************************
- * func: get variable default value from current Node
- * return: default value  confVarDefValue.defValue = -1 : no default value
- * @para varName: variable name
- * @para cur: function block node
-***********************************/
-confVarDefValue getVarDefValueFromNode(char *varName, xmlNodePtr funcNode, bool flag);
-
-/***********************************
  * func: get function parameter name by parameter position
  * return: parameter name    NULL = get failure
  * @para parameterListNode: parameter list node 
@@ -204,17 +187,6 @@ char *getParaNameByIndex(int index, char *funcName, char *xmlFilePath, char *fun
  * @para paraListNode: parameter list node
 ***************************************/
 int getArguPosition(char *paraName, xmlNodePtr paraListNode);
-
-/**********************************
- * func: extract specific parameter default value
- * return: confVarDefValue.defValue = -1 : no default value
- * @para paraIndex: parameter position
- * @para funcName: the function name in which the variable used
- * @para xmlFilePath: the file path in which the function is located
- * @para funcArgumentType: the argument type of the funcName
-***********************************/
-confVarDefValue ExtractSpeciParaDefValue(int paraIndex, char *funcName, char *xmlFilePath, char *funcArgumentType, \
-    varDirectInflFuncList *(*DirectInflFunc)(char *, xmlNodePtr, varType *, bool));
 
 /***********************************
  * func: 获取变量varName在函数funcName中通过数据传播所影响的被调用的函数信息

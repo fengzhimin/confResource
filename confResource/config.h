@@ -52,11 +52,11 @@
 #define LOGINFO_LENGTH           1024 
 
 //convert source to xml file pthread number
-#define MAX_CONVERT_SRC_PTHREAD_NUM  1
+#define MAX_CONVERT_SRC_PTHREAD_NUM  10
 //analyze xml file pthread number
-#define MAX_ANALYZE_XML_PTHREAD_NUM  1
+#define MAX_ANALYZE_XML_PTHREAD_NUM  15
 //analyze config option pthread number
-#define MAX_ANALYZE_CONFOPT_PTHREAD_NUM  1
+#define MAX_ANALYZE_CONFOPT_PTHREAD_NUM  6
 
 typedef struct configurationScore
 {

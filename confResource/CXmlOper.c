@@ -55,15 +55,20 @@ bool ExtractFuncFromCXML(char *xmlFilePath, char *tempFuncScoreTableName, char *
             char *funcType = "extern";
             while(temp_cur != NULL)
             {
+                char *value = (char*)xmlNodeGetContent(temp_cur);
                 if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"specifier"))
                 {
-                    if(strcasecmp((char*)xmlNodeGetContent(temp_cur), "static") == 0)
+                    if(strcasecmp(value, "static") == 0)
                         funcType = "static";
                 }
                 else if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
                 {
-                    if(strcasecmp("__attribute__", (char*)xmlNodeGetContent(temp_cur)) == 0)
+                    if(strcasecmp("__attribute__", value) == 0)
+                    {
+                        xmlFree(value);
                         break;
+                    }
+                    
                     char src_dir[DIRPATH_MAX] = "";
                     //删除开头的temp_和结尾的.xml
                     strncpy(src_dir, (char *)&(xmlFilePath[5]), strlen(xmlFilePath)-9);
@@ -71,8 +76,9 @@ bool ExtractFuncFromCXML(char *xmlFilePath, char *tempFuncScoreTableName, char *
                     char tempSqlCommand[LINE_CHAR_MAX_NUM] = "";
                     //get function argument type string
                     char *argumentTypeString = ExtractFuncArgumentType(funcNode);
-                    sprintf(tempSqlCommand, "insert into %s (funcName, type, argumentType, sourceFile, line) value('%s', '%s', '%s', '%s', %s)", tempFuncScoreTableName,\
-                        (char*)xmlNodeGetContent(temp_cur), funcType, argumentTypeString, src_dir, attr_value);
+                    sprintf(tempSqlCommand, "insert into %s (funcName, type, argumentType, sourceFile, line) value('%s', '%s', '%s', '%s', %s)", \
+                        tempFuncScoreTableName, value, funcType, argumentTypeString, src_dir, attr_value);
+                    xmlFree(attr_value);
                     if(!executeSQLCommand(NULL, tempSqlCommand))
                     {
                         memset(error_info, 0, LOGINFO_LENGTH);
@@ -81,7 +87,7 @@ bool ExtractFuncFromCXML(char *xmlFilePath, char *tempFuncScoreTableName, char *
                     }
                     varType *begin = ExtractVarType(funcNode);
                     varType *current = begin;
-                    scanCallFunction(tempFuncCallTableName, funcNode, (char*)xmlNodeGetContent(temp_cur), funcType, argumentTypeString, src_dir, begin);
+                    scanCallFunction(tempFuncCallTableName, funcNode, value, funcType, argumentTypeString, src_dir, begin);
                     while(current != NULL)
                     {
                         begin = begin->next;
@@ -89,9 +95,11 @@ bool ExtractFuncFromCXML(char *xmlFilePath, char *tempFuncScoreTableName, char *
                         free(current);
                         current = begin;
                     }
+                    xmlFree(value);
                     free(argumentTypeString);
                     break;
                 }
+                xmlFree(value);
                 temp_cur = temp_cur->next;
             }
             
@@ -156,8 +164,12 @@ static void scanCallFunctionFromNode(char *tempFuncCallTableName, xmlNodePtr cur
                         memset(error_info, 0, LOGINFO_LENGTH);
                         sprintf(error_info, "execute commad %s failure.\n", tempSqlCommand);
                         Error(error_info);
+                        xmlFree(callFuncName);
+                        return ;
                     }
                 }
+                xmlFree(attr_value);
+                xmlFree(callFuncName);
             }
         }
         
@@ -215,6 +227,8 @@ funcInfoList *scanCCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, bool 
                 if(tempMysqlConnect == NULL)
                 {
                     Error("init mysql failure\n");
+                    xmlFree(calledFuncName);
+                    xmlFree(attr_value);
                     return false;
                 }
                 if(NULL == mysql_real_connect((MYSQL *)tempMysqlConnect, bind_address, user, pass, database, port, NULL, 0))
@@ -222,6 +236,8 @@ funcInfoList *scanCCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, bool 
                     memset(error_info, 0, LOGINFO_LENGTH);
                     sprintf(error_info, "connect failed: %s\n", mysql_error(tempMysqlConnect));
                     Error(error_info);
+                    xmlFree(calledFuncName);
+                    xmlFree(attr_value);
                     mysql_close(tempMysqlConnect);
                     return false;
                 }
@@ -230,6 +246,8 @@ funcInfoList *scanCCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, bool 
                     memset(error_info, 0, LOGINFO_LENGTH);
                     sprintf(error_info, "execute command failed: %s\n", mysql_error(tempMysqlConnect));
                     Error(error_info);
+                    xmlFree(calledFuncName);
+                    xmlFree(attr_value);
                     mysql_close(tempMysqlConnect);
                     return false;
                 }
@@ -267,6 +285,8 @@ funcInfoList *scanCCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, bool 
                     }
                     mysql_free_result(res_ptr);
                 }
+                xmlFree(calledFuncName);
+                xmlFree(attr_value);
                 mysql_close(tempMysqlConnect);
             }
         }
@@ -367,7 +387,9 @@ funcInfoList *varCScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *va
         bool recursive_flag = true;
         if(!xmlStrcmp(cur->name, (const xmlChar*)"if"))
         {
-            currentLine = StrToInt((char *)getLine(cur));
+            char *value = (char *)getLine(cur);
+            currentLine = StrToInt(value);
+            xmlFree(value);
             if(varInfo.line < currentLine)
             {
                 xmlNodePtr condition = cur->children;
@@ -458,7 +480,9 @@ funcInfoList *varCScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *va
         }
         else if(!xmlStrcmp(cur->name, (const xmlChar*)"while"))
         {
-            currentLine = StrToInt((char *)getLine(cur));
+            char *value = (char *)getLine(cur);
+            currentLine = StrToInt(value);
+            xmlFree(value);
             if(varInfo.line < currentLine)
             {
                 xmlNodePtr condition = cur->children;
@@ -549,7 +573,9 @@ funcInfoList *varCScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *va
         }
         else if(!xmlStrcmp(cur->name, (const xmlChar*)"do"))
         {
-            currentLine = StrToInt((char *)getLine(cur));
+            char *value = (char *)getLine(cur);
+            currentLine = StrToInt(value);
+            xmlFree(value);
             if(varInfo.line < currentLine)
             {
                 xmlNodePtr condition = cur->children;
@@ -640,7 +666,9 @@ funcInfoList *varCScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *va
         }
         else if(!xmlStrcmp(cur->name, (const xmlChar*)"for"))
         {
-            currentLine = StrToInt((char *)getLine(cur));
+            char *value = (char *)getLine(cur);
+            currentLine = StrToInt(value);
+            xmlFree(value);
             if(varInfo.line < currentLine)
             {
                 xmlNodePtr control = cur->children;
@@ -748,11 +776,19 @@ funcInfoList *varCScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *va
             {
                 if(!xmlStrcmp(argument_list->name, (const xmlChar*)"name"))
                 {
+                    if(attr_value != NULL)
+                        xmlFree(attr_value);
+                    attr_value = NULL;
                     attr_value = getLine(argument_list);
+                    if(calledFuncName != NULL)
+                        xmlFree(calledFuncName);
+                    calledFuncName = NULL;
                     calledFuncName = (char*)xmlNodeGetContent(argument_list);
                     currentLine = StrToInt((char *)attr_value);
                     if(varInfo.line > currentLine)
+                    {
                         break;
+                    }
                 }
                 else if(!xmlStrcmp(argument_list->name, (const xmlChar*)"argument_list"))
                 {
@@ -836,7 +872,7 @@ funcInfoList *varCScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *va
                         }
                         mysql_close(tempMysqlConnect);
                     }
-                    
+
                     //handle function call as argument
                     xmlNodePtr argument = argument_list->children;
                     while(argument != NULL)
@@ -865,6 +901,10 @@ funcInfoList *varCScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *va
                 }
                 argument_list = argument_list->next;
             }
+            if(attr_value != NULL)
+                xmlFree(attr_value);
+            if(calledFuncName != NULL)
+                xmlFree(calledFuncName);
         }
         
         if(recursive_flag)
@@ -920,7 +960,13 @@ varDirectInflFuncList *getCDirectInflFuncFromNode(char *varName, xmlNodePtr func
             {
                 if(!xmlStrcmp(argument_list->name, (const xmlChar*)"name"))
                 {
+                    if(attr_value != NULL)
+                        xmlFree(attr_value);
+                    attr_value = NULL;
                     attr_value = getLine(argument_list);
+                    if(calledFuncName != NULL)
+                        xmlFree(calledFuncName);
+                    calledFuncName = NULL;
                     calledFuncName = (char*)xmlNodeGetContent(argument_list);
                 }
                 else if(!xmlStrcmp(argument_list->name, (const xmlChar*)"argument_list"))
@@ -991,6 +1037,10 @@ varDirectInflFuncList *getCDirectInflFuncFromNode(char *varName, xmlNodePtr func
                 }
                 argument_list = argument_list->next;
             }
+            if(attr_value != NULL)
+                xmlFree(attr_value);
+            if(calledFuncName != NULL)
+                xmlFree(calledFuncName);
         }
         current = getCDirectInflFuncFromNode(varName, funcBlockNode->children, varTypeBegin, false);
         if(begin == NULL)
@@ -1008,87 +1058,6 @@ varDirectInflFuncList *getCDirectInflFuncFromNode(char *varName, xmlNodePtr func
     }
     
     return begin;
-}
-
-confVarDefValue getCVarDefaultValue(char *varName, char *xmlFilePath)
-{
-    confVarDefValue ret;
-    ret.defValue = -1;
-    xmlDocPtr doc;
-    xmlNodePtr cur;
-    xmlKeepBlanksDefault(0);
-    doc = xmlParseFile(xmlFilePath);
-    if(doc == NULL )
-    {
-        memset(error_info, 0, LOGINFO_LENGTH);
-        sprintf(error_info, "Document(%s) not parsed successfully. \n", xmlFilePath);
-		Error(error_info);
-        return ret;
-    }
-    cur = xmlDocGetRootElement(doc);
-    if (cur == NULL)
-    {
-        memset(error_info, 0, LOGINFO_LENGTH);
-        sprintf(error_info, "empty document(%s). \n", xmlFilePath);
-		Error(error_info);  
-        xmlFreeDoc(doc);
-        return ret;
-    }
-    
-    cur = cur->children;
-    while (cur != NULL)
-    {
-        if(!xmlStrcmp(cur->name, (const xmlChar*)"function") || \
-            (!xmlStrcmp(cur->name, (const xmlChar*)"extern") && cur->children != NULL && !xmlStrcmp(cur->last->name, (const xmlChar*)"function")) || \
-            (!xmlStrcmp(cur->name, (const xmlChar*)"decl_stmt") && cur->children != NULL && !xmlStrcmp(cur->last->name, (const xmlChar*)"decl")))
-        {
-            xmlNodePtr funcNode;
-            if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
-                funcNode = cur;
-            else
-                funcNode = cur->last;
-                
-            if(JudgeVarUsed(funcNode, varName))
-            {
-                ret = getVarDefValue(varName, funcNode);
-                if(ret.defValue == -1)
-                {
-                    varDirectInflFuncList *begin = NULL;
-                    varDirectInflFuncList *current = NULL;
-
-                    begin = current = getCDirectInflFunc(varName, funcNode);
-                    while(current != NULL)
-                    {
-                        char xmlFilePath[512];
-                        sprintf(xmlFilePath, "temp_%s.xml", current->info.info.sourceFile);
-                        if(judgeCPreprocessFile(current->info.info.sourceFile))
-                            ret = ExtractSpeciParaDefValue(current->info.index, current->info.info.funcName, xmlFilePath, \
-                                current->info.info.argumentType, getCDirectInflFuncFromNode);
-                        else
-                            ret = ExtractSpeciParaDefValue(current->info.index, current->info.info.funcName, xmlFilePath, \
-                                current->info.info.argumentType, getCPPDirectInflFuncFromNode);
-                        if(ret.defValue != -1)
-                            break;
-                        current = current->next;
-                    }
-                    current = begin;
-                    while(current != NULL)
-                    {
-                        begin = begin->next;
-                        free(current);
-                        current = begin;
-                    }
-                }
-                xmlFreeDoc(doc);
-                return ret;
-            }
-        }
-        cur = cur->next;
-    }
-      
-    xmlFreeDoc(doc);
-    
-    return ret;
 }
 
 varDirectInflFuncList *getCVarInfluFunc(char *varName, char *funcName, char *xmlFilePath, char *funcArgumentType)
@@ -1110,10 +1079,14 @@ bool ExtractConfKeyUsedInfoFromNode(xmlNodePtr cur, char *confName, bool flag)
                 if(strcasecmp(confName, temp_content) == 0)
                 {
                     free(temp_content);
+                    xmlFree(content);
+                    xmlFree(type);
                     return true;
                 }
                 free(temp_content);
             }
+            xmlFree(content);
+            xmlFree(type);
         }
         else if(ExtractConfKeyUsedInfoFromNode(cur->children, confName, false))
             return true;
@@ -1272,7 +1245,13 @@ bool literalScliceVarFromNode(char *literalName, xmlNodePtr cur, bool flag)
             {
                 if(!xmlStrcmp(argument_list->name, (const xmlChar*)"name"))
                 {
+                    if(attr_value != NULL)
+                        xmlFree(attr_value);
+                    attr_value = NULL;
                     attr_value = getLine(argument_list);
+                    if(calledFuncName != NULL)
+                        xmlFree(calledFuncName);
+                    calledFuncName = NULL;
                     calledFuncName = (char*)xmlNodeGetContent(argument_list);
                 }
                 else if(!xmlStrcmp(argument_list->name, (const xmlChar*)"argument_list"))
@@ -1302,6 +1281,10 @@ bool literalScliceVarFromNode(char *literalName, xmlNodePtr cur, bool flag)
                 }
                 argument_list = argument_list->next;
             }
+            if(attr_value != NULL)
+                xmlFree(attr_value);
+            if(calledFuncName != NULL)
+                xmlFree(calledFuncName);
         }
         
         if(recursive_flag)
@@ -1365,9 +1348,12 @@ bool ScliceConfKey(char *confName, char *xmlFilePath)
             
             if(literalScliceVar(confName, funcNode))
             {
-                printf("function: %s(%s)\n", (char*)xmlNodeGetContent(temp_cur), attr_value);
+                char *value = (char*)xmlNodeGetContent(temp_cur);
+                printf("function: %s(%s)\n", value, attr_value);
+                xmlFree(value);
                 ret = true;
             }
+            xmlFree(attr_value);
         }
         cur = cur->next;
     }

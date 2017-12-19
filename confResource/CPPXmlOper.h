@@ -88,14 +88,6 @@ funcCallInfoList *CPPSclice(char *varName, char *xmlFilePath);
 *************************************/
 varDirectInflFuncList *getCPPDirectInflFuncFromNode(char *varName, xmlNodePtr funcBlockNode, varType *varTypeBegin, bool flag);
 
-/*************************************
- * func: get C++ language variable default value
- * return: confVarDefValue.defValue = -1 : no default value
- * @para varName: analysed variable name
- * @para xmlFilePath: xml file path
-**************************************/
-confVarDefValue getCPPVarDefaultValue(char *varName, char *xmlFilePath);
-
 /***********************************
  * func: 获取变量varName在C++函数funcName中通过数据传播所影响的被调用的函数信息
  * return: 影响函数的列表

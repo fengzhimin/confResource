@@ -25,9 +25,16 @@ bool JudgeVarUsedFromNode(xmlNodePtr cur, char *var, bool flag)
                     varName = (char*)xmlNodeGetContent(temp_cur);
                     //server.port <---> server.port[0]
                     if(strcasecmp(varName, var) == 0)
+                    {
+                        xmlFree(varName);
                         return true;
+                    }
                     else if(strstr(varName, var) != NULL && varName[strlen(var)] == '[')
+                    {
+                        xmlFree(varName);
                         return true;
+                    }
+                    xmlFree(varName); 
                 }
                 
                 temp_cur = temp_cur->next;
@@ -205,7 +212,11 @@ varType *ExtractVarDefFromNode(xmlNodePtr cur, bool flag)
                         {
                             //handle static
                             if(!xmlStrcmp(temp->name, (const xmlChar*)"specifier"))
-                                strcat(type, (char*)xmlNodeGetContent(temp));
+                            {
+                                char *value = (char*)xmlNodeGetContent(temp);
+                                strcat(type, value);
+                                xmlFree(value);
+                            }
                             //struct stu *
                             else if(!xmlStrcmp(temp->name, (const xmlChar*)"type"))
                             {
@@ -220,7 +231,9 @@ varType *ExtractVarDefFromNode(xmlNodePtr cur, bool flag)
                                         {
                                             if(strlen(type) != 0)
                                                 strcat(type, " ");
-                                            strcat(type, (char*)xmlNodeGetContent(temp_type));
+                                            char *value = (char*)xmlNodeGetContent(temp_type);
+                                            strcat(type, value);
+                                            xmlFree(value);
                                         }
                                         else
                                         {
@@ -229,7 +242,9 @@ varType *ExtractVarDefFromNode(xmlNodePtr cur, bool flag)
                                             {
                                                 if(strlen(type) != 0)
                                                     strcat(type, " ");
-                                                strcat(type, (char*)xmlNodeGetContent(temp_name));
+                                                char *value = (char*)xmlNodeGetContent(temp_name);
+                                                strcat(type, value);
+                                                xmlFree(value);
                                                 temp_name = temp_name->next;
                                             }
                                         }
@@ -243,7 +258,9 @@ varType *ExtractVarDefFromNode(xmlNodePtr cur, bool flag)
                                             strcat(end->type, " ");
                                             label = false;
                                         }
-                                        strcat(end->type, (char*)xmlNodeGetContent(temp_type));
+                                        char *value = (char*)xmlNodeGetContent(temp_type);
+                                        strcat(end->type, value);
+                                        xmlFree(value);
                                     }
                                     temp_type = temp_type->next;
                                 }
@@ -255,12 +272,24 @@ varType *ExtractVarDefFromNode(xmlNodePtr cur, bool flag)
                                 if(temp_name != NULL)
                                 {
                                     if(!xmlStrcmp(temp_name->name, (const xmlChar*)"text"))
-                                        strcat(end->varName, (char*)xmlNodeGetContent(temp));
+                                    {
+                                        char *value = (char*)xmlNodeGetContent(temp);
+                                        strcat(end->varName, value);
+                                        xmlFree(value);
+                                    }
                                     else
-                                        strcat(end->varName, (char*)xmlNodeGetContent(temp_name));
+                                    {
+                                        char *value = (char*)xmlNodeGetContent(temp_name);
+                                        strcat(end->varName, value);
+                                        xmlFree(value);
+                                    }
                                 }
                                 else
-                                    strcat(end->varName, (char*)xmlNodeGetContent(temp));
+                                {
+                                    char *value = (char*)xmlNodeGetContent(temp);
+                                    strcat(end->varName, value);
+                                    xmlFree(value);
+                                }
                                 end->line = StrToInt((char *)attr_value);
                                 if(strlen(end->type) == 0)
                                 {
@@ -282,9 +311,17 @@ varType *ExtractVarDefFromNode(xmlNodePtr cur, bool flag)
                             temp_name = temp_name->next;
                         temp_name = temp_name->children;
                         if(!xmlStrcmp(temp_name->name, (const xmlChar*)"text"))
-                            strcat(end->varName, (char*)xmlNodeGetContent(temp_name->parent));
+                        {
+                            char *value = (char*)xmlNodeGetContent(temp_name->parent);
+                            strcat(end->varName, value);
+                            xmlFree(value);
+                        }
                         else
-                            strcat(end->varName, (char*)xmlNodeGetContent(temp_name));
+                        {
+                            char *value = (char*)xmlNodeGetContent(temp_name);
+                            strcat(end->varName, value);
+                            xmlFree(value);
+                        }
                     }
                 }
                 else if(xmlStrcmp(temp_cur->name, (const xmlChar*)"text") && xmlStrcmp(temp_cur->name, (const xmlChar*)"position"))
@@ -303,7 +340,9 @@ varType *ExtractVarDefFromNode(xmlNodePtr cur, bool flag)
                                 strcat(end->type, " ");
                                 label = false;
                             }
-                            strcat(end->type, (char*)xmlNodeGetContent(temp_cur));
+                            char *value = (char*)xmlNodeGetContent(temp_cur);
+                            strcat(end->type, value);
+                            xmlFree(value);
                             end->line = StrToInt((char *)attr_value);
                         }
                         else if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"decl"))
@@ -311,7 +350,11 @@ varType *ExtractVarDefFromNode(xmlNodePtr cur, bool flag)
                             xmlNodePtr temp_name = temp_cur->children;
 
                             if(temp_name != NULL && !xmlStrcmp(temp_name->name, (const xmlChar*)"text"))
-                                strcat(end->varName, (char*)xmlNodeGetContent(temp_cur));
+                            {
+                                char *value = (char*)xmlNodeGetContent(temp_cur);
+                                strcat(end->varName, value);
+                                xmlFree(value);
+                            }
                             else
                             {
                                 while(temp_name != NULL)
@@ -320,9 +363,17 @@ varType *ExtractVarDefFromNode(xmlNodePtr cur, bool flag)
                                     {
                                         xmlNodePtr child_name = temp_name->children;
                                         if(child_name != NULL && !xmlStrcmp(child_name->name, (const xmlChar*)"text"))
-                                            strcat(end->varName, (char*)xmlNodeGetContent(temp_name));
+                                        {
+                                            char *value = (char*)xmlNodeGetContent(temp_name);
+                                            strcat(end->varName, value);
+                                            xmlFree(value);
+                                        }
                                         else if(child_name != NULL && !xmlStrcmp(child_name->name, (const xmlChar*)"name"))
-                                            strcat(end->varName, (char*)xmlNodeGetContent(child_name));
+                                        {
+                                            char *value = (char*)xmlNodeGetContent(child_name);
+                                            strcat(end->varName, value);
+                                            xmlFree(value);
+                                        }
                                         
                                         break;
                                     }
@@ -339,6 +390,8 @@ varType *ExtractVarDefFromNode(xmlNodePtr cur, bool flag)
                 }
                 temp_cur = temp_cur->next;
             }
+            
+            xmlFree(attr_value);
         }
         else
         {
@@ -415,7 +468,11 @@ varType *ExtractVarTypeFromNode(xmlNodePtr cur, bool flag)
                         {
                             //handle static
                             if(!xmlStrcmp(temp->name, (const xmlChar*)"specifier"))
-                                strcat(type, (char*)xmlNodeGetContent(temp));
+                            {
+                                char *value = (char*)xmlNodeGetContent(temp);
+                                strcat(type, value);
+                                xmlFree(value);
+                            }
                             //struct stu *
                             else if(!xmlStrcmp(temp->name, (const xmlChar*)"type"))
                             {
@@ -427,7 +484,9 @@ varType *ExtractVarTypeFromNode(xmlNodePtr cur, bool flag)
                                     {
                                         if(!xmlStrcmp(temp_type->children->name, (const xmlChar*)"text"))
                                         {
-                                            strcat(type, (char*)xmlNodeGetContent(temp_type));
+                                            char *value = (char*)xmlNodeGetContent(temp_type);
+                                            strcat(type, value);
+                                            xmlFree(value);
                                         }
                                         else
                                         {
@@ -436,7 +495,9 @@ varType *ExtractVarTypeFromNode(xmlNodePtr cur, bool flag)
                                             {
                                                 if(strlen(type) != 0)
                                                     strcat(type, " ");
-                                                strcat(type, (char*)xmlNodeGetContent(temp_name));
+                                                char *value = (char*)xmlNodeGetContent(temp_name);
+                                                strcat(type, value);
+                                                xmlFree(value);
                                                 temp_name = temp_name->next;
                                             }
                                         }
@@ -453,21 +514,28 @@ varType *ExtractVarTypeFromNode(xmlNodePtr cur, bool flag)
                                 {
                                     if(!xmlStrcmp(temp_name->name, (const xmlChar*)"text"))
                                     {
-                                        strcat(end->varName, (char*)xmlNodeGetContent(temp));
+                                        char *value = (char*)xmlNodeGetContent(temp);
+                                        strcat(end->varName, value);
+                                        xmlFree(value);
                                         attr_value = xmlGetProp(temp, (xmlChar*)"line");
                                     }
                                     else
                                     {
-                                        strcat(end->varName, (char*)xmlNodeGetContent(temp_name));
+                                        char *value = (char*)xmlNodeGetContent(temp_name);
+                                        strcat(end->varName, value);
+                                        xmlFree(value);
                                         attr_value = xmlGetProp(temp_name, (xmlChar*)"line");
                                     }
                                 }
                                 else
                                 {
-                                    strcat(end->varName, (char*)xmlNodeGetContent(temp));
+                                    char *value = (char*)xmlNodeGetContent(temp);
+                                    strcat(end->varName, value);
+                                    xmlFree(value);
                                     attr_value = xmlGetProp(temp, (xmlChar*)"line");
                                 }
                                 end->line = StrToInt((char *)attr_value);
+                                xmlFree(attr_value);
                                 strcat(end->type, type);
                             }
                             temp = temp->next;
@@ -488,21 +556,28 @@ varType *ExtractVarTypeFromNode(xmlNodePtr cur, bool flag)
                             //handle array variable
                             if(!xmlStrcmp(temp_name->name, (const xmlChar*)"text"))
                             {
-                                strcat(end->varName, (char*)xmlNodeGetContent(temp_name->parent));
+                                char *value = (char*)xmlNodeGetContent(temp_name->parent);
+                                strcat(end->varName, value);
+                                xmlFree(value);
                                 attr_value = xmlGetProp(temp_name->parent, (xmlChar*)"line");
                             }
                             else
                             {
-                                strcat(end->varName, (char*)xmlNodeGetContent(temp_name));
+                                char *value = (char*)xmlNodeGetContent(temp_name);
+                                strcat(end->varName, value);
+                                xmlFree(value);
                                 attr_value = xmlGetProp(temp_name, (xmlChar*)"line");
                             }
                         }
                         else
                         {
-                            strcat(end->varName, (char*)xmlNodeGetContent(temp_cur->children->next));
+                            char *value = (char*)xmlNodeGetContent(temp_cur->children->next);
+                            strcat(end->varName, value);
+                            xmlFree(value);
                             attr_value = xmlGetProp(temp_cur->children->next, (xmlChar*)"line");
                         }
                         end->line = StrToInt((char *)attr_value);
+                        xmlFree(attr_value);
                     }
                 }
                 temp_cur = temp_cur->next;
@@ -629,11 +704,14 @@ void scanAssignVarFromNode(xmlNodePtr cur, bool flag)
                                     attr_value = xmlGetProp(name, (xmlChar*)"line");
 
                                 printf("%s(%s)\n", varName, attr_value);
+                                xmlFree(varName);
+                                xmlFree(attr_value);
                                 break;
                             }
                             name = name->prev;
                         }
                     }
+                    xmlFree(optName);
                 }
 
                 opt = opt->next;
@@ -711,13 +789,16 @@ varDef *ExtractDirectInfluVarFromNode(xmlNodePtr cur, char *varName, varType *va
                                             end->line = StrToInt((char *)attr_value);
                                             //printf("%s(%s)\n", influVarName, attr_value);
                                         }
+                                        xmlFree(attr_value);
                                     }
+                                    xmlFree(influVarName);
                                     goto next;
                                 }
                                 name = name->prev;
                             }
                         }
                     }
+                    xmlFree(optName);
                 }
 next:
                 opt = opt->next;
@@ -757,6 +838,8 @@ next:
                                 strcpy(end->varName, influVarName);
                                 end->type = false;
                                 end->line = StrToInt((char *)attr_value);
+                                xmlFree(influVarName);
+                                xmlFree(attr_value);
                                 break;
                             }
                         }
@@ -841,7 +924,8 @@ char *ExtractFuncArgumentType(xmlNodePtr cur)
                                         {
                                             if(strlen(retTypeString) == 0)
                                             {
-                                                if(strcasecmp((char*)xmlNodeGetContent(name), "void") == 0)
+                                                char *value = (char*)xmlNodeGetContent(name);
+                                                if(strcasecmp(value, "void") == 0)
                                                 {
                                                     point_void = true;
                                                     while(type != NULL)
@@ -856,11 +940,14 @@ char *ExtractFuncArgumentType(xmlNodePtr cur)
                                                         type = type->next;
                                                     }
                                                 }
-                                                sprintf(retTypeString, "(%s", (char*)xmlNodeGetContent(name));
+                                                sprintf(retTypeString, "(%s", value);
+                                                xmlFree(value);
                                             }
                                             else
                                             {
-                                                sprintf(retTypeString, "%s/%s", retTypeString, (char*)xmlNodeGetContent(name));
+                                                char *value = (char*)xmlNodeGetContent(name);
+                                                sprintf(retTypeString, "%s/%s", retTypeString, value);
+                                                xmlFree(value);
                                             }
                                                 
                                             goto parameterNext;
@@ -897,14 +984,16 @@ char *ExtractFuncArgumentType(xmlNodePtr cur)
                             {
                                 if(!xmlStrcmp(name->name, (const xmlChar*)"name"))
                                 {
+                                    char *value = (char*)xmlNodeGetContent(name);
                                     if(strlen(retTypeString) == 0)
                                     {
-                                        sprintf(retTypeString, "(%s", (char*)xmlNodeGetContent(name));
+                                        sprintf(retTypeString, "(%s", value);
                                     }
                                     else
                                     {
-                                        sprintf(retTypeString, "%s/%s", retTypeString, (char*)xmlNodeGetContent(name));
+                                        sprintf(retTypeString, "%s/%s", retTypeString, value);
                                     }
+                                    xmlFree(value);
                                         
                                     goto argumentNext;
                                 }
@@ -986,6 +1075,7 @@ char *getCalledFuncArgumentType(xmlNodePtr cur, varType *funcDefVarType)
                                     }
                                     current = current->next;
                                 }
+                                xmlFree(parameterName);
                                 if(!findResult)
                                 {
                                     //don't find variable type
@@ -1040,9 +1130,13 @@ char *getFuncName(xmlNodePtr funcNode)
     {
         if(!xmlStrcmp(funcNode->name, (const xmlChar*)"name"))
         {
-            if(strcasecmp("__attribute__", (char*)xmlNodeGetContent(funcNode)) == 0)
-                break;
             funcName = (char*)xmlNodeGetContent(funcNode);
+            if(strcasecmp("__attribute__", funcName) == 0)
+            {
+                xmlFree(funcName);
+                funcName = NULL;
+            }
+            
             break;
         }
         funcNode = funcNode->next;
@@ -1289,6 +1383,7 @@ funcCallInfoList *Sclice(char *varName, char *xmlFilePath, funcInfoList *(*varSc
                     strncpy(endFuncList->info.sourceFile, &(xmlFilePath[5]), strlen(xmlFilePath)-9);
                     strcpy(endFuncList->info.funcArgumentType, argumentTypeString);
                     endFuncList->info.calledFuncInfo = begin;
+                    xmlFree(funcName);
                 }
                 else
                 {
@@ -1358,6 +1453,7 @@ funcCallInfoList *ScliceDebug(char *varName, char *xmlFilePath, funcInfoList *(*
             funcInfoList *begin = NULL;
             funcInfoList *end = NULL;
             funcInfoList *current = NULL;
+            
             begin = end = current = varScliceFunc(varInfo, funcNode, currentVarType, true);
             while(current != NULL)
             {
@@ -1365,6 +1461,7 @@ funcCallInfoList *ScliceDebug(char *varName, char *xmlFilePath, funcInfoList *(*
                 end = current;
                 current = current->next;
             }
+            
             varDef *varInfluence = ScliceInflVar(varName, funcNode, currentVarType);
             if(varInfluence != NULL)
             {
@@ -1397,6 +1494,7 @@ funcCallInfoList *ScliceDebug(char *varName, char *xmlFilePath, funcInfoList *(*
                     varInfluCur = varInfluence;
                 }
             }
+            
             while(currentVarType != NULL)
             {
                 beginVarType = beginVarType->next;
@@ -1412,6 +1510,7 @@ funcCallInfoList *ScliceDebug(char *varName, char *xmlFilePath, funcInfoList *(*
                 char *argumentTypeString = ExtractFuncArgumentType(funcNode);
                 xmlChar* funcLine = getLine(funcNode->children);
                 printf("\033[40;36msource Path: %s\tfunction: %s(%s)\033[0m\n", src_dir, funcName, (char *)funcLine);
+                xmlFree(funcLine);
                 if(argumentTypeString != NULL && funcName != NULL)
                 {
                     if(ret == NULL)
@@ -1423,12 +1522,15 @@ funcCallInfoList *ScliceDebug(char *varName, char *xmlFilePath, funcInfoList *(*
                     strcpy(endFuncList->info.sourceFile, src_dir);
                     strcpy(endFuncList->info.funcArgumentType, argumentTypeString);
                     endFuncList->info.calledFuncInfo = begin;
+                    xmlFree(funcName);
                 }
                 else
                 {
                     Warning("get function name or line error!\n");
                     free(argumentTypeString);
                     xmlFreeDoc(doc);
+                    if(funcName != NULL)
+                        xmlFree(funcName);
                     return NULL;
                 }
                 free(argumentTypeString);
@@ -1438,128 +1540,6 @@ funcCallInfoList *ScliceDebug(char *varName, char *xmlFilePath, funcInfoList *(*
     }
       
     xmlFreeDoc(doc);
-    
-    return ret;
-}
-
-confVarDefValue judgeVarDefValueModel(char *varName, xmlNodePtr expr)
-{
-    confVarDefValue ret;
-    ret.defValue = -1;
-    if(xmlStrcmp(expr->name, (const xmlChar*)"expr"))
-        return ret;
-    xmlNodePtr exprChildren = expr->children;
-    char *operatorContent = NULL;
-    while(exprChildren != NULL)
-    {
-        if(!xmlStrcmp(exprChildren->name, (const xmlChar*)"operator"))
-        {
-            operatorContent = (char *)xmlNodeGetContent(exprChildren);
-            if(operatorContent[0] == '<' || operatorContent[0] == '>')
-            {
-                xmlNodePtr prev = exprChildren->prev;
-                xmlNodePtr next = exprChildren->next;
-                if(prev != NULL && next != NULL)
-                {
-                    if(!xmlStrcmp(prev->name, (const xmlChar*)"name") && \
-                    !xmlStrcmp(next->name, (const xmlChar*)"literal") && \
-                    !xmlStrcmp(xmlGetProp(next, (xmlChar*)"type"), (const xmlChar*)"number"))
-                    {
-                        /*
-                         * varaible-name Operator default-value
-                         * example: varName < 100
-                         */
-                        if(strcasecmp((char *)xmlNodeGetContent(prev), varName) == 0)
-                        {
-                            //judge maximum value or minimum value
-                            if(operatorContent[0] == '<')
-                                ret.type = false;
-                            else
-                                ret.type = true;
-                            ret.defValue = StrToInt((char *)xmlNodeGetContent(next));
-                            
-                            return ret;
-                        }
-                    }
-                    else if(!xmlStrcmp(next->name, (const xmlChar*)"name") && \
-                    !xmlStrcmp(prev->name, (const xmlChar*)"literal") &&\
-                    !xmlStrcmp(xmlGetProp(prev, (xmlChar*)"type"), (const xmlChar*)"number"))
-                    {
-                        /*
-                         * default-value Operator varaible-name
-                         * example: 100 > varName
-                         */
-                        if(strcasecmp((char *)xmlNodeGetContent(next), varName) == 0)
-                        {
-                            //judge maximum value or minimum value
-                            if(operatorContent[0] == '<')
-                                ret.type = true;
-                            else
-                                ret.type = false;
-                            ret.defValue = StrToInt((char *)xmlNodeGetContent(prev));
-                            
-                            return ret;
-                        }  
-                    }
-                }
-            }
-        }
-        exprChildren = exprChildren->next;
-    }
-    
-    return ret;
-}
-confVarDefValue getVarDefValueFromNode(char *varName, xmlNodePtr funcNode, bool flag)
-{
-    confVarDefValue ret;
-    ret.defValue = -1;
-#if DEBUG == 1
-    int currentLine = 0;
-#endif
-    while(funcNode != NULL)
-    {
-        if(!xmlStrcmp(funcNode->name, (const xmlChar*)"if"))
-        {
-#if DEBUG == 1
-            currentLine = StrToInt((char *)getLine(funcNode));
-#endif
-            xmlNodePtr condition = funcNode->children;
-            while(condition != NULL)
-            {
-                if(!xmlStrcmp(condition->name, (const xmlChar*)"condition"))
-                {
-                    xmlNodePtr conditionExpr = condition->children;
-                    while(conditionExpr != NULL)
-                    {
-                        if(!xmlStrcmp(conditionExpr->name, (const xmlChar*)"expr"))
-                        {
-                            ret = judgeVarDefValueModel(varName, conditionExpr);
-                            if(ret.defValue != -1)
-                            {
-#if DEBUG == 1
-                                printf("default value line: %d\n", currentLine);
-#endif
-                                return ret;
-                            }
-                            else
-                                goto next;
-                        }
-                        conditionExpr = conditionExpr->next;
-                    }
-                }
-                condition = condition->next;
-            }
-        }
-next:
-        ret = getVarDefValueFromNode(varName, funcNode->children, false);
-        if(ret.defValue != -1)
-            return ret;
-    
-        if(flag)
-            break;
-        
-        funcNode = funcNode->next;
-    }
     
     return ret;
 }
@@ -1661,8 +1641,9 @@ char *getParaNameByIndex(int index, char *funcName, char *xmlFilePath, char *fun
             while(temp_cur != NULL)
             {
                 if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
-                { 
-                    if(strcasecmp(funcName, (char*)xmlNodeGetContent(temp_cur)) == 0)
+                {
+                    char *value = (char*)xmlNodeGetContent(temp_cur);
+                    if(strcasecmp(funcName, value) == 0)
                     {
                         //get function argument type string
                         char *argumentTypeString = ExtractFuncArgumentType(funcNode);
@@ -1687,6 +1668,7 @@ char *getParaNameByIndex(int index, char *funcName, char *xmlFilePath, char *fun
                                         ret = malloc(len);
                                         memset(ret, 0, len);
                                         strcpy(ret, paraName);
+                                        xmlFree(paraName);
                                     }
                                     break;
                                 }
@@ -1701,6 +1683,7 @@ char *getParaNameByIndex(int index, char *funcName, char *xmlFilePath, char *fun
                             Warning(error_info);
                         }
                     }
+                    xmlFree(value);
                 }
                 temp_cur = temp_cur->next;
             }
@@ -1724,8 +1707,13 @@ int getArguPosition(char *paraName, xmlNodePtr paraListNode)
         if(!xmlStrcmp(argument->name, (const xmlChar*)"argument"))
         {
             //这里只是忽略的查找某个参数是否包含要被查找的字符串+
-            if(strstr((char *)xmlNodeGetContent(argument), paraName) != NULL)
+            char *value = (char *)xmlNodeGetContent(argument);
+            if(strstr(value, paraName) != NULL)
+            {
+                xmlFree(value);
                 return ret;
+            }
+            xmlFree(value);
             ret++;
         }
         
@@ -1733,141 +1721,6 @@ int getArguPosition(char *paraName, xmlNodePtr paraListNode)
     }
     
     return -1;
-}
-
-confVarDefValue ExtractSpeciParaDefValue(int paraIndex, char *funcName, char *xmlFilePath, char *funcArgumentType, \
-    varDirectInflFuncList *(*DirectInflFunc)(char *, xmlNodePtr, varType *, bool))
-{
-    confVarDefValue ret;
-    ret.defValue = -1;
-    xmlDocPtr doc;
-    xmlNodePtr cur;
-    xmlKeepBlanksDefault(0);
-    doc = xmlParseFile(xmlFilePath);
-    if(doc == NULL )
-    {
-        memset(error_info, 0, LOGINFO_LENGTH);
-        sprintf(error_info, "Document(%s) not parsed successfully. \n", xmlFilePath);
-		Error(error_info);
-        return ret;
-    }
-    cur = xmlDocGetRootElement(doc);
-    if (cur == NULL)
-    {
-        memset(error_info, 0, LOGINFO_LENGTH);
-        sprintf(error_info, "empty document(%s). \n", xmlFilePath);
-		Error(error_info);  
-        xmlFreeDoc(doc);
-        return ret;
-    }
-    
-    cur = cur->children;
-    while (cur != NULL)
-    {
-        if(!xmlStrcmp(cur->name, (const xmlChar*)"function") || \
-            (!xmlStrcmp(cur->name, (const xmlChar*)"extern") && cur->children != NULL && !xmlStrcmp(cur->last->name, (const xmlChar*)"function")) || \
-            (!xmlStrcmp(cur->name, (const xmlChar*)"decl_stmt") && cur->children != NULL && !xmlStrcmp(cur->last->name, (const xmlChar*)"decl")))
-        {
-            xmlNodePtr funcNode;
-            if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
-                funcNode = cur;
-            else
-                funcNode = cur->last;
-            xmlNodePtr temp_cur = funcNode->children;
-            while(temp_cur != NULL)
-            {
-                if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
-                { 
-                    if(strcasecmp(funcName, (char*)xmlNodeGetContent(temp_cur)) == 0)
-                    {
-                        //get function argument type string
-                        char *argumentTypeString = ExtractFuncArgumentType(funcNode);
-                        char sourcePath[512] = "";
-                        //删除开头的temp_和结尾的.xml
-                        strncpy(sourcePath, (char *)&(xmlFilePath[5]), strlen(xmlFilePath)-9);
-                        if(JudgeArgumentSimilar(funcName, sourcePath, argumentTypeString, funcArgumentType))
-                        {
-                            //函数名和参数格式都匹配的函数
-                            free(argumentTypeString);
-                            while(temp_cur != NULL)
-                            {
-                                if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"parameter_list"))
-                                {
-                                    //get specific position parameter name
-                                    char *paraName = getParaNameByIndexFromNode(temp_cur, paraIndex);
-                                    //handle the (const char* fmt, ...) parameter
-                                    if(paraName != NULL)
-                                    {
-                                        ret = getVarDefValue(paraName, funcNode);
-                                        if(ret.defValue == -1)
-                                        {
-                                            varDirectInflFuncList *begin = NULL;
-                                            varDirectInflFuncList *current = NULL;
-                                            if(judgeCSrcXmlFile(xmlFilePath))
-                                            {
-                                                begin = current = DirectInflFunc(paraName, funcNode, NULL, true);
-                                            }
-                                            else
-                                            {
-                                                varType *beginVarType = ExtractVarType(funcNode);
-                                                varType *currentVarType = beginVarType;
-                                                begin = current = DirectInflFunc(paraName, funcNode, currentVarType, true);
-                                                while(currentVarType != NULL)
-                                                {
-                                                    beginVarType = beginVarType->next;
-                                                    free(currentVarType);
-                                                    currentVarType = beginVarType;
-                                                }
-                                            }
-                                            
-                                            while(current != NULL)
-                                            {
-                                                char xmlFilePath[512];
-                                                sprintf(xmlFilePath, "temp_%s.xml", current->info.info.sourceFile);
-                                                ret = ExtractSpeciParaDefValue(current->info.index, current->info.info.funcName, xmlFilePath, \
-                                                    current->info.info.argumentType, DirectInflFunc);
-                                                if(ret.defValue != -1)
-                                                    break;
-                                                current = current->next;
-                                            }
-                                            current = begin;
-                                            while(current != NULL)
-                                            {
-                                                begin = begin->next;
-                                                free(current);
-                                                current = begin;
-                                            }
-                                        }
-                                        xmlFreeDoc(doc);
-                                        return ret;
-                                    }
-                                    else
-                                    {
-                                        //direct break program
-                                        break;
-                                    }
-                                }
-                                temp_cur = temp_cur->next;
-                            }
-                        }
-                        else
-                        {
-                            free(argumentTypeString);
-                            memset(error_info, 0, LOGINFO_LENGTH);
-                            sprintf(error_info, "%s: function: %s has more than one define!\n", xmlFilePath, funcName);
-                            Warning(error_info);
-                        }
-                    }
-                }
-                temp_cur = temp_cur->next;
-            }
-        }
-        cur = cur->next;
-    }
-      
-    xmlFreeDoc(doc);
-    
-    return ret;
 }
 
 varDirectInflFuncList *getVarInfluFunc(char *varName, char *funcName, char *xmlFilePath, char *funcArgumentType, \
@@ -1913,8 +1766,9 @@ varDirectInflFuncList *getVarInfluFunc(char *varName, char *funcName, char *xmlF
             while(temp_cur != NULL)
             {
                 if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
-                { 
-                    if(strcasecmp(funcName, (char*)xmlNodeGetContent(temp_cur)) == 0)
+                {
+                    char *value = (char*)xmlNodeGetContent(temp_cur);
+                    if(strcasecmp(funcName, value) == 0)
                     {
                         //get function argument type string
                         char *argumentTypeString = ExtractFuncArgumentType(funcNode);
@@ -1992,6 +1846,7 @@ varDirectInflFuncList *getVarInfluFunc(char *varName, char *funcName, char *xmlF
                             Warning(error_info);
                         }
                     }
+                    xmlFree(value);
                 }
                 temp_cur = temp_cur->next;
             }
@@ -2044,8 +1899,9 @@ varDef *getVarInfluVarInfo(char *varName, char *funcName, char *xmlFilePath, cha
             while(temp_cur != NULL)
             {
                 if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
-                { 
-                    if(strcasecmp(funcName, (char*)xmlNodeGetContent(temp_cur)) == 0)
+                {
+                    char *value = (char*)xmlNodeGetContent(temp_cur);
+                    if(strcasecmp(funcName, value) == 0)
                     {
                         //get function argument type string
                         char *argumentTypeString = ExtractFuncArgumentType(funcNode);
@@ -2076,6 +1932,7 @@ varDef *getVarInfluVarInfo(char *varName, char *funcName, char *xmlFilePath, cha
                             Warning(error_info);
                         }
                     }
+                    xmlFree(value);
                 }
                 temp_cur = temp_cur->next;
             }
@@ -2098,6 +1955,7 @@ xmlNodePtr getSpeciCalledFuncNode(xmlNodePtr cur, char *calledFuncName, int call
             {
                 xmlChar* attr_value = getLine(cur->children);
                 int line = StrToInt((char *)attr_value);
+                xmlFree(attr_value);
                 char *callFuncName = NULL;
                 if(xmlStrcmp(cur->children->last->name, (const xmlChar*)"position"))
                 {
@@ -2110,8 +1968,10 @@ xmlNodePtr getSpeciCalledFuncNode(xmlNodePtr cur, char *calledFuncName, int call
                 //判断该节点是否为检查节点
                 if(strcasecmp(callFuncName, calledFuncName) == 0 && line == calledLine)
                 {
+                    xmlFree(callFuncName);
                     return cur;
                 }
+                xmlFree(callFuncName);
             }
         }
         
@@ -2166,8 +2026,9 @@ loopExprList *getCalledFuncLoopInfo(char *funcName, char *xmlFilePath, char *fun
             while(temp_cur != NULL)
             {
                 if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
-                { 
-                    if(strcasecmp(funcName, (char*)xmlNodeGetContent(temp_cur)) == 0)
+                {
+                    char *value = (char*)xmlNodeGetContent(temp_cur);
+                    if(strcasecmp(funcName, value) == 0)
                     {
                         //get function argument type string
                         char *argumentTypeString = ExtractFuncArgumentType(funcNode);
@@ -2195,7 +2056,9 @@ loopExprList *getCalledFuncLoopInfo(char *funcName, char *xmlFilePath, char *fun
                                             if(!xmlStrcmp(childrenNode->name, (const xmlChar*)"control"))
                                             {
                                                 tempLoopExpr.type = 0;
-                                                strcpy(tempLoopExpr.loopExpr, (char*)xmlNodeGetContent(childrenNode));
+                                                char *value = (char*)xmlNodeGetContent(childrenNode);
+                                                strcpy(tempLoopExpr.loopExpr, value);
+                                                xmlFree(value);
                                                 break;
                                             }
                                             childrenNode = childrenNode->next;
@@ -2209,7 +2072,9 @@ loopExprList *getCalledFuncLoopInfo(char *funcName, char *xmlFilePath, char *fun
                                             if(!xmlStrcmp(childrenNode->name, (const xmlChar*)"condition"))
                                             {
                                                 tempLoopExpr.type = 2;
-                                                strcpy(tempLoopExpr.loopExpr, (char*)xmlNodeGetContent(childrenNode));
+                                                char *value = (char*)xmlNodeGetContent(childrenNode);
+                                                strcpy(tempLoopExpr.loopExpr, value);
+                                                xmlFree(value);
                                                 break;
                                             }
                                             childrenNode = childrenNode->next;
@@ -2223,7 +2088,9 @@ loopExprList *getCalledFuncLoopInfo(char *funcName, char *xmlFilePath, char *fun
                                             if(!xmlStrcmp(childrenNode->name, (const xmlChar*)"condition"))
                                             {
                                                 tempLoopExpr.type = 1;
-                                                strcpy(tempLoopExpr.loopExpr, (char*)xmlNodeGetContent(childrenNode));
+                                                char *value = (char*)xmlNodeGetContent(childrenNode);
+                                                strcpy(tempLoopExpr.loopExpr, value);
+                                                xmlFree(value);
                                                 break;
                                             }
                                             childrenNode = childrenNode->next;
@@ -2252,6 +2119,7 @@ loopExprList *getCalledFuncLoopInfo(char *funcName, char *xmlFilePath, char *fun
                             Warning(error_info);
                         }
                     }
+                    xmlFree(value);
                 }
                 temp_cur = temp_cur->next;
             }
@@ -2305,8 +2173,9 @@ loopCountInfoList *getCalledFuncLoopCountInfo(char *funcName, char *xmlFilePath,
             while(temp_cur != NULL)
             {
                 if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name"))
-                { 
-                    if(strcasecmp(funcName, (char*)xmlNodeGetContent(temp_cur)) == 0)
+                {
+                    char *value = (char*)xmlNodeGetContent(temp_cur);
+                    if(strcasecmp(funcName, value) == 0)
                     {
                         //get function argument type string
                         char *argumentTypeString = ExtractFuncArgumentType(funcNode);
@@ -2351,10 +2220,10 @@ loopCountInfoList *getCalledFuncLoopCountInfo(char *funcName, char *xmlFilePath,
                                                             tempLoopCount.type = 0;
                                                             strncpy(strCount, &(countContent[5]), strlen(countContent)-7);
                                                             tempLoopCount.count = StrToInt(strCount);
-                                                            
+                                                            xmlFree(countContent);
                                                             goto next;
                                                         }
-                                                        
+                                                        xmlFree(countContent);
                                                     }
                                                     
                                                     countNode = countNode->prev;
@@ -2384,10 +2253,10 @@ loopCountInfoList *getCalledFuncLoopCountInfo(char *funcName, char *xmlFilePath,
                                                             tempLoopCount.type = 2;
                                                             strncpy(strCount, &(countContent[5]), strlen(countContent)-7);
                                                             tempLoopCount.count = StrToInt(strCount);
-                                                            
+                                                            xmlFree(countContent);
                                                             goto next;
                                                         }
-                                                        
+                                                        xmlFree(countContent);
                                                     }
                                                     
                                                     countNode = countNode->prev;
@@ -2416,10 +2285,10 @@ loopCountInfoList *getCalledFuncLoopCountInfo(char *funcName, char *xmlFilePath,
                                                             tempLoopCount.type = 1;
                                                             strncpy(strCount, &(countContent[5]), strlen(countContent)-7);
                                                             tempLoopCount.count = StrToInt(strCount);
-                                                            
+                                                            xmlFree(countContent);
                                                             goto next;
                                                         }
-                                                        
+                                                        xmlFree(countContent);
                                                     }
                                                     
                                                     countNode = countNode->prev;
@@ -2452,6 +2321,7 @@ next:
                             Warning(error_info);
                         }
                     }
+                    xmlFree(value);
                 }
                 temp_cur = temp_cur->next;
             }
