@@ -389,7 +389,7 @@ funcInfoList *scanCPPCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, boo
                 //get called function argument type and filePath
                 char tempSqlCommand[LINE_CHAR_MAX_NUM] = "";
                 int rownum = 0;
-                sprintf(tempSqlCommand, "select calledFuncType, calledFuncArgumentType, CalledSrcFile from %s where calledFunc='%s' and line=%s",\
+                sprintf(tempSqlCommand, "select calledFuncType, calledFuncArgumentType, CalledSrcFile, type from %s where calledFunc='%s' and line=%s",\
                     funcCallTableName, calledFuncName, (char *)attr_value);
                 MYSQL temp_db;
                 MYSQL *tempMysqlConnect = NULL;
@@ -431,7 +431,7 @@ funcInfoList *scanCPPCallFuncFromNode(xmlNodePtr cur, varType *varTypeBegin, boo
                             strcpy(end->info.argumentType, sqlrow[1]);
                             strcpy(end->info.sourceFile, sqlrow[2]);
                             //sprintf(end->info.sourceFile, "temp_%s.xml", sqlrow[2]);
-                            end->info.type = 'S';
+                            end->info.type = ((char *)sqlrow[3])[0];
                             break;
                         }
 #if DEBUG == 1         
@@ -1084,7 +1084,7 @@ funcInfoList *varCPPScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *
                         end->info.calledLine = StrToInt((char *)attr_value);
                         //get called function argument type and filePath
                         char tempSqlCommand[LINE_CHAR_MAX_NUM] = "";
-                        sprintf(tempSqlCommand, "select calledFuncType, calledFuncArgumentType, CalledSrcFile from %s where calledFunc='%s' and line=%s",\
+                        sprintf(tempSqlCommand, "select calledFuncType, calledFuncArgumentType, CalledSrcFile, type from %s where calledFunc='%s' and line=%s",\
                             funcCallTableName, calledFuncName, (char *)attr_value);
                         MYSQL temp_db;
                         MYSQL *tempMysqlConnect = NULL;
@@ -1126,7 +1126,7 @@ funcInfoList *varCPPScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *
                                     strcpy(end->info.argumentType, sqlrow[1]);
                                     strcpy(end->info.sourceFile, sqlrow[2]);
                                     //sprintf(end->info.sourceFile, "temp_%s.xml", sqlrow[2]);
-                                    end->info.type = 'S';
+                                    end->info.type = ((char *)sqlrow[3])[0];
                                     
                                     break;
                                 }

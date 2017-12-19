@@ -694,7 +694,7 @@ bool buildFuncScore()
     time(&start);
     /*
      * 有待测试是否需要执行这步
-     */
+     * 会把函数通过函数指针来调用的那些函数删除掉
     //删除没有用到的函数声明
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
     sprintf(sqlCommand, "delete from %s where funcName not in (select calledFunc from %s)", funcScoreTableName, funcCallTableName);
@@ -707,10 +707,10 @@ bool buildFuncScore()
     }
     else
         ret = true;
-    
+    */
     /*
      * 有待测试是否需要执行这步
-     */
+     
     // delete unused function call record from funcCall
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
     sprintf(sqlCommand, "delete from %s where funcName not in (select funcName from %s)", funcCallTableName, funcScoreTableName);
@@ -723,7 +723,7 @@ bool buildFuncScore()
     }
     else
         ret = true;
-    
+    */
     //更新C++类中函数调用类自身的函数
     memset(sqlCommand, 0, LINE_CHAR_MAX_NUM);
     sprintf(sqlCommand, "update %s as funcScore, %s as funcCall set funcCall.calledFunc=funcScore.funcName, funcCall.calledFuncType=funcScore.type \
