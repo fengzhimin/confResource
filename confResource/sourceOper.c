@@ -1329,6 +1329,7 @@ confScore getFuncScore(char *confOptName, funcInfo info, int curPthreadID)
                             printf("\n");
 #endif
                         }
+#if PRINT_INFLUENCE_FUNCTION == 1
                         else
                         {
                             while(tempFuncCallInfo != NULL)
@@ -1338,6 +1339,7 @@ confScore getFuncScore(char *confOptName, funcInfo info, int curPthreadID)
                             }
                             printf("\n");
                         }
+#endif
                         
                         ret.CPU += tempScore.CPU;
                         ret.MEM += tempScore.MEM;

@@ -47,6 +47,113 @@ bool ExtractFuncFromCPPXML(char *xmlFilePath, char *tempFuncScoreTableName, char
     return ret;  
 }
 
+bool ExtractErrorCPPFunc(char *xmlFilePath, xmlNodePtr cur, char *tempFuncScoreTableName, char *tempFuncCallTableName)
+{
+    bool ret = true;
+    cur = cur->children;
+    char clssNameStr2[2][MAX_SUBSTR];
+    while(cur != NULL)
+    {
+        if(!xmlStrcmp(cur->name, (const xmlChar*)"decl"))
+        {
+            xmlNodePtr temp_cur = cur->children;
+            char *funcType = "extern";
+            while(temp_cur != NULL)
+            {
+                char *value = (char*)xmlNodeGetContent(temp_cur);
+                if(!xmlStrcmp(temp_cur->name, (const xmlChar*)"name") && temp_cur->next != NULL && !xmlStrcmp(temp_cur->next->name, (const xmlChar*)"argument_list"))
+                {
+                    if(strcasecmp("__attribute__", value) == 0)
+                    {
+                        xmlFree(value);
+                        break;
+                    }
+                    char src_dir[DIRPATH_MAX] = "";
+                    //删除开头的temp_和结尾的.xml
+                    strncpy(src_dir, (char *)&(xmlFilePath[5]), strlen(xmlFilePath)-9);
+                    xmlChar* attr_value = getLine(temp_cur);
+
+                    char tempSqlCommand[LINE_CHAR_MAX_NUM] = "";
+                    //get function argument type string
+                    char *argumentTypeString = ExtractErrorFuncArgumentType(temp_cur->next);
+                    int isClass = cutStrByLabel(value, ':', clssNameStr2, 2);
+                    if(isClass != 1)
+                    {
+                        //是类的成员函数
+                        sprintf(tempSqlCommand, "insert into %s (funcName, type, argumentType, sourceFile, line, className) value('%s', '%s', '%s', '%s', %s, '%s')", \
+                            tempFuncScoreTableName, value, funcType, argumentTypeString, src_dir, attr_value, clssNameStr2[0]);
+                    }
+                    else
+                    {
+                        //不是类的成员函数
+                        sprintf(tempSqlCommand, "insert into %s (funcName, type, argumentType, sourceFile, line) value('%s', '%s', '%s', '%s', %s)", \
+                            tempFuncScoreTableName, value, funcType, argumentTypeString, src_dir, attr_value);
+                    }
+
+                    xmlFree(attr_value);
+                    
+                    if(!executeSQLCommand(NULL, tempSqlCommand))
+                    {
+                        memset(error_info, 0, LOGINFO_LENGTH);
+                        sprintf(error_info, "execute commad %s failure.\n", tempSqlCommand);
+                        Error(error_info);
+                        ret = false;
+                    }
+
+                    //获取函数参数定义的变量信息
+                    varType *begin = ExtractErrorVarType(temp_cur->next);
+                    varType *end = begin;
+                    if(begin != NULL)
+                    {
+                        while(end->next != NULL)
+                        {
+                            end = end->next;
+                        }
+                    }
+                    
+                    xmlNodePtr blockNode = temp_cur->next->next;
+                    while(blockNode != NULL)
+                    {
+                        if(!xmlStrcmp(blockNode->name, (const xmlChar*)"argument_list"))
+                            break;
+                        blockNode = blockNode->next;
+                    }
+                    
+                    //获取函数block块中定义的变量信息
+                    if(end != NULL)
+                        end->next = ExtractErrorVarType(blockNode);
+                    else
+                        begin = ExtractErrorVarType(blockNode);
+                    
+                    if(isClass != 1)
+                        scanCallFunction(tempFuncCallTableName, blockNode, value, funcType, argumentTypeString, src_dir, clssNameStr2[0], begin);
+                    else
+                        scanCallFunction(tempFuncCallTableName, blockNode, value, funcType, argumentTypeString, src_dir, NULL, begin);
+                    
+                    varType *current = begin;
+                    while(current != NULL)
+                    {
+                        begin = begin->next;
+                        //printf("%s(%d):%s\n", current->type, current->line, current->varName);
+                        free(current);
+                        current = begin;
+                    }
+                    xmlFree(value);
+                    value = NULL;
+                    free(argumentTypeString);
+                }
+                if(value != NULL)
+                    xmlFree(value);
+                temp_cur = temp_cur->next;
+            }
+        }
+        
+        cur = cur->next;
+    }
+    
+    return ret;
+}
+
 bool ExtractCPPFunc(char *xmlFilePath, xmlNodePtr cur, char *tempFuncScoreTableName, char *tempFuncCallTableName)
 {
     bool ret = true;
@@ -56,7 +163,8 @@ bool ExtractCPPFunc(char *xmlFilePath, xmlNodePtr cur, char *tempFuncScoreTableN
     {
         if(!xmlStrcmp(cur->name, (const xmlChar*)"function") || \
             (!xmlStrcmp(cur->name, (const xmlChar*)"extern") && cur->children != NULL && !xmlStrcmp(cur->last->name, (const xmlChar*)"function")) || \
-            (!xmlStrcmp(cur->name, (const xmlChar*)"decl_stmt") && cur->children != NULL && !xmlStrcmp(cur->last->name, (const xmlChar*)"decl")))
+            (!xmlStrcmp(cur->parent->name, (const xmlChar*)"block") && !xmlStrcmp(cur->name, (const xmlChar*)"decl_stmt") && cur->children != NULL && \
+            !xmlStrcmp(cur->last->name, (const xmlChar*)"decl")))
         {
             xmlNodePtr funcNode;
             if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
@@ -116,15 +224,22 @@ bool ExtractCPPFunc(char *xmlFilePath, xmlNodePtr cur, char *tempFuncScoreTableN
                     varType *begin = ExtractVarType(funcNode);
                     varType *current = begin;
                     
+                    xmlNodePtr blockNode = temp_cur;
+                    while(blockNode != NULL)
+                    {
+                        if(!xmlStrcmp(blockNode->name, (const xmlChar*)"block"))
+                            break;
+                        blockNode = blockNode->next;
+                    }
                     if(isClass != 1)
-                        scanCallFunction(tempFuncCallTableName, funcNode, value, funcType, argumentTypeString, src_dir, clssNameStr2[0], begin);
+                        scanCallFunction(tempFuncCallTableName, blockNode, value, funcType, argumentTypeString, src_dir, clssNameStr2[0], begin);
                     else
-                        scanCallFunction(tempFuncCallTableName, funcNode, value, funcType, argumentTypeString, src_dir, NULL, begin);
+                        scanCallFunction(tempFuncCallTableName, blockNode, value, funcType, argumentTypeString, src_dir, NULL, begin);
                     
                     while(current != NULL)
                     {
                         begin = begin->next;
-                        //printf("%s(%d):%s\n", current->type, current->line, current->varName);
+                        //printfatt("%s(%d):%s\n", current->type, current->line, current->varName);
                         free(current);
                         current = begin;
                     }
@@ -200,6 +315,9 @@ bool ExtractCPPFunc(char *xmlFilePath, xmlNodePtr cur, char *tempFuncScoreTableN
             {
                 if(!xmlStrcmp(children->name, (const xmlChar*)"block"))
                     ret = ExtractCPPFunc(xmlFilePath, children, tempFuncScoreTableName, tempFuncCallTableName);
+                else if(!xmlStrcmp(children->name, (const xmlChar*)"decl_stmt"))
+                    ret = ExtractErrorCPPFunc(xmlFilePath, children, tempFuncScoreTableName, tempFuncCallTableName);
+                
                 children = children->next;
             }
         }
@@ -1210,11 +1328,7 @@ funcInfoList *varCPPScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *
 
 funcCallInfoList *CPPSclice(char *varName, char *xmlFilePath)
 {
-#if DEBUG == 1
-    return ScliceDebug(varName, xmlFilePath, varCPPScliceFuncFromNode);
-#else
     return Sclice(varName, xmlFilePath, varCPPScliceFuncFromNode);
-#endif
 }
 
 varDirectInflFuncList *getCPPDirectInflFuncFromNode(char *varName, xmlNodePtr funcBlockNode, varType *varTypeBegin, bool flag)
@@ -1324,7 +1438,6 @@ varDirectInflFuncList *getCPPDirectInflFuncFromNode(char *varName, xmlNodePtr fu
                             MYSQL_ROW sqlrow;
                             res_ptr = mysql_store_result(tempMysqlConnect);
                             int rownum = mysql_num_rows(res_ptr);
-                            //count 为递归的最大深度
                             if(rownum != 0)
                             {
                                 //self-define function

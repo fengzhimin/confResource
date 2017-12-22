@@ -22,6 +22,7 @@
 #define JudgeVarUsed(cur, var)  JudgeVarUsedFromNode(cur, var, true)
 #define JudgeExistChildNode(cur, nodeName)   JudgeExistChildNodeFromNode(cur, nodeName, true)
 #define ExtractVarDef(cur)  ExtractVarDefFromNode(cur, true)
+#define ExtractErrorVarType(cur)   ExtractErrorVarTypeFromNode(cur, true)
 #define ExtractVarType(cur)   ExtractVarTypeFromNode(cur, true)
 #define scanAssignVar(cur)   scanAssignVarFromNode(cur, true)
 #define ExtractDirectInfluVar(cur, varName, varTypeBegin)  ExtractDirectInfluVarFromNode(cur, varName, varTypeBegin, true)
@@ -62,6 +63,14 @@ bool JudgeArgumentSimilar(char *funcName, char *xmlFilePath, char *arg1, char *a
 varType *ExtractVarDefFromNode(xmlNodePtr cur, bool flag);
 
 /*********************************
+ * func: 提取解析错误函数的变量定义
+ * return: varType list
+ * @para cur: current node
+ * @para flag: whether scan next node or not
+*********************************/
+varType *ExtractErrorVarTypeFromNode(xmlNodePtr cur, bool flag);
+
+/*********************************
  * func: Extract variable type
  * return: varType list
  * @para cur: current node
@@ -99,6 +108,15 @@ varDef *ExtractDirectInfluVarFromNode(xmlNodePtr cur, char *varName, varType *va
  * @para cur: current Node
 *******************************/
 void scanBackAssignVar(xmlNodePtr cur);
+
+/*******************************
+ * func: 提取错误参数类型
+ * return: argument type string
+ * @para cur: current function node
+ * @example: void fun(void) ---> void
+ * @example: void fun(int a, const char *str)   ---> (int/char#2)
+*******************************/
+char *ExtractErrorFuncArgumentType(xmlNodePtr cur);
 
 /*******************************
  * func: extract function argument type
@@ -145,6 +163,26 @@ xmlChar *getLine(xmlNodePtr cur);
 varDef *ScliceInflVarInfo(char *varName, xmlNodePtr cur, char *inflVarName, varDef *curInflVar, varType *varTypeBegin);
 
 /**********************************
+ * func: 处理解析错误的程序(sql_connect.cc中的get_key_conn)
+ * return: not null = exist influence   null = not exist influence
+ * @para varInfo: analyse variable info
+ * @para xmlFilePath: xml file path
+ * @para cur: current node
+ * @para varScliceFunc: C or C++ variable Sclice function point
+**********************************/
+funcCallInfoList *ScliceErrorFromNode(char *varName, char *xmlFilePath, xmlNodePtr cur, funcInfoList *(*varScliceFunc)(varDef, xmlNodePtr , varType *, bool));
+
+/**********************************
+ * func: variable sclice return influence function from node
+ * return: not null = exist influence   null = not exist influence
+ * @para varInfo: analyse variable info
+ * @para xmlFilePath: xml file path
+ * @para cur: current node
+ * @para varScliceFunc: C or C++ variable Sclice function point
+**********************************/
+funcCallInfoList *ScliceFromNode(char *varName, char *xmlFilePath, xmlNodePtr cur, funcInfoList *(*varScliceFunc)(varDef, xmlNodePtr , varType *, bool));
+
+/**********************************
  * func: variable sclice return influence function
  * return: not null = exist influence   null = not exist influence
  * @para varInfo: analyse variable info
@@ -153,22 +191,35 @@ varDef *ScliceInflVarInfo(char *varName, xmlNodePtr cur, char *inflVarName, varD
 **********************************/
 funcCallInfoList *Sclice(char *varName, char *xmlFilePath, funcInfoList *(*varScliceFunc)(varDef, xmlNodePtr , varType *, bool));
 
-/**********************************
- * func: variable sclice
- * return: not null = exist influence   null = not exist influence
- * @para varInfo: analyse variable info
- * @para xmlFilePath: xml file path
- * @para varScliceFunc: C or C++ variable Sclice function point
-**********************************/
-funcCallInfoList *ScliceDebug(char *varName, char *xmlFilePath, funcInfoList *(*varScliceFunc)(varDef, xmlNodePtr , varType *, bool));
-
 /***********************************
  * func: get function parameter name by parameter position
  * return: parameter name    NULL = get failure
  * @para parameterListNode: parameter list node 
  * @para index: parameter position
 ***********************************/
-char *getParaNameByIndexFromNode(xmlNodePtr parameterListNode, int index);
+char *getParaNameByIndexFromParaList(xmlNodePtr parameterListNode, int index);
+
+/************************************
+ * func: get function parameter name by parameter position
+ * return: parameter name    NULL = get failure
+ * @para cur: current node
+ * @para index: parameter position
+ * @para funcName: function name
+ * @para xmlFilePath: the file path in which the function is located
+ * @para funcArgumentType: the argument type of the funcName
+*************************************/
+char *getErrorParaNameByIndexFromNode(xmlNodePtr cur, int index, char *funcName, char *xmlFilePath, char *funcArgumentType);
+
+/************************************
+ * func: get function parameter name by parameter position
+ * return: parameter name    NULL = get failure
+ * @para cur: current node
+ * @para index: parameter position
+ * @para funcName: function name
+ * @para xmlFilePath: the file path in which the function is located
+ * @para funcArgumentType: the argument type of the funcName
+*************************************/
+char *getParaNameByIndexFromNode(xmlNodePtr cur, int index, char *funcName, char *xmlFilePath, char *funcArgumentType);
 
 /************************************
  * func: get function parameter name by parameter position
@@ -187,6 +238,30 @@ char *getParaNameByIndex(int index, char *funcName, char *xmlFilePath, char *fun
  * @para paraListNode: parameter list node
 ***************************************/
 int getArguPosition(char *paraName, xmlNodePtr paraListNode);
+
+/***********************************
+ * func: 获取变量varName在函数funcName中通过数据传播所影响的被调用的函数信息
+ * return: 影响函数的列表
+ * @para cur: current node
+ * @para varName: 要分析的变量
+ * @para funcName: 要分析的函数名
+ * @para xmlFilePath: funcName函数所在的xml文件路径
+ * @para funcArgumentType: funcName函数的参数格式
+***********************************/
+varDirectInflFuncList *getErrorVarInfluFuncFromNode(xmlNodePtr cur, char *varName, char *funcName, char *xmlFilePath, char *funcArgumentType, \
+    varDirectInflFuncList *(*DirectInflFunc)(char *, xmlNodePtr, varType *, bool));
+    
+/***********************************
+ * func: 获取变量varName在函数funcName中通过数据传播所影响的被调用的函数信息
+ * return: 影响函数的列表
+ * @para cur: current node
+ * @para varName: 要分析的变量
+ * @para funcName: 要分析的函数名
+ * @para xmlFilePath: funcName函数所在的xml文件路径
+ * @para funcArgumentType: funcName函数的参数格式
+***********************************/
+varDirectInflFuncList *getVarInfluFuncFromNode(xmlNodePtr cur, char *varName, char *funcName, char *xmlFilePath, char *funcArgumentType, \
+    varDirectInflFuncList *(*DirectInflFunc)(char *, xmlNodePtr, varType *, bool));
 
 /***********************************
  * func: 获取变量varName在函数funcName中通过数据传播所影响的被调用的函数信息

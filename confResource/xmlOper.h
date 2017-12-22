@@ -31,7 +31,7 @@
 bool ExtractFuncFromXML(char *xmlFilePath, char *tempFuncScoreTableName, char *tempFuncCallTableName);
 
 /**********************************
- * func: variable sclice
+ * func: variable sclice(get variable affect function)
  * return: not null = exist influence   null = not exist influence
  * @para varName: variable name
  * @para xmlFilePath: xml file path

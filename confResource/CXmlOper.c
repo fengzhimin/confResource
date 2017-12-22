@@ -42,15 +42,9 @@ bool ExtractFuncFromCXML(char *xmlFilePath, char *tempFuncScoreTableName, char *
     cur = cur->children;
     while (cur != NULL)
     {
-        if(!xmlStrcmp(cur->name, (const xmlChar*)"function") || \
-            (!xmlStrcmp(cur->name, (const xmlChar*)"extern") && cur->children != NULL && !xmlStrcmp(cur->last->name, (const xmlChar*)"function")) || \
-            (!xmlStrcmp(cur->name, (const xmlChar*)"decl_stmt") && cur->children != NULL && !xmlStrcmp(cur->last->name, (const xmlChar*)"decl")))
+        if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
         {
-            xmlNodePtr funcNode;
-            if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
-                funcNode = cur;
-            else
-                funcNode = cur->last;
+            xmlNodePtr funcNode = cur;
             xmlNodePtr temp_cur = funcNode->children;
             char *funcType = "extern";
             while(temp_cur != NULL)
@@ -87,7 +81,14 @@ bool ExtractFuncFromCXML(char *xmlFilePath, char *tempFuncScoreTableName, char *
                     }
                     varType *begin = ExtractVarType(funcNode);
                     varType *current = begin;
-                    scanCallFunction(tempFuncCallTableName, funcNode, value, funcType, argumentTypeString, src_dir, begin);
+                    xmlNodePtr blockNode = temp_cur;
+                    while(blockNode != NULL)
+                    {
+                        if(!xmlStrcmp(blockNode->name, (const xmlChar*)"block"))
+                            break;
+                        blockNode = blockNode->next;
+                    }
+                    scanCallFunction(tempFuncCallTableName, blockNode, value, funcType, argumentTypeString, src_dir, begin);
                     while(current != NULL)
                     {
                         begin = begin->next;
@@ -937,11 +938,7 @@ funcInfoList *varCScliceFuncFromNode(varDef varInfo, xmlNodePtr cur, varType *va
 
 funcCallInfoList *CSclice(char *varName, char *xmlFilePath)
 {
-#if DEBUG == 1
-    return ScliceDebug(varName, xmlFilePath, varCScliceFuncFromNode);
-#else
     return Sclice(varName, xmlFilePath, varCScliceFuncFromNode);
-#endif
 }
 
 varDirectInflFuncList *getCDirectInflFuncFromNode(char *varName, xmlNodePtr funcBlockNode, varType *varTypeBegin, bool flag)
@@ -1325,15 +1322,9 @@ bool ScliceConfKey(char *confName, char *xmlFilePath)
     cur = cur->children;
     while (cur != NULL)
     {
-        if(!xmlStrcmp(cur->name, (const xmlChar*)"function") || \
-            (!xmlStrcmp(cur->name, (const xmlChar*)"extern") && cur->children != NULL && !xmlStrcmp(cur->last->name, (const xmlChar*)"function")) || \
-            (!xmlStrcmp(cur->name, (const xmlChar*)"decl_stmt") && cur->children != NULL && !xmlStrcmp(cur->last->name, (const xmlChar*)"decl")))
+        if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
         {
-            xmlNodePtr funcNode;
-            if(!xmlStrcmp(cur->name, (const xmlChar*)"function"))
-                funcNode = cur;
-            else
-                funcNode = cur->last;
+            xmlNodePtr funcNode = cur;
             xmlNodePtr temp_cur = funcNode->children;
             xmlChar* attr_value = NULL;
             while(temp_cur != NULL)

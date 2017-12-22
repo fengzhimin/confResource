@@ -33,6 +33,16 @@
 bool ExtractFuncFromCPPXML(char *xmlFilePath, char *tempFuncScoreTableName, char *tempFuncCallTableName);
 
 /*******************************
+ * func: 提取srcml解析错误的C++函数(sql_connect.cc中的get_key_conn)
+ * return: true = success    false = failure
+ * @para xmlFilePath: xml path
+ * @para cur: current node
+ * @para tempFuncScoreTableName: temporary funcScore table name
+ * @para tempFuncCallTableName: temporary funcCall table name
+********************************/
+bool ExtractErrorCPPFunc(char *xmlFilePath, xmlNodePtr cur, char *tempFuncScoreTableName, char *tempFuncCallTableName);
+
+/*******************************
  * func: Extract C++ function Name from current node
  * return: true = success    false = failure
  * @para xmlFilePath: xml path
