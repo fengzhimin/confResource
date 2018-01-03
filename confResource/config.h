@@ -15,7 +15,7 @@
 
 #define OPENLOG  1      //0=不记录日志   1=记录日志
 
-#define DEBUG    0      //0=不打印调试信息    1 = 打印调试信息
+#define DEBUG    1      //0=不打印调试信息    1 = 打印调试信息
 
 #define PRINT_INFLUENCE_FUNCTION  1    //1 = 打印直接影响资源分数的函数  0 = 不打印
 
