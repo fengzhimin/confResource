@@ -111,7 +111,7 @@ if __name__ == '__main__':
     measurementFD.close()
     #将配置项标题写入结果文件中
     resultFD = open(resultFile, "a")
-    resultFD.write(lines[0].replace("\n", ", CPU, MEM\n"))
+    resultFD.write(lines[0].replace("\n", ",CPU,MEM\n"))
     resultFD.close()
     #得到待测试的配置项名称
     confName = lines[0].rstrip("\n")
