@@ -30,6 +30,10 @@ measurement = "SAMPLE.csv"
 sumCPU = 0
 #总的内存使用和
 sumMem = 0
+#总的IO数
+sumIO = 0
+#总的net数
+sumNET = 0
 #监控次数
 count = 0
 #平均CPU使用率
@@ -90,15 +94,26 @@ def getMonitorResult():
         sumMem += long(line[5])
         global sumCPU
         sumCPU += float(line[8])
+    #获取IO数据
+    command = os.popen("pgrep " + SoftWareName + " | tr \"\\n\" \",\" | sed 's/,$//'") #执行该命令
+    commandResult = command.readlines()
+    pids = commandResult[0].split(",")
+    for pid in pids:
+        command = os.popen("sudo iotop -k -p " + pid + " -b -n 1 | tail -n 1 | sed -r 's/^ | $//' | tr -s ' ' | cut -d ' ' -f4,6")
+        commandResult = command.readlines()
+        ioData = commandResult[0].split()
+        global sumIO
+        sumIO += float(ioData[0])
+        sumIO += float(ioData[1])
 
 """
 saveResult: 获取资源使用情况
 CPUValue: CPU使用率
 MEMValue: 内存使用率
 """
-def saveResult(CPUValue, MEMValue):
+def saveResult(CPUValue, MEMValue, IOValue, NETValue):
     file = open(resultFile, "a")
-    file.write("," + str(CPUValue) + "," + str(MEMValue) + "\n")
+    file.write("," + str(CPUValue) + "," + str(MEMValue) + "," + str(IOValue) + "," + str(NETValue) + "\n")
     file.close()
 
 if __name__ == '__main__':
@@ -111,7 +126,7 @@ if __name__ == '__main__':
     measurementFD.close()
     #将配置项标题写入结果文件中
     resultFD = open(resultFile, "a")
-    resultFD.write(lines[0].replace("\n", ",CPU,MEM\n"))
+    resultFD.write(lines[0].replace("\n", ",CPU,MEM,IO,NET\n"))
     resultFD.close()
     #得到待测试的配置项名称
     confName = lines[0].rstrip("\n")
@@ -134,6 +149,8 @@ if __name__ == '__main__':
         thread1.start()
         sumMem = 0
         sumCPU = 0
+        sumIO = 0
+        sumNET = 0
         count = 0
         """
         每隔30秒去检测程序占用资源情况
@@ -146,4 +163,6 @@ if __name__ == '__main__':
         #计算出资源平均使用大小
         averageCPU = sumCPU/count
         averageMem = sumMem/count
-        saveResult(averageCPU, averageMem)
+        averageIO = sumIO/count
+        averageNET = sumNET/count
+        saveResult(averageCPU, averageMem, averageIO, averageNET)

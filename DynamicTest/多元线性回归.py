@@ -34,7 +34,7 @@ import numpy as np
 sum_mean=0  
 for i in range(len(y_pred)):  
     sum_mean+=(y_pred[i]-y_test.values[i])**2 
-sum_erro=np.sqrt(sum_mean/12)
+sum_erro=np.sqrt(sum_mean/len(y_test))
 # calculate RMSE by hand  
 print "RMSE by hand:",sum_erro
 

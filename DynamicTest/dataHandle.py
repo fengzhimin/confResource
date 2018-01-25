@@ -10,10 +10,12 @@ resultFile = "result.csv"
 #存放平均值文件
 averageFile = "resultData.csv"
 #相同配置项组合个数
-confCount = 5
+confCount = 10
 
 memSum = 0
 CPUSum = 0
+IOSum = 0
+NETSum = 0
 count = 0
 
 '''
@@ -31,22 +33,35 @@ if __name__ == '__main__':
     resultFD.close()
     for line in lines[1:]:
         ConfValue = line.split(",")
+        confLen = len(ConfValue)
         if count == (confCount-1):
-            CPUSum += float(ConfValue[3])
-            memSum += float(ConfValue[4])
+            CPUSum += float(ConfValue[confLen-4])
+            memSum += float(ConfValue[confLen-3])
+            IOSum += float(ConfValue[confLen-2])
+            NETSum += float(ConfValue[confLen-1])
             file = open(averageFile, "a")
             mem = str(memSum/confCount)
             cpu = str(CPUSum/confCount)
-            file.write(ConfValue[0]+",")
-            file.write(ConfValue[1]+",")
-            file.write(ConfValue[2]+",")
+            io = str(IOSum/count)
+            net = str(NETSum/count)
+            counter = 0
+            while counter <= (confLen-5):
+                file.write(ConfValue[counter]+",")
+                counter += 1
+
             file.write(str(cpu)+",")
-            file.write(str(mem)+"\n")
+            file.write(str(mem)+",")
+            file.write(str(io)+",")
+            file.write(str(net)+"\n")
             file.close()
             count = 0
             memSum = 0
             CPUSum = 0
+            IOSum = 0
+            NETSum = 0
         else:
             count += 1
-            CPUSum += float(ConfValue[3])
-            memSum += float(ConfValue[4])
+            CPUSum += float(ConfValue[confLen-4])
+            memSum += float(ConfValue[confLen-3])
+            IOSum += float(ConfValue[confLen-2])
+            NETSum += float(ConfValue[confLen-1])
