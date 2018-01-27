@@ -11,7 +11,7 @@ feature_cols = ['sort_buffer_size', 'key_buffer_size', 'read_buffer_size']
 X = data[feature_cols]
 y = data['MEM']
 
-X_train,X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=0)  
+X_train,X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)  
 print X_train.shape  
 print y_train.shape  
 print X_test.shape  

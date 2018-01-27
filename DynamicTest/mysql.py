@@ -14,9 +14,9 @@ srcConfFilePath = "./my.cnf.back"
 #新配置文件名称
 desConfFilePath = "my.cnf"
 #重启软件命令
-restartSoftWareCommand = "sudo service mysql restart"
+restartSoftWareCommand = "sudo service mysql restart > /dev/null 2>&1"
 #压力测试命令
-DynamicTestCommand = "./exe"
+DynamicTestCommand = "./exe > /dev/null 2>&1"
 #测试软件的名称
 SoftWareName = "mysqld"
 #监控结果存放的文件名
@@ -99,7 +99,7 @@ def getMonitorResult():
     commandResult = command.readlines()
     pids = commandResult[0].split(",")
     for pid in pids:
-        command = os.popen("sudo iotop -k -p " + pid + " -b -n 1 | tail -n 1 | sed -r 's/^ | $//' | tr -s ' ' | cut -d ' ' -f4,6")
+        command = os.popen("sudo iotop -k -p " + pid + " -b -n 1 | tail -n 1 | tr -s ' ' | sed -r 's/^ | $//' | cut -d ' ' -f4,6")
         commandResult = command.readlines()
         ioData = commandResult[0].split()
         global sumIO
