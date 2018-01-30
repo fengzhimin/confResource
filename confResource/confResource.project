@@ -55,6 +55,10 @@
     <File Name="logOper.h"/>
     <File Name="logOper.c"/>
   </VirtualDirectory>
+  <VirtualDirectory Name="LoopCount">
+    <File Name="searchLoopCount.h"/>
+    <File Name="searchLoopCount.c"/>
+  </VirtualDirectory>
   <Settings Type="Executable">
     <GlobalSettings>
       <Compiler Options="" C_Options="" Assembler="">
@@ -145,8 +149,4 @@
       </Completion>
     </Configuration>
   </Settings>
-  <VirtualDirectory Name="LoopCount">
-    <File Name="searchLoopCount.h"/>
-    <File Name="searchLoopCount.c"/>
-  </VirtualDirectory>
 </CodeLite_Project>

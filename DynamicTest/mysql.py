@@ -22,9 +22,9 @@ SoftWareName = "mysqld"
 #监控结果存放的文件名
 MonitorResultFile = "resource.txt"
 #最终动态测试结果值存放的文件名
-resultFile = "result.csv"
+outputFile = "result.csv"
 #配置项组合存放的文件名
-measurement = "SAMPLE.csv"
+inputFile = "SAMPLE.csv"
 
 #总的CPU使用率和
 sumCPU = 0
@@ -112,20 +112,20 @@ CPUValue: CPU使用率
 MEMValue: 内存使用率
 """
 def saveResult(CPUValue, MEMValue, IOValue, NETValue):
-    file = open(resultFile, "a")
+    file = open(outputFile, "a")
     file.write("," + str(CPUValue) + "," + str(MEMValue) + "," + str(IOValue) + "," + str(NETValue) + "\n")
     file.close()
 
 if __name__ == '__main__':
-    if os.path.exists(resultFile):
-        os.remove(resultFile)
+    if os.path.exists(outputFile):
+        os.remove(outputFile)
     #打开待测试用例集合
-    measurementFD = open(measurement, "r")
+    measurementFD = open(inputFile, "r")
     #读取所有数据
     lines = measurementFD.readlines()
     measurementFD.close()
     #将配置项标题写入结果文件中
-    resultFD = open(resultFile, "a")
+    resultFD = open(outputFile, "a")
     resultFD.write(lines[0].replace("\n", ",CPU,MEM,IO,NET\n"))
     resultFD.close()
     #得到待测试的配置项名称
@@ -133,7 +133,7 @@ if __name__ == '__main__':
     confName = confName.split(",")
     for line in lines[1:]:
         line = line.rstrip("\n")
-        file = open(resultFile, "a")
+        file = open(outputFile, "a")
         file.write(line)
         file.close()
         ConfValue = line.split(",")

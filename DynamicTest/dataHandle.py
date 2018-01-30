@@ -6,9 +6,9 @@ import sys
 from sys import argv
 
 #测试结果文件
-resultFile = "result.csv"
+inputFile = "result.csv"
 #存放平均值文件
-averageFile = "resultData.csv"
+outputFile = "dataHandle.csv"
 #相同配置项组合个数
 confCount = 10
 
@@ -23,12 +23,12 @@ function: 同一组配置项组合被测试多次，取平均值
 '''
 if __name__ == '__main__':
     #打开待测试用例集合
-    measurementFD = open(resultFile, "r")
+    measurementFD = open(inputFile, "r")
     #读取所有数据
     lines = measurementFD.readlines()
     measurementFD.close()
     #将配置项标题写入结果文件中
-    resultFD = open(averageFile, "w")
+    resultFD = open(outputFile, "w")
     resultFD.write(lines[0])
     resultFD.close()
     for line in lines[1:]:
@@ -39,7 +39,7 @@ if __name__ == '__main__':
             memSum += float(ConfValue[confLen-3])
             IOSum += float(ConfValue[confLen-2])
             NETSum += float(ConfValue[confLen-1])
-            file = open(averageFile, "a")
+            file = open(outputFile, "a")
             mem = str(memSum/confCount)
             cpu = str(CPUSum/confCount)
             io = str(IOSum/count)

@@ -21,12 +21,19 @@ DynamicTestCommand = "./exe > /dev/null 2>&1"
 SoftWareName = "mysqld"
 #监控结果存放的文件名
 MonitorResultFile = "resource.txt"
-#存放最终那些配置项是相互作用影响而不是单独影响资源
-resultFile = "ConfInteractResult.csv"
+#存放最终配置项组合关系
+outputFile = "ConfInteractResult.csv"
 #存放待测试配置项文件
-confInfo = "confInfo.csv"
+inputFile = "confInfo.csv"
+#程序日志文件
+logFile = "Detect_Interact.log"
 #为了获取平均值，将一组配置项执行多次
 measureCounter = 5
+#存放单独影响资源的配置项名称
+noInteractConfName = []
+#存放组合影响资源的配置项名称
+#每项内容的格式为: [配置项名称 deltasMinMem deltasMaxMem]
+interactConfInfo = []
 
 #总的CPU使用率和
 sumCPU = 0
@@ -42,6 +49,8 @@ count = 0
 averageCPU = 0
 #平均内存使用
 averageMem = 0
+#判断是否为单独影响资源的阈值(30M)
+threshold = 30000
 
 '''
 buildConfFile: 用于生成配置项修改后新配置文件
@@ -146,28 +155,16 @@ def getResource():
         counter += 1
     return sumAverageCPU/measureCounter,sumAverageMem/measureCounter,sumAverageIO/measureCounter,sumAverageNET/measureCounter
 
-"""
-saveResult: 获取资源使用情况
-CPUValue: CPU使用率
-MEMValue: 内存使用率
-"""
-def saveResult(CPUValue, MEMValue, IOValue, NETValue):
-    file = open(resultFile, "a")
-    file.write("," + str(CPUValue) + "," + str(MEMValue) + "," + str(IOValue) + "," + str(NETValue) + "\n")
-    file.close()
-
 if __name__ == '__main__':
-    if os.path.exists(resultFile):
-        os.remove(resultFile)
+    if os.path.exists(outputFile):
+        os.remove(outputFile)
+    if os.path.exists(logFile):
+        os.remove(logFile)
     #打开待测试配置项集合
-    confInfoFD = open(confInfo, "r")
+    confInfoFD = open(inputFile, "r")
     #读取所有数据
     lines = confInfoFD.readlines()
     confInfoFD.close()
-    #将配置项标题写入结果文件中
-    resultFD = open(resultFile, "a")
-    resultFD.write(lines[0])
-    resultFD.close()
     #得到待测试的配置项名称
     confName = lines[0].rstrip("\n")
     confName = confName.split(",")
@@ -227,7 +224,7 @@ if __name__ == '__main__':
 
         '''
         生成新的配置文件
-        deltasMaxA = AXBXC - BXC
+        deltasMaxA = AXBXC - BXCconfMaxValue
         计算BXC影响的资源
         '''
         confValue = list(confMaxValue)
@@ -241,23 +238,69 @@ if __name__ == '__main__':
         deltasMaxMem = maxMEM - averageMem
         deltasMaxIO = maxIO - averageIO
         deltasMaxNET = maxNET - averageNET
+        logFd = open(logFile, 'a')
+        logInfo = "配置项:" + confName[confIndex] + " deltasMaxMem＝" + str(deltasMaxMem) + " deltasMinMem=" + str(deltasMinMem)
+        print(logInfo)
+        logFd.write(logInfo)
+        
 
-        print("配置项:" + confName[confIndex] + " deltasMaxMem＝" + str(deltasMaxMem) + " deltasMinMem=" + str(deltasMinMem))
-        file = open(resultFile, "a")
-        if abs(deltasMaxMem - deltasMinMem) < 25000:
+        if abs(deltasMaxMem - deltasMinMem) < threshold:
             #单独影响资源
-            file.write("N,")
+            logInfo = "配置项:" + confName[confIndex] + "单独影响资源"
+            logFd.write(logInfo)
+            print(logInfo)
+            noInteractConfName.append(confName[confIndex])
         else:
-            file.write("Y,")
-        file.close()
+            logInfo = "配置项:" + confName[confIndex] + "组合影响资源"
+            logFd.write(logInfo)
+            print(logInfo)
+            interactConf = [confName[confIndex], str(deltasMinMem), str(deltasMaxMem)]
+            interactConfInfo.append(interactConf)
+        logFd.close()
         confIndex += 1
+    
+    #对组合影响资源的配置项进行测试，判断出组合关系
+    #计算出非单独影响资源的配置项个数
+    interactConfNum = len(interactConfInfo)
+    if interactConfNum < 2:
+        print("组合配置项个数不符号要求")
+    else:
+        for interactConfA in interactConfInfo[:interactConfNum-1]:
+            for interactConfB in interactConfInfo[interactConfInfo.index(interactConfA)+1:]:
+                confA = interactConfA[0]
+                confB = interactConfB[0]
+                '''
+                生成新的配置文件
+                deltasMinAB = AB
+                计算AB影响的资源
+                '''
+                confAIndex = confName.index(confA)
+                confBIndex = confName.index(confB)
+                confValue = list(confMinValue)
+                confValue[confAIndex] = confMaxValue[confAIndex]
+                confValue[confBIndex] = confMaxValue[confBIndex]
+                buildConfFile(srcConfFilePath, desConfFilePath, confName, confValue)
+                #拷贝新配置文件
+                os.system("sudo cp "+ desConfFilePath + " " + softwareConfPath)
+                averageCPU, averageMem, averageIO, averageNET = getResource()
+                #获取单独(最小)影响资源的值
+                deltasMinCPU = averageCPU - minCPU
+                deltasMinMem = averageMem - minMEM
+                deltasMinIO = averageIO - minIO
+                deltasMinNET = averageNET - minNET
 
-    file = open(resultFile, "r")
+                #判断AB一起开启后所影响的资源与单独开启A和B所影响资源的关系
+                #如果MEM(AB) != MEM(A) + MEM(B)则表示AB是组合关系
+                if abs(deltasMinMem - int(interactConfA[1]) - int(interactConfB[1])) > threshold:
+                    file = open(outputFile, "a")
+                    file.write(interactConfA[0] + "X" + interactConfB[0] + ",")
+                    file.close()
+    
+    file = open(outputFile, "r")
     lines = file.readlines()
     file.close()
-    file = open(resultFile, "w")
+    file = open(outputFile, "w")
     file.truncate()
-    file.write(lines[0])
-    line = lines[1].rstrip(",") + "\n"
+    line = lines[0].rstrip(",") + "\n"
     file.write(line)
     file.close()
