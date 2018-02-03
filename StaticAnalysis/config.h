@@ -21,7 +21,7 @@
 
 #define LINE_CHAR_MAX_NUM      1024   //一行最大字符个数
 
-//定义KCode配置文件存放的路径
+//定义配置文件存放的路径
 #define CONFIG_PATH     "../confResource.conf"
 #define CONFIG_NOTESYMBOL    '#'
 //存放库函数与资源的关系文件

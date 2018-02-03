@@ -1,3 +1,6 @@
+项目名称：配置项意图的资源依赖分析
+
+项目依赖：
 依赖如下库：
 libmysqlclient: sudo apt-get install libmysqlclient-dev
 libxml2: sudo apt-get install libxml2-dev
@@ -5,10 +8,21 @@ libxml2: sudo apt-get install libxml2-dev
 mysql数据库: sudo apt-get install mysql-server
 srcml: http://www.srcml.org/
 
-动态插装程序运行前提:
-1、将libInsertFile.so拷贝到/usr/lib或者/lib目录下
-2、将insertFile.h拷贝到/usr/include目录下
-3、将环境变量PATH的首目录设置为c++、g++、cc和gcc这个四个脚本所在的目录
+子项目介绍：
+1、CodeInstrumentation: 对源码中的循环进行插装，目的是计算出软件循环的执行次数
+详细介绍请参考:CodeInstrumentation/readMe
 
-动态运行插装后的mysql
-具体参考:http://blog.csdn.net/zero_295813128/article/details/51258568
+2、StaticAnalysis: 采用程序切片技术静态分析出和资源相关的配置项
+详细介绍请参考:StaticAnalysis/readMe
+
+3、PreCompilerHandler: 对软件源码进行预编译处理
+详细介绍请参考:PreCompilerHandler/readMe
+
+4、DynamicLearn: 采用机器学习方法分析出软件配置项和资源的使用关系式
+详细介绍请参考:DynamicLearn/readMe
+
+5、compilerSet:　修改系统默认编译器选项
+详细介绍请参考:compilerSet/readMe
+
+各个子项目间的关系：
+CodeInstrumentation　--->  compilerSet  --->  动态运行程序 --->  (得到程序执行循环次数, PreCompilerHandler)  --->  StaticAnalysis  --->  DynamicLearn
