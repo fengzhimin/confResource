@@ -34,6 +34,8 @@ using namespace std;
 //生成测试用例
 #define SAMPLE_PATH          "SAMPLE.csv"
 
+#define INPUT_PATH        "../input.conf"
+
 /************************
  * func: 定义软件待测配置项信息
  * 配置文件格式: confName confType minValue maxValue 开关型配置项minValue和maxValue的值为空

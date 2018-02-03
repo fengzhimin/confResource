@@ -127,4 +127,7 @@
       </Completion>
     </Configuration>
   </Settings>
+  <VirtualDirectory Name="configuration">
+    <File Name="input.conf"/>
+  </VirtualDirectory>
 </CodeLite_Project>
