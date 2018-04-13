@@ -1756,7 +1756,7 @@ funcCallInfoList *ScliceFromNode(char *varName, char *xmlFilePath, xmlNodePtr cu
                         ret = endFuncList = ScliceFromNode(varName, xmlFilePath, children->children, varScliceFunc);
                     else
                         endFuncList = ScliceFromNode(varName, xmlFilePath, children->children, varScliceFunc);
-                    if(ret != NULL)
+                    if(endFuncList != NULL)
                     {
                         while(endFuncList->next != NULL)
                         {
@@ -1771,7 +1771,7 @@ funcCallInfoList *ScliceFromNode(char *varName, char *xmlFilePath, xmlNodePtr cu
                         ret = endFuncList = ScliceErrorFromNode(varName, xmlFilePath, children->children, varScliceFunc);
                     else
                         endFuncList->next = ScliceErrorFromNode(varName, xmlFilePath, children->children, varScliceFunc);
-                    if(ret != NULL)
+                    if(endFuncList != NULL)
                     {
                         while(endFuncList->next != NULL)
                         {

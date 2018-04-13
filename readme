@@ -1,12 +1,15 @@
-项目名称：配置项意图的资源依赖分析
+项目名称: 配置项意图的资源依赖分析
+开发环境: ubuntu16.04-64bit  gcc-5.4.0  g++-5.4.0
+IDE: CodeLite-11.0.5
 
-项目依赖：
-依赖如下库：
+项目依赖:
+依赖如下库:
 libmysqlclient: sudo apt-get install libmysqlclient-dev
 libxml2: sudo apt-get install libxml2-dev
-依赖如下程序：
-mysql数据库: sudo apt-get install mysql-server
-srcml: http://www.srcml.org/
+依赖如下程序:
+mysql数据库: sudo apt-get install mysql-server ---> 用于存放项目的call graph
+srcml: http://www.srcml.org/   ---> 将源码文件解析为xml形式
+bear: https://github.com/rizsotto/Bear     ---> 提取编译数据库工具
 
 子项目介绍：
 1、CodeInstrumentation: 对源码中的循环进行插装，目的是计算出软件循环的执行次数
