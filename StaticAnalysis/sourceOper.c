@@ -1451,6 +1451,7 @@ static void *getScore(void *arg)
                     int rownum = mysql_num_rows(res_ptr);
                     if(rownum != 0)
                     {
+                        sqlrow = mysql_fetch_row(res_ptr);
                         forcount = StrToInt(sqlrow[0]);
                         whilecount = StrToInt(sqlrow[1]);
                     }

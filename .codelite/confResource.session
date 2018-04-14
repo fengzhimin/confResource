@@ -1,26 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Session Name="/home/fzm/github/confResource/confResource.workspace">
-  <int Value="2" Name="m_selectedTab"/>
+  <int Value="0" Name="m_selectedTab"/>
   <wxString Value="/home/fzm/github/confResource/confResource.workspace" Name="m_workspaceName"/>
   <TabInfoArray Name="TabInfoArray">
     <TabInfo>
-      <wxString Value="/home/fzm/github/confResource/StaticAnalysis/xmlOper.c" Name="FileName"/>
-      <int Value="49" Name="FirstVisibleLine"/>
-      <int Value="41" Name="CurrentLine"/>
-      <wxArrayString Name="Bookmarks"/>
-      <IntVector Name="CollapsedFolds"/>
-    </TabInfo>
-    <TabInfo>
       <wxString Value="/home/fzm/github/confResource/StaticAnalysis/sourceOper.c" Name="FileName"/>
-      <int Value="1373" Name="FirstVisibleLine"/>
-      <int Value="1368" Name="CurrentLine"/>
-      <wxArrayString Name="Bookmarks"/>
-      <IntVector Name="CollapsedFolds"/>
-    </TabInfo>
-    <TabInfo>
-      <wxString Value="/home/fzm/github/confResource/CodeInstrumentation/xmlOper.c" Name="FileName"/>
-      <int Value="68" Name="FirstVisibleLine"/>
-      <int Value="95" Name="CurrentLine"/>
+      <int Value="1437" Name="FirstVisibleLine"/>
+      <int Value="1440" Name="CurrentLine"/>
       <wxArrayString Name="Bookmarks"/>
       <IntVector Name="CollapsedFolds"/>
     </TabInfo>
