@@ -12,19 +12,22 @@ srcml: http://www.srcml.org/   ---> 将源码文件解析为xml形式
 bear: https://github.com/rizsotto/Bear     ---> 提取编译数据库工具
 
 子项目介绍：
-1、CodeInstrumentation: 对源码中的循环进行插装，目的是计算出软件循环的执行次数
-详细介绍请参考:CodeInstrumentation/readMe
+1、LoopInstrumentation: 对源码中的循环进行插装，目的是计算出软件循环的执行次数
+详细介绍请参考:LoopInstrumentation/readMe
 
-2、StaticAnalysis: 采用程序切片技术静态分析出和资源相关的配置项
+2、ConfigInstrumentation: 对源码中的配置项进行插装，目的是获取软件运行时被触发的有效配置项
+详细介绍请参考:ConfigInstrumentation/readMe
+
+3、StaticAnalysis: 采用程序切片技术静态分析出和资源相关的配置项
 详细介绍请参考:StaticAnalysis/readMe
 
-3、PreCompilerHandler: 对软件源码进行预编译处理
+4、PreCompilerHandler: 对软件源码进行预编译处理
 详细介绍请参考:PreCompilerHandler/readMe
 
-4、DynamicLearn: 采用机器学习方法分析出软件配置项和资源的使用关系式
+5、DynamicLearn: 采用机器学习方法分析出软件配置项和资源的使用关系式
 详细介绍请参考:DynamicLearn/readMe
 
-5、compilerSet:　修改系统默认编译器选项
+6、compilerSet:　修改系统默认编译器选项
 详细介绍请参考:compilerSet/readMe
 
 各个子项目间的关系：

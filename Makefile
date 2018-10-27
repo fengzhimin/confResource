@@ -1,8 +1,8 @@
 .PHONY: clean All
 
 All:
-	@echo "----------Building project:[ PreCompilerHandler - Debug ]----------"
-	@cd "PreCompilerHandler" && "$(MAKE)" -f  "PreCompilerHandler.mk"
+	@echo "----------Building project:[ ConfigInstrumentation - Debug ]----------"
+	@cd "ConfigInstrumentation" && "$(MAKE)" -f  "ConfigInstrumentation.mk"
 clean:
-	@echo "----------Cleaning project:[ PreCompilerHandler - Debug ]----------"
-	@cd "PreCompilerHandler" && "$(MAKE)" -f  "PreCompilerHandler.mk" clean
+	@echo "----------Cleaning project:[ ConfigInstrumentation - Debug ]----------"
+	@cd "ConfigInstrumentation" && "$(MAKE)" -f  "ConfigInstrumentation.mk" clean

@@ -86,12 +86,14 @@ def getMonitorResult():
     monitorFile = open(MonitorResultFile, "r")
     lines = monitorFile.readlines()
     monitorFile.close()
+    #计算总的物理内存
+    MemSum = lines[3].split()[2]
     #从第7行开始读取数据
     lines = lines[7:]
     for line in lines:
         line = line.split()
         global sumMem
-        sumMem += long(line[5])
+        sumMem += float(line[9])*float(MemSum)/100
         global sumCPU
         sumCPU += float(line[8])
     #获取IO数据

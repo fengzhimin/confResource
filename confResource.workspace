@@ -1,25 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CodeLite_Workspace Name="confResource" Database="confResource.tags" Version="10.0.0">
-  <Project Name="CodeInstrumentation" Path="CodeInstrumentation/CodeInstrumentation.project" Active="No"/>
+  <Project Name="ConfigInstrumentation" Path="ConfigInstrumentation/ConfigInstrumentation.project" Active="Yes"/>
   <Project Name="PreCompilerHandler" Path="PreCompilerHandler/PreCompilerHandler.project" Active="No"/>
   <Project Name="DynamicLearn" Path="DynamicLearn/DynamicLearn.project" Active="No"/>
-  <Project Name="StaticAnalysis" Path="StaticAnalysis/StaticAnalysis.project" Active="Yes"/>
+  <Project Name="StaticAnalysis" Path="StaticAnalysis/StaticAnalysis.project" Active="No"/>
+  <Project Name="LoopInstrumentation" Path="LoopInstrumentation/LoopInstrumentation.project" Active="No"/>
   <BuildMatrix>
     <WorkspaceConfiguration Name="Debug" Selected="yes">
       <Environment/>
       <Project Name="StaticAnalysis" ConfigName="Debug"/>
-      <Project Name="CodeInstrumentation" ConfigName="Debug"/>
+      <Project Name="ConfigInstrumentation" ConfigName="Debug"/>
       <Project Name="PreCompilerHandler" ConfigName="Debug"/>
       <Project Name="DynamicLearn" ConfigName="Debug"/>
       <Project Name="StaticAnalysis" ConfigName="Debug"/>
+      <Project Name="LoopInstrumentation" ConfigName="Debug"/>
     </WorkspaceConfiguration>
     <WorkspaceConfiguration Name="Release" Selected="yes">
       <Environment/>
       <Project Name="StaticAnalysis" ConfigName="Release"/>
-      <Project Name="CodeInstrumentation" ConfigName="Release"/>
+      <Project Name="ConfigInstrumentation" ConfigName="Release"/>
       <Project Name="PreCompilerHandler" ConfigName="Release"/>
       <Project Name="DynamicLearn" ConfigName="Release"/>
       <Project Name="StaticAnalysis" ConfigName="Release"/>
+      <Project Name="LoopInstrumentation" ConfigName="Release"/>
     </WorkspaceConfiguration>
   </BuildMatrix>
 </CodeLite_Workspace>
