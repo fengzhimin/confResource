@@ -13,7 +13,7 @@ CurrentFileName        :=
 CurrentFilePath        :=
 CurrentFileFullPath    :=
 User                   :=fzm
-Date                   :=27/10/18
+Date                   :=29/10/18
 CodeLitePath           :=/home/fzm/.codelite
 LinkerName             :=/usr/bin/g++
 SharedObjectLinkerName :=/usr/bin/g++ -shared -fPIC
@@ -60,8 +60,8 @@ AS       := /usr/bin/as
 ## User defined environment variables
 ##
 CodeLiteDir:=/usr/share/codelite
-Objects0=$(IntermediateDirectory)/main.c$(ObjectSuffix) $(IntermediateDirectory)/config.c$(ObjectSuffix) $(IntermediateDirectory)/dateOper.c$(ObjectSuffix) $(IntermediateDirectory)/dirOper.c$(ObjectSuffix) $(IntermediateDirectory)/fileOper.c$(ObjectSuffix) $(IntermediateDirectory)/strOper.c$(ObjectSuffix) $(IntermediateDirectory)/confOper.c$(ObjectSuffix) $(IntermediateDirectory)/logOper.c$(ObjectSuffix) $(IntermediateDirectory)/xmlOper.c$(ObjectSuffix) $(IntermediateDirectory)/sourceOper.c$(ObjectSuffix) \
-	
+Objects0=$(IntermediateDirectory)/main.c$(ObjectSuffix) $(IntermediateDirectory)/config.c$(ObjectSuffix) $(IntermediateDirectory)/dateOper.c$(ObjectSuffix) $(IntermediateDirectory)/dirOper.c$(ObjectSuffix) $(IntermediateDirectory)/fileOper.c$(ObjectSuffix) $(IntermediateDirectory)/strOper.c$(ObjectSuffix) $(IntermediateDirectory)/confOper.c$(ObjectSuffix) $(IntermediateDirectory)/logOper.c$(ObjectSuffix) $(IntermediateDirectory)/xmlOper.c$(ObjectSuffix) $(IntermediateDirectory)/CXmlOper.c$(ObjectSuffix) \
+	$(IntermediateDirectory)/CPPXmlOper.c$(ObjectSuffix) $(IntermediateDirectory)/JavaXmlOper.c$(ObjectSuffix) $(IntermediateDirectory)/sourceOper.c$(ObjectSuffix) 
 
 
 
@@ -163,6 +163,30 @@ $(IntermediateDirectory)/xmlOper.c$(DependSuffix): xmlOper.c
 
 $(IntermediateDirectory)/xmlOper.c$(PreprocessSuffix): xmlOper.c
 	$(CC) $(CFLAGS) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/xmlOper.c$(PreprocessSuffix) xmlOper.c
+
+$(IntermediateDirectory)/CXmlOper.c$(ObjectSuffix): CXmlOper.c $(IntermediateDirectory)/CXmlOper.c$(DependSuffix)
+	$(CC) $(SourceSwitch) "/home/fzm/github/confResource/ConfigInstrumentation/CXmlOper.c" $(CFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/CXmlOper.c$(ObjectSuffix) $(IncludePath)
+$(IntermediateDirectory)/CXmlOper.c$(DependSuffix): CXmlOper.c
+	@$(CC) $(CFLAGS) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/CXmlOper.c$(ObjectSuffix) -MF$(IntermediateDirectory)/CXmlOper.c$(DependSuffix) -MM CXmlOper.c
+
+$(IntermediateDirectory)/CXmlOper.c$(PreprocessSuffix): CXmlOper.c
+	$(CC) $(CFLAGS) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/CXmlOper.c$(PreprocessSuffix) CXmlOper.c
+
+$(IntermediateDirectory)/CPPXmlOper.c$(ObjectSuffix): CPPXmlOper.c $(IntermediateDirectory)/CPPXmlOper.c$(DependSuffix)
+	$(CC) $(SourceSwitch) "/home/fzm/github/confResource/ConfigInstrumentation/CPPXmlOper.c" $(CFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/CPPXmlOper.c$(ObjectSuffix) $(IncludePath)
+$(IntermediateDirectory)/CPPXmlOper.c$(DependSuffix): CPPXmlOper.c
+	@$(CC) $(CFLAGS) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/CPPXmlOper.c$(ObjectSuffix) -MF$(IntermediateDirectory)/CPPXmlOper.c$(DependSuffix) -MM CPPXmlOper.c
+
+$(IntermediateDirectory)/CPPXmlOper.c$(PreprocessSuffix): CPPXmlOper.c
+	$(CC) $(CFLAGS) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/CPPXmlOper.c$(PreprocessSuffix) CPPXmlOper.c
+
+$(IntermediateDirectory)/JavaXmlOper.c$(ObjectSuffix): JavaXmlOper.c $(IntermediateDirectory)/JavaXmlOper.c$(DependSuffix)
+	$(CC) $(SourceSwitch) "/home/fzm/github/confResource/ConfigInstrumentation/JavaXmlOper.c" $(CFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/JavaXmlOper.c$(ObjectSuffix) $(IncludePath)
+$(IntermediateDirectory)/JavaXmlOper.c$(DependSuffix): JavaXmlOper.c
+	@$(CC) $(CFLAGS) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/JavaXmlOper.c$(ObjectSuffix) -MF$(IntermediateDirectory)/JavaXmlOper.c$(DependSuffix) -MM JavaXmlOper.c
+
+$(IntermediateDirectory)/JavaXmlOper.c$(PreprocessSuffix): JavaXmlOper.c
+	$(CC) $(CFLAGS) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/JavaXmlOper.c$(PreprocessSuffix) JavaXmlOper.c
 
 $(IntermediateDirectory)/sourceOper.c$(ObjectSuffix): sourceOper.c $(IntermediateDirectory)/sourceOper.c$(DependSuffix)
 	$(CC) $(SourceSwitch) "/home/fzm/github/confResource/ConfigInstrumentation/sourceOper.c" $(CFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/sourceOper.c$(ObjectSuffix) $(IncludePath)

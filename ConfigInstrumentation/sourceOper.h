@@ -88,11 +88,10 @@ bool SrcToXML(char *dirPath);
 bool XMLToSrc(char *dirPath);
 
 /*****************************************
- * func: 向xml文件插入记录循环次数的代码
+ * func: 向xml文件插入标记配置项触发的代码
  * return: true = success   false = failure
- * @para dirPath: xml directory
 *****************************************/
-bool InsertXML(char *dirPath);
+bool InsertXML();
 
 /*****************************************
  * func: 从源码目录中将所有源文件转化为对应的xml文件

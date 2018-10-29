@@ -8,7 +8,7 @@
 #include "sourceOper.h"
 
 static char error_info[LOGINFO_LENGTH];
-static char xml_dir[DIRPATH_MAX];
+static char xml_dir[MAX_PATH_LENGTH];
 
 bool getSoftWareConfInfo()
 {
@@ -67,6 +67,7 @@ bool getSoftWareConfInfo()
         else
         {
             insertNum = StrToInt(value);
+            handledConfiguration[index-1].insertInfoSize = insertNum;
             //申请每个需要被插桩的配置项所需插桩的位置
             handledConfiguration[index-1].insertInfo = malloc(sizeof(InstrumentInfo)*insertNum);
             for(int i = 1; i <= insertNum; i++)
@@ -167,7 +168,7 @@ int judgeSrcFileType(char *filePath)
     //judge Java language file
     if(strlen(filePath) <= 5)
         return -1;
-    if(strcmp((char *)&filePath[strlen(filePath)-2], ".java") == 0)
+    if(strcmp((char *)&filePath[strlen(filePath)-5], ".java") == 0)
         return 3;
     
     return -1;
@@ -201,7 +202,7 @@ int judgeXmlFileType(char *filePath)
     //judge whether Java language source xml file or not
     if(strlen(filePath) <= 9)
         return -1;
-    if(strcmp((char *)&filePath[strlen(filePath)-6], ".java.xml") == 0)
+    if(strcmp((char *)&filePath[strlen(filePath)-9], ".java.xml") == 0)
         return 3;
         
     return -1;
@@ -296,7 +297,7 @@ int getTotalConvertFileNum(char *dirPath)
     struct stat statbuf;
     int ret = 0;
     
-    char child_dir[DIRPATH_MAX];
+    char child_dir[MAX_PATH_LENGTH];
     pdir = opendir(dirPath);
     if(pdir)
     {
@@ -306,7 +307,7 @@ int getTotalConvertFileNum(char *dirPath)
             if(strcmp(pdirent->d_name, ".") == 0 || strcmp(pdirent->d_name, "..") == 0 || (pdirent->d_name[0] == '.'))
                 continue;
             
-            memset(child_dir, 0, DIRPATH_MAX);
+            memset(child_dir, 0, MAX_PATH_LENGTH);
             sprintf(child_dir, "%s/%s", dirPath, pdirent->d_name);
             if(lstat(child_dir, &statbuf) < 0)
             {
@@ -356,25 +357,25 @@ static void *pthread_handle_Convert(void *arg)
 
 bool SrcToXML(char *dirPath)
 {
-    char temp_dir[DIRPATH_MAX];
-    char srcCpy_dir[DIRPATH_MAX];
+    char temp_dir[MAX_PATH_LENGTH];
+    char srcCpy_dir[MAX_PATH_LENGTH];
     char *temp_point = strstr(dirPath, programName);
     if(temp_point[strlen(programName)] == '\0')
     {
-        memset(temp_dir, 0, DIRPATH_MAX);
+        memset(temp_dir, 0, MAX_PATH_LENGTH);
         sprintf(temp_dir, "temp_%s", programName);
     }
     else
     {
         //递归遍历文件夹
         temp_point = (char *)&temp_point[strlen(programName)];
-        memset(temp_dir, 0, DIRPATH_MAX);
+        memset(temp_dir, 0, MAX_PATH_LENGTH);
         sprintf(temp_dir, "temp_%s%s", programName, temp_point);
     }
     //创建存放xml文件的临时文件夹
     createDir(temp_dir);
     //创建源码的拷贝文件夹
-    memset(srcCpy_dir, 0, DIRPATH_MAX);
+    memset(srcCpy_dir, 0, MAX_PATH_LENGTH);
     strcpy(srcCpy_dir, &(temp_dir[5]));
     createDir(srcCpy_dir);
     
@@ -383,7 +384,7 @@ bool SrcToXML(char *dirPath)
     struct stat statbuf;
     bool ret = true;
     
-    char child_dir[DIRPATH_MAX];
+    char child_dir[MAX_PATH_LENGTH];
     pdir = opendir(dirPath);
     if(pdir)
     {
@@ -393,7 +394,7 @@ bool SrcToXML(char *dirPath)
             if(strcmp(pdirent->d_name, ".") == 0 || strcmp(pdirent->d_name, "..") == 0 || (pdirent->d_name[0] == '.'))
                 continue;
             
-            memset(child_dir, 0, DIRPATH_MAX);
+            memset(child_dir, 0, MAX_PATH_LENGTH);
             sprintf(child_dir, "%s/%s", dirPath, pdirent->d_name);
             if(lstat(child_dir, &statbuf) < 0)
             {
@@ -421,7 +422,7 @@ bool SrcToXML(char *dirPath)
             {
                 if(judgeSrcFileType(child_dir) != -1)
                 {
-                    memset(xml_dir, 0, DIRPATH_MAX);
+                    memset(xml_dir, 0, MAX_PATH_LENGTH);
                     sprintf(xml_dir, "%s/%s.xml", temp_dir, pdirent->d_name);
                     
                     void *pthread_ret = NULL;
@@ -459,7 +460,7 @@ bool SrcToXML(char *dirPath)
                 else
                 {
                     //拷贝非源文件
-                    memset(xml_dir, 0, DIRPATH_MAX);
+                    memset(xml_dir, 0, MAX_PATH_LENGTH);
                     sprintf(xml_dir, "%s/%s", srcCpy_dir, pdirent->d_name);
                     CpyFile(child_dir, xml_dir);
                 }
@@ -481,18 +482,18 @@ bool SrcToXML(char *dirPath)
 
 bool XMLToSrc(char *dirPath)
 {
-    char temp_dir[DIRPATH_MAX];
+    char temp_dir[MAX_PATH_LENGTH];
     char *temp_point = strstr(dirPath, programName);
     if(temp_point[strlen(programName)] == '\0')
     {
-        memset(temp_dir, 0, DIRPATH_MAX);
+        memset(temp_dir, 0, MAX_PATH_LENGTH);
         sprintf(temp_dir, "%s", programName);
     }
     else
     {
         //递归调用
         temp_point = (char *)&temp_point[strlen(programName)];
-        memset(temp_dir, 0, DIRPATH_MAX);
+        memset(temp_dir, 0, MAX_PATH_LENGTH);
         sprintf(temp_dir, "%s%s", programName, temp_point);
     }
     
@@ -501,7 +502,7 @@ bool XMLToSrc(char *dirPath)
     struct stat statbuf;
     bool ret = true;
     
-    char child_dir[DIRPATH_MAX];
+    char child_dir[MAX_PATH_LENGTH];
     pdir = opendir(dirPath);
     if(pdir)
     {
@@ -511,7 +512,7 @@ bool XMLToSrc(char *dirPath)
             if(strcmp(pdirent->d_name, ".") == 0 || strcmp(pdirent->d_name, "..") == 0 || (pdirent->d_name[0] == '.'))
                 continue;
             
-            memset(child_dir, 0, DIRPATH_MAX);
+            memset(child_dir, 0, MAX_PATH_LENGTH);
             sprintf(child_dir, "%s/%s", dirPath, pdirent->d_name);
             if(lstat(child_dir, &statbuf) < 0)
             {
@@ -540,7 +541,7 @@ bool XMLToSrc(char *dirPath)
                 if(judgeXmlFileType(child_dir) != -1)
                 {
                     
-                    memset(xml_dir, 0, DIRPATH_MAX);
+                    memset(xml_dir, 0, MAX_PATH_LENGTH);
                     sprintf(xml_dir, "%s/%s", temp_dir, pdirent->d_name);
                     
                     void *pthread_ret = NULL;
@@ -594,100 +595,46 @@ bool XMLToSrc(char *dirPath)
 static void *pthread_handle_Insert(void *arg)
 {
     int *ret = malloc(sizeof(int));
-    char *argument = (char *)arg;
-    if(InsertCode(argument))
+    HandledConf *argument = (HandledConf *)arg;
+    if(InsertMarkerCode(*argument))
         *ret = 1;
     else
         *ret = 0;
     pthread_exit((void *)ret);
 }
 
-bool InsertXML(char *dirPath)
+bool InsertXML()
 {
-    DIR *pdir;
-    struct dirent *pdirent;
-    struct stat statbuf;
     bool ret = true;
-    
-    char child_dir[DIRPATH_MAX];
-    pdir = opendir(dirPath);
-    if(pdir)
+    for(int index = 0; index < totalHandledConfNum; index++)
     {
-        while((pdirent = readdir(pdir)) != NULL)
+        void *pthread_ret = NULL;
+        if(InsertXMLPthreadRet[currentInsertXmlPthreadID] == 0)
         {
-            //跳过"."和".."和隐藏文件夹
-            if(strcmp(pdirent->d_name, ".") == 0 || strcmp(pdirent->d_name, "..") == 0 || (pdirent->d_name[0] == '.'))
-                continue;
-            
-            memset(child_dir, 0, DIRPATH_MAX);
-            sprintf(child_dir, "%s/%s", dirPath, pdirent->d_name);
-            if(lstat(child_dir, &statbuf) < 0)
+            pthread_join(insertXMLPthreadID[currentInsertXmlPthreadID], &pthread_ret);
+            if(pthread_ret != NULL)
             {
-                memset(error_info, 0, LOGINFO_LENGTH);
-                sprintf(error_info, "lstat %s to failed: %s.\n", child_dir, strerror(errno));
-                Error(error_info);
-                closedir(pdir);
-                
-                return false;
-            }
-            
-            //judge whether directory or not
-            if(S_ISDIR(statbuf.st_mode))
-            {
-                if(InsertXML(child_dir))
-                    ret = true;
-                else
+                ret = *(int *)pthread_ret;
+                free(pthread_ret);
+                if(!ret)
                 {
-                    ret = false;
-                    closedir(pdir);
+                    Error("pthread_join insert xml failure!\n");
                     return ret;
                 }
             }
-            if(S_ISREG(statbuf.st_mode))
-            {
-                if(judgeXmlFileType(child_dir) != -1)
-                {
-                    void *pthread_ret = NULL;
-                    if(InsertXMLPthreadRet[currentInsertXmlPthreadID] == 0)
-                    {
-                        pthread_join(insertXMLPthreadID[currentInsertXmlPthreadID], &pthread_ret);
-                        if(pthread_ret != NULL)
-                        {
-                            ret = *(int *)pthread_ret;
-                            free(pthread_ret);
-                            if(!ret)
-                            {
-                                Error("pthread_join insert xml failure!\n");
-                                closedir(pdir);
-                                return ret;
-                            }
-                        }
-                    }
-                    
-                    curConvertFileNum++;
-                    printf("insert xml file %s(%d/%d)\n", child_dir, curConvertFileNum, totalConvertFileNum);
-                    
-                    memset(insXmlPthreadArg[currentInsertXmlPthreadID], 0, DIRPATH_MAX);
-                    strcpy(insXmlPthreadArg[currentInsertXmlPthreadID], child_dir);
-                    
-                    InsertXMLPthreadRet[currentInsertXmlPthreadID] = pthread_create(&insertXMLPthreadID[currentInsertXmlPthreadID], \
-                    NULL, pthread_handle_Insert, (void *)insXmlPthreadArg[currentInsertXmlPthreadID]);
-                    
-                    currentInsertXmlPthreadID++;
-                    currentInsertXmlPthreadID = currentInsertXmlPthreadID%MAX_INSERT_XML_PTHREAD_NUM;
-                }
-            }
         }
-    }
-    else
-    {
-        memset(error_info, 0, LOGINFO_LENGTH);
-        sprintf(error_info, "open directory %s to failed: %s.\n", dirPath, strerror(errno));
-        Error(error_info);
         
-        ret = false;
+        printf("insert configuration: %s(%d/%d)\n", handledConfiguration[index].confName, index+1, totalHandledConfNum);
+        
+        memset(&insXmlPthreadArg[currentInsertXmlPthreadID], 0, sizeof(HandledConf));
+        insXmlPthreadArg[currentInsertXmlPthreadID] = handledConfiguration[index];
+        
+        InsertXMLPthreadRet[currentInsertXmlPthreadID] = pthread_create(&insertXMLPthreadID[currentInsertXmlPthreadID], \
+        NULL, pthread_handle_Insert, (void *)&insXmlPthreadArg[currentInsertXmlPthreadID]);
+        
+        currentInsertXmlPthreadID++;
+        currentInsertXmlPthreadID = currentInsertXmlPthreadID%MAX_INSERT_XML_PTHREAD_NUM;
     }
-    closedir(pdir);
     
     return ret;
 }
@@ -730,8 +677,8 @@ bool BuildXmlToSrc()
         ConvertXMLPthreadRet[i] = -1;
     curConvertFileNum = 0;
     currentConvertXmlPthreadID = 0;
-    char xml_dir[DIRPATH_MAX] = "";
-    memset(xml_dir, 0, DIRPATH_MAX);
+    char xml_dir[MAX_PATH_LENGTH] = "";
+    memset(xml_dir, 0, MAX_PATH_LENGTH);
     sprintf(xml_dir, "temp_%s", programName);
     bool ret = XMLToSrc(xml_dir);
     for(i = 0; i < MAX_CONVERT_XML_PTHREAD_NUM; i++)
@@ -757,13 +704,12 @@ bool BuildXmlToSrc()
 
 bool BuildInsertXml()
 {
-    int i;
+    int i;                                                         
     for(i = 0; i < MAX_INSERT_XML_PTHREAD_NUM; i++)
         InsertXMLPthreadRet[i] = -1;
-    curConvertFileNum = 0;
     currentInsertXmlPthreadID = 0;
-    char xml_dir[DIRPATH_MAX];
-    memset(xml_dir, 0, DIRPATH_MAX);
+    char xml_dir[MAX_PATH_LENGTH];
+    memset(xml_dir, 0, MAX_PATH_LENGTH);
     sprintf(xml_dir, "temp_%s", programName);
     bool ret = InsertXML(xml_dir);
     for(i = 0; i < MAX_INSERT_XML_PTHREAD_NUM; i++)
@@ -789,8 +735,8 @@ bool BuildInsertXml()
 
 void ClearTmp()
 {
-    char xml_dir[DIRPATH_MAX];
-    memset(xml_dir, 0, DIRPATH_MAX);
+    char xml_dir[MAX_PATH_LENGTH];
+    memset(xml_dir, 0, MAX_PATH_LENGTH);
     sprintf(xml_dir, "temp_%s", programName);
     
     deleteDir(xml_dir);

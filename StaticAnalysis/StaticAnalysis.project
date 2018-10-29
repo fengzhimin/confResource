@@ -22,7 +22,6 @@
   </VirtualDirectory>
   <VirtualDirectory Name="mysql">
     <File Name="mysqlOper.h"/>
-    <File Name="mysqlOper.c"/>
     <File Name="buildFuncLibrary.h"/>
     <File Name="buildFuncLibrary.c"/>
     <File Name="buildTempTable.h"/>
@@ -50,6 +49,7 @@
   <VirtualDirectory Name="sourceCode">
     <File Name="sourceOper.h"/>
     <File Name="sourceOper.c"/>
+    <File Name="mysqlOper.c"/>
   </VirtualDirectory>
   <VirtualDirectory Name="log">
     <File Name="logOper.h"/>

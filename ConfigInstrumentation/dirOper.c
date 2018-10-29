@@ -26,7 +26,7 @@ bool deleteDir(char *path)
 {
     DIR *dir;
     struct dirent *entry;
-    char dirPath[DIRPATH_MAX];
+    char dirPath[MAX_PATH_LENGTH];
 
     dir = opendir(path);
     if (dir == NULL)
@@ -41,7 +41,7 @@ bool deleteDir(char *path)
     {
         if (strcmp(entry->d_name, ".") && strcmp(entry->d_name, ".."))
         {
-            snprintf(dirPath, (size_t) DIRPATH_MAX, "%s/%s", path, entry->d_name);
+            snprintf(dirPath, (size_t) MAX_PATH_LENGTH, "%s/%s", path, entry->d_name);
             if (entry->d_type == DT_DIR)
             {
                 deleteDir(dirPath);

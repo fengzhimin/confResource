@@ -34,6 +34,12 @@
   <VirtualDirectory Name="xmlParse">
     <File Name="xmlOper.h"/>
     <File Name="xmlOper.c"/>
+    <File Name="CXmlOper.h"/>
+    <File Name="CXmlOper.c"/>
+    <File Name="CPPXmlOper.h"/>
+    <File Name="CPPXmlOper.c"/>
+    <File Name="JavaXmlOper.h"/>
+    <File Name="JavaXmlOper.c"/>
   </VirtualDirectory>
   <VirtualDirectory Name="sourceCode">
     <File Name="sourceOper.h"/>

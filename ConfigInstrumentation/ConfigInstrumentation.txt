@@ -1,1 +1,1 @@
-./Debug/main.c.o ./Debug/config.c.o ./Debug/dateOper.c.o ./Debug/dirOper.c.o ./Debug/fileOper.c.o ./Debug/strOper.c.o ./Debug/confOper.c.o ./Debug/logOper.c.o ./Debug/xmlOper.c.o ./Debug/sourceOper.c.o
+./Debug/main.c.o ./Debug/config.c.o ./Debug/dateOper.c.o ./Debug/dirOper.c.o ./Debug/fileOper.c.o ./Debug/strOper.c.o ./Debug/confOper.c.o ./Debug/logOper.c.o ./Debug/xmlOper.c.o ./Debug/CXmlOper.c.o ./Debug/CPPXmlOper.c.o ./Debug/JavaXmlOper.c.o ./Debug/sourceOper.c.o

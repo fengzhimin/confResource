@@ -16,11 +16,11 @@ int main (int argc, char **argv)
     
     getSoftWareConfInfo();
     getProgramName(srcPath);
-    /*
+    
     BuildSrcToXml();
     BuildInsertXml();
     BuildXmlToSrc();
-     * */
+    
     ClearTmp();
     
     return 0;

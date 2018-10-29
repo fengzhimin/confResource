@@ -14,7 +14,7 @@
 #include <libxml/parser.h>
 #include <errno.h>
 
-#define OPENLOG  1      //0=不记录日志   1=记录日志
+#define OPENLOG  1      //0=不记录日志  DIRPATH_MAX 1=记录日志
 
 #define DEBUG    0      //0=不打印调试信息    1 = 打印调试信息
 
@@ -22,11 +22,7 @@
 
 #define MAX_SUBSTR               512   //拆分后子字符串的最大长度
 
-#define DIRPATH_MAX              256
-
-#define LOGINFO_LENGTH           1024 
-
-#define MAX_FUNCNAME_LENGTH      128
+#define LOGINFO_LENGTH           1024    //log info max length
 
 #define MAX_PATH_LENGTH          1024    //path max length
 
@@ -39,7 +35,7 @@
 #define MAX_CONVERT_XML_PTHREAD_NUM  10
 
 //insert xml file pthread number
-#define MAX_INSERT_XML_PTHREAD_NUM   10
+#define MAX_INSERT_XML_PTHREAD_NUM   1
 
 //the max length of function name
 #define MAX_FUNCTION_NAME_NUM     64
@@ -65,34 +61,20 @@ typedef struct InstrumentInfomation
 
 /****************************************
  * @para confName: the name of configuration
+ * @para insertInfoSize: the size of insertInfo
  * @para insertInfo: the information of instrumented　configuration options
 ****************************************/
 typedef struct HandledConfiguration
 {
     char confName[MAX_CONFIG_NAME_NUM];
+    int insertInfoSize;
     InstrumentInfo *insertInfo;
 } HandledConf;
 
-/***************************************
- * @para blockNode: 函数体节点
- * @para funcName: 函数名
-***************************************/ 
-typedef struct SelfDefineFunctionNode
-{
-    xmlNodePtr blockNode;
-    char funcName[MAX_FUNCNAME_LENGTH];
-} SelfDefFuncNode;
-
-typedef struct SelfDefineFunctionNodeList
-{
-    SelfDefFuncNode funcInfo;
-    struct SelfDefineFunctionNodeList *next;
-} SelfDefFuncNodeList;
-
 typedef struct convertPthread_argument
 {
-    char src_dir[DIRPATH_MAX];
-    char des_dir[DIRPATH_MAX];
+    char src_dir[MAX_PATH_LENGTH];
+    char des_dir[MAX_PATH_LENGTH];
     int pthreadID;
 } convertPthread_arg;
 
@@ -114,7 +96,7 @@ extern int currentConvertXmlPthreadID;
 extern int currentInsertXmlPthreadID;
 extern convertPthread_arg convSrcPthreadArg[MAX_CONVERT_SRC_PTHREAD_NUM];
 extern convertPthread_arg convXmlPthreadArg[MAX_CONVERT_XML_PTHREAD_NUM];
-extern char insXmlPthreadArg[MAX_INSERT_XML_PTHREAD_NUM][DIRPATH_MAX];
+extern HandledConf insXmlPthreadArg[MAX_INSERT_XML_PTHREAD_NUM];
 
 extern HandledConf *handledConfiguration;
 extern int totalHandledConfNum;    //需要插桩的配置项总个数
