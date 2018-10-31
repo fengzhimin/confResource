@@ -10,14 +10,33 @@
 void AddCHeaderFile(xmlNodePtr root_node)
 {
     xmlNodePtr cur = root_node->children;
+    //查看是否以及添加过
     while(cur != NULL)
     {
-        if(xmlStrcmp(cur->name, (const xmlChar *) "text"))
+        if(!xmlStrcmp(cur->name, (const xmlChar *) "include"))
+        {
+            if(strcmp((char*)xmlNodeGetContent(cur), "\n#include <insertFile.h>\n") == 0)
+                return ;
+        }
+        
+        cur = cur->next;
+    }
+    
+    cur = root_node->children;
+    while(cur != NULL)
+    {
+        if(!xmlStrcmp(cur->name, (const xmlChar *) "include"))
         {
             char temp[1024] = "";
             //sprintf(temp, "#include <sys/types.h>\n#include <sys/stat.h>\n#include <fcntl.h>\n#include <unistd.h>\n#include <string.h>\n%s", value);
-            sprintf(temp, "\n#include <insertFile.h>");
-            xmlNewTextChild(cur, NULL, (const xmlChar*)"keyword", (xmlChar *)temp);
+            sprintf(temp, "\n#include <insertFile.h>\n");
+            xmlNodePtr newNode = xmlNewNode(NULL, (const xmlChar*)"include");
+            xmlNodePtr newText = xmlNewText((xmlChar *)temp);
+            xmlAddChild(newNode, newText);
+            newNode->next = cur;
+            newNode->prev = cur->prev;
+            cur->prev = newNode;
+            newNode->prev->next = newNode;
             break;
         }
         
@@ -69,15 +88,21 @@ void AddCMarkerCode(xmlNodePtr funcBlockNode, char *confName)
 {
     xmlNodePtr cur = funcBlockNode->children;
     char temp_str[1024] = "";
+    sprintf(temp_str, "insert_count((char *)\"%s\");\n", confName);
     while(cur != NULL)
     {
         if(xmlStrcmp(cur->name, (const xmlChar *) "text"))
         {
-            sprintf(temp_str, "\ninsert_count((char *)\"%s\");", confName);
-            xmlNewTextChild(cur, NULL, (const xmlChar*)"keyword", (xmlChar *)temp_str);
-            break;
+            xmlNodePtr newNode = xmlNewNode(NULL, (const xmlChar*)"keyword");
+            xmlNodePtr newText = xmlNewText((xmlChar *)temp_str);
+            xmlAddChild(newNode, newText);
+            newNode->next = cur;
+            newNode->prev = cur->prev;
+            cur->prev = newNode;
+            newNode->prev->next = newNode;
+            newNode->parent = funcBlockNode;
         }
-        
+
         cur = cur->next;
     }
 }

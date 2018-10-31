@@ -1,190 +1,52 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Session Name="/home/fzm/github/confResource/confResource.workspace">
-  <int Value="1" Name="m_selectedTab"/>
+  <int Value="3" Name="m_selectedTab"/>
   <wxString Value="/home/fzm/github/confResource/confResource.workspace" Name="m_workspaceName"/>
   <TabInfoArray Name="TabInfoArray">
     <TabInfo>
-      <wxString Value="/home/fzm/github/confResource/ConfigInstrumentation/xmlOper.h" Name="FileName"/>
-      <int Value="7" Name="FirstVisibleLine"/>
-      <int Value="27" Name="CurrentLine"/>
-      <wxArrayString Name="Bookmarks"/>
-      <IntVector Name="CollapsedFolds"/>
-    </TabInfo>
-    <TabInfo>
       <wxString Value="/home/fzm/github/confResource/ConfigInstrumentation/xmlOper.c" Name="FileName"/>
-      <int Value="3" Name="FirstVisibleLine"/>
-      <int Value="17" Name="CurrentLine"/>
-      <wxArrayString Name="Bookmarks"/>
-      <IntVector Name="CollapsedFolds"/>
-    </TabInfo>
-    <TabInfo>
-      <wxString Value="/home/fzm/github/confResource/ConfigInstrumentation/CXmlOper.h" Name="FileName"/>
-      <int Value="12" Name="FirstVisibleLine"/>
-      <int Value="29" Name="CurrentLine"/>
+      <int Value="53" Name="FirstVisibleLine"/>
+      <int Value="72" Name="CurrentLine"/>
       <wxArrayString Name="Bookmarks"/>
       <IntVector Name="CollapsedFolds"/>
     </TabInfo>
     <TabInfo>
       <wxString Value="/home/fzm/github/confResource/ConfigInstrumentation/CXmlOper.c" Name="FileName"/>
-      <int Value="2" Name="FirstVisibleLine"/>
-      <int Value="77" Name="CurrentLine"/>
-      <wxArrayString Name="Bookmarks"/>
-      <IntVector Name="CollapsedFolds"/>
-    </TabInfo>
-    <TabInfo>
-      <wxString Value="/home/fzm/github/confResource/ConfigInstrumentation/CPPXmlOper.h" Name="FileName"/>
-      <int Value="5" Name="FirstVisibleLine"/>
-      <int Value="32" Name="CurrentLine"/>
+      <int Value="75" Name="FirstVisibleLine"/>
+      <int Value="90" Name="CurrentLine"/>
       <wxArrayString Name="Bookmarks"/>
       <IntVector Name="CollapsedFolds"/>
     </TabInfo>
     <TabInfo>
       <wxString Value="/home/fzm/github/confResource/ConfigInstrumentation/CPPXmlOper.c" Name="FileName"/>
-      <int Value="60" Name="FirstVisibleLine"/>
-      <int Value="67" Name="CurrentLine"/>
+      <int Value="73" Name="FirstVisibleLine"/>
+      <int Value="90" Name="CurrentLine"/>
       <wxArrayString Name="Bookmarks"/>
-      <IntVector Name="CollapsedFolds"/>
-    </TabInfo>
-    <TabInfo>
-      <wxString Value="/home/fzm/github/confResource/ConfigInstrumentation/JavaXmlOper.h" Name="FileName"/>
-      <int Value="20" Name="FirstVisibleLine"/>
-      <int Value="41" Name="CurrentLine"/>
-      <wxArrayString Name="Bookmarks">
-        <wxString Value="17:3"/>
-      </wxArrayString>
       <IntVector Name="CollapsedFolds"/>
     </TabInfo>
     <TabInfo>
       <wxString Value="/home/fzm/github/confResource/ConfigInstrumentation/JavaXmlOper.c" Name="FileName"/>
-      <int Value="22" Name="FirstVisibleLine"/>
-      <int Value="27" Name="CurrentLine"/>
-      <wxArrayString Name="Bookmarks"/>
-      <IntVector Name="CollapsedFolds"/>
-    </TabInfo>
-    <TabInfo>
-      <wxString Value="/home/fzm/github/confResource/ConfigInstrumentation/sourceOper.c" Name="FileName"/>
-      <int Value="597" Name="FirstVisibleLine"/>
-      <int Value="598" Name="CurrentLine"/>
-      <wxArrayString Name="Bookmarks"/>
-      <IntVector Name="CollapsedFolds"/>
-    </TabInfo>
-    <TabInfo>
-      <wxString Value="/home/fzm/github/confResource/ConfigInstrumentation/sourceOper.h" Name="FileName"/>
-      <int Value="97" Name="FirstVisibleLine"/>
-      <int Value="117" Name="CurrentLine"/>
-      <wxArrayString Name="Bookmarks"/>
-      <IntVector Name="CollapsedFolds"/>
-    </TabInfo>
-    <TabInfo>
-      <wxString Value="/home/fzm/github/confResource/ConfigInstrumentation/main.c" Name="FileName"/>
       <int Value="0" Name="FirstVisibleLine"/>
-      <int Value="23" Name="CurrentLine"/>
+      <int Value="17" Name="CurrentLine"/>
       <wxArrayString Name="Bookmarks"/>
       <IntVector Name="CollapsedFolds"/>
     </TabInfo>
     <TabInfo>
       <wxString Value="/home/fzm/github/confResource/ConfigInstrumentation/input.conf" Name="FileName"/>
       <int Value="0" Name="FirstVisibleLine"/>
-      <int Value="17" Name="CurrentLine"/>
+      <int Value="18" Name="CurrentLine"/>
       <wxArrayString Name="Bookmarks"/>
       <IntVector Name="CollapsedFolds"/>
     </TabInfo>
     <TabInfo>
-      <wxString Value="/home/fzm/github/confResource/ConfigInstrumentation/config.c" Name="FileName"/>
-      <int Value="0" Name="FirstVisibleLine"/>
-      <int Value="9" Name="CurrentLine"/>
-      <wxArrayString Name="Bookmarks"/>
-      <IntVector Name="CollapsedFolds"/>
-    </TabInfo>
-    <TabInfo>
-      <wxString Value="/home/fzm/github/confResource/ConfigInstrumentation/config.h" Name="FileName"/>
-      <int Value="19" Name="FirstVisibleLine"/>
-      <int Value="37" Name="CurrentLine"/>
+      <wxString Value="/home/fzm/github/confResource/ConfigInstrumentation/sourceOper.c" Name="FileName"/>
+      <int Value="573" Name="FirstVisibleLine"/>
+      <int Value="598" Name="CurrentLine"/>
       <wxArrayString Name="Bookmarks"/>
       <IntVector Name="CollapsedFolds"/>
     </TabInfo>
   </TabInfoArray>
   <SerializedObject Name="m_breakpoints">
-    <long Value="5" Name="Count"/>
-    <SerializedObject Name="Breakpoint0">
-      <wxString Value="/home/fzm/github/confResource/ConfigInstrumentation/xmlOper.c" Name="file"/>
-      <int Value="49" Name="lineno"/>
-      <wxString Value="" Name="function_name"/>
-      <wxString Value="" Name="memory_address"/>
-      <int Value="1" Name="bp_type"/>
-      <int Value="0" Name="watchpoint_type"/>
-      <wxString Value="" Name="watchpt_data"/>
-      <CData Name="commandlist"/>
-      <bool Value="0" Name="regex"/>
-      <bool Value="0" Name="is_temp"/>
-      <bool Value="1" Name="is_enabled"/>
-      <int Value="0" Name="ignore_number"/>
-      <wxString Value="" Name="conditions"/>
-      <int Value="0" Name="origin"/>
-    </SerializedObject>
-    <SerializedObject Name="Breakpoint1">
-      <wxString Value="/home/fzm/github/confResource/ConfigInstrumentation/CXmlOper.c" Name="file"/>
-      <int Value="15" Name="lineno"/>
-      <wxString Value="" Name="function_name"/>
-      <wxString Value="" Name="memory_address"/>
-      <int Value="1" Name="bp_type"/>
-      <int Value="0" Name="watchpoint_type"/>
-      <wxString Value="" Name="watchpt_data"/>
-      <CData Name="commandlist"/>
-      <bool Value="0" Name="regex"/>
-      <bool Value="0" Name="is_temp"/>
-      <bool Value="1" Name="is_enabled"/>
-      <int Value="0" Name="ignore_number"/>
-      <wxString Value="" Name="conditions"/>
-      <int Value="0" Name="origin"/>
-    </SerializedObject>
-    <SerializedObject Name="Breakpoint2">
-      <wxString Value="/home/fzm/github/confResource/ConfigInstrumentation/CXmlOper.c" Name="file"/>
-      <int Value="70" Name="lineno"/>
-      <wxString Value="" Name="function_name"/>
-      <wxString Value="" Name="memory_address"/>
-      <int Value="1" Name="bp_type"/>
-      <int Value="0" Name="watchpoint_type"/>
-      <wxString Value="" Name="watchpt_data"/>
-      <CData Name="commandlist"/>
-      <bool Value="0" Name="regex"/>
-      <bool Value="0" Name="is_temp"/>
-      <bool Value="1" Name="is_enabled"/>
-      <int Value="0" Name="ignore_number"/>
-      <wxString Value="" Name="conditions"/>
-      <int Value="0" Name="origin"/>
-    </SerializedObject>
-    <SerializedObject Name="Breakpoint3">
-      <wxString Value="/home/fzm/github/confResource/ConfigInstrumentation/sourceOper.c" Name="file"/>
-      <int Value="599" Name="lineno"/>
-      <wxString Value="" Name="function_name"/>
-      <wxString Value="" Name="memory_address"/>
-      <int Value="1" Name="bp_type"/>
-      <int Value="0" Name="watchpoint_type"/>
-      <wxString Value="" Name="watchpt_data"/>
-      <CData Name="commandlist"/>
-      <bool Value="0" Name="regex"/>
-      <bool Value="0" Name="is_temp"/>
-      <bool Value="1" Name="is_enabled"/>
-      <int Value="0" Name="ignore_number"/>
-      <wxString Value="" Name="conditions"/>
-      <int Value="0" Name="origin"/>
-    </SerializedObject>
-    <SerializedObject Name="Breakpoint4">
-      <wxString Value="/home/fzm/github/confResource/ConfigInstrumentation/sourceOper.c" Name="file"/>
-      <int Value="714" Name="lineno"/>
-      <wxString Value="" Name="function_name"/>
-      <wxString Value="" Name="memory_address"/>
-      <int Value="1" Name="bp_type"/>
-      <int Value="0" Name="watchpoint_type"/>
-      <wxString Value="" Name="watchpt_data"/>
-      <CData Name="commandlist"/>
-      <bool Value="0" Name="regex"/>
-      <bool Value="0" Name="is_temp"/>
-      <bool Value="1" Name="is_enabled"/>
-      <int Value="0" Name="ignore_number"/>
-      <wxString Value="" Name="conditions"/>
-      <int Value="0" Name="origin"/>
-    </SerializedObject>
+    <long Value="0" Name="Count"/>
   </SerializedObject>
 </Session>
